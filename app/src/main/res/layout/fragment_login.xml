@@ -1,13 +1,114 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".fragments.LoginFragment">
+    android:fillViewport="true">
 
-    <TextView
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="Login Fragment" />
+        android:layout_height="wrap_content"
+        android:background="@color/background"
+        android:padding="16dp">
 
-</FrameLayout>
+        <!-- Logo -->
+        <ImageView
+            android:id="@+id/logo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/logo"
+            android:layout_centerHorizontal="true"
+            android:contentDescription="UniTech Logo"
+            android:layout_marginTop="-130dp"
+            android:layout_marginBottom="-130dp"/>
+
+        <!-- Login Card -->
+        <RelativeLayout
+            android:id="@+id/login_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/rounded_white_background"
+            android:elevation="2dp"
+            android:padding="24dp"
+            android:layout_below="@id/logo"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="24dp">
+
+            <!-- Title -->
+            <TextView
+                android:id="@+id/login_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sign In"
+                android:fontFamily="@font/urbanist_semibold"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="@color/blue"
+                android:layout_centerHorizontal="true"
+                android:layout_marginBottom="24dp" />
+
+            <!-- Employee ID Input -->
+            <EditText
+                android:id="@+id/email_input"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:hint="Employee ID  or Applicant Email"
+                android:inputType="text"
+                android:fontFamily="@font/urbanist"
+                android:elevation="4dp"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
+                android:padding="12dp"
+                android:background="@drawable/rounded_edittext_background"
+                android:layout_below="@id/login_title"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Password Input -->
+            <EditText
+                android:id="@+id/password"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:hint="Password"
+                android:fontFamily="@font/urbanist"
+                android:inputType="textPassword"
+                android:padding="12dp"
+                android:elevation="4dp"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
+                android:drawableEnd="@drawable/eye_closed"
+                android:background="@drawable/rounded_edittext_background"
+                android:layout_below="@id/email_input"
+                android:layout_marginBottom="24dp"
+                android:drawablePadding="10dp" />
+
+            <!-- Login Button -->
+            <Button
+                android:id="@+id/login_button"
+                android:layout_width="wrap_content"
+                android:layout_height="60dp"
+                android:layout_centerHorizontal="true"
+                android:text="Login"
+                android:backgroundTint="@color/pink"
+                android:textColor="@color/black"
+                android:drawableEnd="@drawable/arrow_forward"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
+                android:elevation="4dp"
+                android:translationZ="4dp"
+                android:textSize="24sp"
+                android:layout_below="@id/password"
+                android:gravity="center" />
+
+            <View
+                android:id="@+id/horizontal_line"
+                android:layout_width="match_parent"
+                android:layout_height="2dp"
+                android:layout_below="@id/login_button"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="24dp"
+                android:background="@color/blue"/>
+
+        </RelativeLayout>
+    </RelativeLayout>
+</ScrollView>
