@@ -1,5 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Light Mode Colors -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="background">#F6F5F2</color>
+    <color name="description_color">#4F4E4E</color>
+    <color name="dot_color">#002244</color>
+    <color name="pink">#F3D0D7</color>
+    <color name="blue">#0B0C63</color>
+    <color name="verify">#DBDBDB</color>
+    <color name="gray">#333333</color>
+    <color name="red">#F44336</color>
+
+    <!-- Default color for light mode -->
+    <color name="vector_fill">#000000</color>
+
+    <!-- Colors for Dark Mode -->
+    <color name="textColorPrimaryLight">#212121</color> <!-- For light theme text -->
+    <color name="textColorPrimaryDark">#FFFFFF</color> <!-- For dark theme text -->
+    <color name="button_text_color_light">#000000</color> <!-- For light button text -->
+    <color name="button_text_color_dark">#FFFFFF</color> <!-- For dark button text -->
+    <color name="button_background">#FF9800</color> <!-- Common button background -->
 </resources>
