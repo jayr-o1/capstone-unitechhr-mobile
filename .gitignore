@@ -1,0 +1,40 @@
+# Built files
+/build/
+**/build/
+.cxx/
+.externalNativeBuild/
+
+# Local configuration
+local.properties
+/local.properties
+
+# Gradle
+.gradle/
+**/*.iml
+
+# IDE files
+.idea/
+*.iml
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+
+# macOS
+.DS_Store
+
+# Android Studio captures
+/captures/
+
+# Keystore files (if any)
+*.jks
+
+# Signing/credentials
+*.keystore
+*.pem
+*.key
+
+# Others
+*.log
