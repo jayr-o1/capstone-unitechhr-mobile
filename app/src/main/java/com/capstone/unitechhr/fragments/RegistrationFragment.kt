@@ -16,6 +16,7 @@ import com.capstone.unitechhr.R
 import com.capstone.unitechhr.viewmodels.AuthViewModel
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import java.util.regex.Pattern
+import android.app.AlertDialog
 
 class RegistrationFragment : Fragment() {
     private val authViewModel: AuthViewModel by activityViewModels()
@@ -64,17 +65,19 @@ class RegistrationFragment : Fragment() {
             
             result.fold(
                 onSuccess = {
-                    // Show success message
-                    Toast.makeText(
-                        requireContext(),
-                        "Registration successful! Please check your email for verification instructions.",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    // Show detailed success message
+                    val message = "Registration successful!\n\nWe've sent a verification code to your email. Please check your inbox (including spam folder) and use the code to verify your account."
                     
-                    // Navigate directly to login screen
-                    findNavController().navigate(
-                        R.id.action_registrationFragment_to_loginFragment
-                    )
+                    // Create a dialog for better visibility
+                    AlertDialog.Builder(requireContext())
+                        .setTitle("Registration Complete")
+                        .setMessage(message)
+                        .setPositiveButton("Go to Login") { _, _ ->
+                            // Navigate to login screen
+                            findNavController().navigate(R.id.action_registrationFragment_to_loginFragment)
+                        }
+                        .setCancelable(false)
+                        .show()
                 },
                 onFailure = { exception ->
                     // Show error message

@@ -155,6 +155,13 @@ class VerificationFragment : Fragment() {
         progressIndicator.visibility = View.VISIBLE
         verifyButton.isEnabled = false
         
+        // Show a toast message to let the user know the verification is in progress
+        Toast.makeText(
+            requireContext(),
+            "Verifying your account...",
+            Toast.LENGTH_SHORT
+        ).show()
+        
         // We need to login first with the entered email to retrieve the user
         authViewModel.loginForVerification(email, verificationCode)
     }

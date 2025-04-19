@@ -66,6 +66,10 @@ dependencies {
     implementation("com.google.firebase:firebase-auth-ktx:22.3.1")
     implementation("com.google.firebase:firebase-functions-ktx:20.4.0")
 
+    // Email sending libraries
+    implementation("com.sun.mail:android-mail:1.6.7")
+    implementation("com.sun.mail:android-activation:1.6.7")
+
     testImplementation(libs.junit)
     androidTestImplementation("androidx.test.ext:junit:1.9.0")
     androidTestImplementation(libs.androidx.espresso.core)
