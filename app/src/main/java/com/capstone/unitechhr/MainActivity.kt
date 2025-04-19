@@ -23,18 +23,12 @@ class MainActivity : AppCompatActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(R.layout.activity_main)
         
-        // Set up the toolbar
+        // Set up the toolbar but hide it
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
-        
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+        supportActionBar?.hide() // Hide the action bar completely for all fragments
         
         // Setup Navigation
         val navHostFragment = supportFragmentManager
@@ -52,7 +46,7 @@ class MainActivity : AppCompatActivity() {
             )
         )
         
-        // Setup ActionBar with NavController
+        // Setup ActionBar with NavController but it's hidden
         setupActionBarWithNavController(navController, appBarConfiguration)
         
         // Setup Bottom Navigation
@@ -106,13 +100,6 @@ class MainActivity : AppCompatActivity() {
             // Update the selected menu item if we have a valid ID
             if (menuItemId != null) {
                 bottomNavigationView.menu.findItem(menuItemId)?.isChecked = true
-            }
-            
-            // Show/hide toolbar based on destination
-            if (destination.id == R.id.homeFragment) {
-                supportActionBar?.hide()
-            } else {
-                supportActionBar?.show()
             }
         }
     }
