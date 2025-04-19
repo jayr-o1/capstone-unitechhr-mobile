@@ -66,15 +66,15 @@ class RegistrationFragment : Fragment() {
             result.fold(
                 onSuccess = {
                     // Show detailed success message
-                    val message = "Registration successful!\n\nWe've sent a verification code to your email. Please check your inbox (including spam folder) and use the code to verify your account."
+                    val message = "Registration successful!\n\nWe've sent a verification link to your email. Please check your inbox (including spam folder) and click the link to verify your account."
                     
                     // Create a dialog for better visibility
                     AlertDialog.Builder(requireContext())
                         .setTitle("Registration Complete")
                         .setMessage(message)
-                        .setPositiveButton("Go to Login") { _, _ ->
-                            // Navigate to login screen
-                            findNavController().navigate(R.id.action_registrationFragment_to_loginFragment)
+                        .setPositiveButton("Go to Verification") { _, _ ->
+                            // Navigate to verification screen instead of login
+                            findNavController().navigate(R.id.action_registrationFragment_to_verificationFragment)
                         }
                         .setCancelable(false)
                         .show()

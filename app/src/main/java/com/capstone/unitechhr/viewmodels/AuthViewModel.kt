@@ -101,6 +101,42 @@ class AuthViewModel : ViewModel() {
         }
     }
     
+    // Verify with code
+    fun verifyWithCode(email: String, code: String) {
+        viewModelScope.launch {
+            try {
+                // Call Firebase Function to verify code
+                val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+                val data = hashMapOf(
+                    "email" to email,
+                    "code" to code
+                )
+                
+                val result = functions
+                    .getHttpsCallable("verifyEmail")
+                    .call(data)
+                    .await()
+                
+                val success = (result.data as? Map<String, Any>)?.get("success") as? Boolean ?: false
+                
+                if (success) {
+                    // Try to sign in with saved credentials to get the verified user
+                    val user = authRepository.getCurrentUser()
+                    if (user != null) {
+                        // Update user's verification status
+                        _verifyEmailResult.postValue(Result.success(user))
+                    } else {
+                        _verifyEmailResult.postValue(Result.failure(Exception("Verification successful, please sign in again.")))
+                    }
+                } else {
+                    _verifyEmailResult.postValue(Result.failure(Exception("Verification failed. Please try again.")))
+                }
+            } catch (e: Exception) {
+                _verifyEmailResult.postValue(Result.failure(e))
+            }
+        }
+    }
+    
     fun sendPasswordResetEmail(email: String) {
         viewModelScope.launch {
             val result = authRepository.sendPasswordResetEmail(email)
