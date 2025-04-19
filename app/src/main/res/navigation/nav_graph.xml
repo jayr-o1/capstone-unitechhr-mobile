@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/homeFragment">
+
+    <!-- Home Screen -->
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.capstone.unitechhr.fragments.HomeFragment"
+        android:label="Home"
+        tools:layout="@layout/fragment_home" />
+
+    <!-- Job Listings -->
+    <fragment
+        android:id="@+id/jobListingFragment"
+        android:name="com.capstone.unitechhr.fragments.JobListingFragment"
+        android:label="Job Listings"
+        tools:layout="@layout/fragment_job_listing" >
+        <action
+            android:id="@+id/action_jobListingFragment_to_jobDetailFragment"
+            app:destination="@id/jobDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/jobDetailFragment"
+        android:name="com.capstone.unitechhr.fragments.JobDetailFragment"
+        android:label="Job Details"
+        tools:layout="@layout/fragment_job_detail" >
+        <action
+            android:id="@+id/action_jobDetailFragment_to_applicationFormFragment"
+            app:destination="@id/applicationFormFragment" />
+    </fragment>
+
+    <!-- Interview Schedule -->
+    <fragment
+        android:id="@+id/interviewScheduleFragment"
+        android:name="com.capstone.unitechhr.fragments.InterviewScheduleFragment"
+        android:label="Interview Schedule"
+        tools:layout="@layout/fragment_interview_schedule" >
+        <action
+            android:id="@+id/action_interviewScheduleFragment_to_interviewDetailFragment"
+            app:destination="@id/interviewDetailFragment" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/interviewDetailFragment"
+        android:name="com.capstone.unitechhr.fragments.InterviewDetailFragment"
+        android:label="Interview Details"
+        tools:layout="@layout/fragment_interview_detail" />
+
+    <!-- Onboarding Checklist -->
+    <fragment
+        android:id="@+id/onboardingChecklistFragment"
+        android:name="com.capstone.unitechhr.fragments.OnboardingChecklistFragment"
+        android:label="Onboarding Checklist"
+        tools:layout="@layout/fragment_onboarding_checklist" />
+
+    <!-- Application Tracking -->
+    <fragment
+        android:id="@+id/applicantListFragment"
+        android:name="com.capstone.unitechhr.fragments.ApplicantListFragment"
+        android:label="Application Tracking"
+        tools:layout="@layout/fragment_applicant_list" >
+        <action
+            android:id="@+id/action_applicantListFragment_to_applicantDetailFragment"
+            app:destination="@id/applicantDetailFragment" />
+        <action
+            android:id="@+id/action_applicantListFragment_to_applicantFormFragment"
+            app:destination="@id/applicantFormFragment" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/applicantDetailFragment"
+        android:name="com.capstone.unitechhr.fragments.ApplicantDetailFragment"
+        android:label="Applicant Details"
+        tools:layout="@layout/fragment_applicant_detail" >
+        <action
+            android:id="@+id/action_applicantDetailFragment_to_applicantFormFragment"
+            app:destination="@id/applicantFormFragment" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/applicantFormFragment"
+        android:name="com.capstone.unitechhr.fragments.ApplicantFormFragment"
+        android:label="Add/Edit Applicant"
+        tools:layout="@layout/fragment_applicant_form" />
+    
+    <fragment
+        android:id="@+id/applicationFormFragment"
+        android:name="com.capstone.unitechhr.fragments.ApplicationFormFragment"
+        android:label="Job Application"
+        tools:layout="@layout/fragment_application_form" />
+
+    <!-- Profile -->
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.capstone.unitechhr.fragments.ProfileFragment"
+        android:label="Profile"
+        tools:layout="@layout/fragment_profile" />
+
+</navigation> 

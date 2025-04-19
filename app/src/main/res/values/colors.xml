@@ -21,4 +21,11 @@
     <color name="button_text_color_light">#000000</color> <!-- For light button text -->
     <color name="button_text_color_dark">#FFFFFF</color> <!-- For dark button text -->
     <color name="button_background">#FF9800</color> <!-- Common button background -->
+
+    <!-- Status Colors -->
+    <color name="status_pending">#FF9800</color>
+    <color name="status_reviewing">#2196F3</color>
+    <color name="status_interview">#673AB7</color>
+    <color name="status_hired">#4CAF50</color>
+    <color name="status_rejected">#F44336</color>
 </resources>
