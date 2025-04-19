@@ -73,6 +73,18 @@ class AuthRepository {
                     .set(verificationData)
                     .await()
                 
+                // Test SMTP connection first
+                try {
+                    val connectionTestResult = EmailService.testConnection()
+                    if (connectionTestResult.isFailure) {
+                        Log.e("AuthRepository", "SMTP connection test failed: ${connectionTestResult.exceptionOrNull()?.message}")
+                    } else {
+                        Log.d("AuthRepository", "SMTP connection test successful")
+                    }
+                } catch (e: Exception) {
+                    Log.e("AuthRepository", "Error testing SMTP connection: ${e.message}")
+                }
+                
                 // Send verification email using our EmailService instead of Cloud Functions
                 try {
                     val emailResult = EmailService.sendVerificationEmail(email, verificationCode, fullName)

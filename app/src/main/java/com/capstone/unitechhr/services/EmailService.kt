@@ -21,19 +21,22 @@ class EmailService {
         
         // Configure these with your email credentials
         private const val EMAIL_USERNAME = "olores.jayrm@gmail.com"
-        private const val EMAIL_PASSWORD = "zpozgyqczzycyiql" // App password, not regular password
+        private const val EMAIL_PASSWORD = "zpoz gyqc zzyc yiql" // App password, not regular password
         
         /**
-         * Send a verification email with the provided code
+         * Test SMTP connection only
          */
-        suspend fun sendVerificationEmail(recipientEmail: String, code: String, name: String): Result<Unit> = withContext(Dispatchers.IO) {
+        suspend fun testConnection(): Result<String> = withContext(Dispatchers.IO) {
             try {
+                Log.d(TAG, "Testing SMTP connection...")
+                
                 val properties = Properties().apply {
                     put("mail.smtp.host", "smtp.gmail.com")
-                    put("mail.smtp.socketFactory.port", "465")
-                    put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory")
+                    put("mail.smtp.port", "587")
                     put("mail.smtp.auth", "true")
-                    put("mail.smtp.port", "465")
+                    put("mail.smtp.starttls.enable", "true")
+                    put("mail.debug", "true")
+                    put("mail.debug.auth", "true")
                 }
                 
                 // Create session with authentication
@@ -42,6 +45,67 @@ class EmailService {
                         return PasswordAuthentication(EMAIL_USERNAME, EMAIL_PASSWORD)
                     }
                 })
+                
+                // Enable session debugging
+                session.debug = true
+                
+                try {
+                    Log.d(TAG, "Opening connection to SMTP server...")
+                    val transport = session.getTransport("smtp")
+                    transport.connect("smtp.gmail.com", EMAIL_USERNAME, EMAIL_PASSWORD)
+                    val isConnected = transport.isConnected
+                    Log.d(TAG, "SMTP Connection successful: $isConnected")
+                    transport.close()
+                    return@withContext Result.success("SMTP connection test successful")
+                } catch (e: Exception) {
+                    Log.e(TAG, "SMTP connection test failed: ${e.javaClass.simpleName}: ${e.message}")
+                    e.printStackTrace()
+                    return@withContext Result.failure(e)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to test SMTP connection: ${e.javaClass.simpleName}", e)
+                e.printStackTrace()
+                return@withContext Result.failure(e)
+            }
+        }
+        
+        /**
+         * Send a verification email with the provided code
+         */
+        suspend fun sendVerificationEmail(recipientEmail: String, code: String, name: String): Result<Unit> = withContext(Dispatchers.IO) {
+            // First test the connection
+            val connectionTest = testConnection()
+            if (connectionTest.isFailure) {
+                Log.e(TAG, "Aborting email send - connection test failed: ${connectionTest.exceptionOrNull()?.message}")
+                return@withContext Result.failure(connectionTest.exceptionOrNull() ?: Exception("Connection test failed"))
+            }
+            
+            try {
+                Log.d(TAG, "Starting email sending process to $recipientEmail")
+                
+                val properties = Properties().apply {
+                    put("mail.smtp.host", "smtp.gmail.com")
+                    put("mail.smtp.port", "587")
+                    put("mail.smtp.auth", "true")
+                    put("mail.smtp.starttls.enable", "true")
+                    // Add these to debug connections
+                    put("mail.debug", "true")
+                    put("mail.debug.auth", "true")
+                }
+                
+                Log.d(TAG, "Creating mail session with properties")
+                
+                // Create session with authentication
+                val session = Session.getInstance(properties, object : Authenticator() {
+                    override fun getPasswordAuthentication(): PasswordAuthentication {
+                        return PasswordAuthentication(EMAIL_USERNAME, EMAIL_PASSWORD)
+                    }
+                })
+                
+                // Enable session debugging
+                session.debug = true
+                
+                Log.d(TAG, "Creating message")
                 
                 // Create message
                 val message = MimeMessage(session).apply {
@@ -71,16 +135,25 @@ class EmailService {
                     
                     // Set HTML content
                     setContent(htmlContent, "text/html; charset=utf-8")
+                    
+                    Log.d(TAG, "Message created successfully")
                 }
                 
-                // Send the message
-                Log.d(TAG, "Sending verification email to $recipientEmail with code $code")
-                Transport.send(message)
-                Log.d(TAG, "Email sent successfully to $recipientEmail")
+                try {
+                    // Send the message
+                    Log.d(TAG, "Attempting to send verification email to $recipientEmail with code $code")
+                    Transport.send(message)
+                    Log.d(TAG, "Email sent successfully to $recipientEmail")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Transport.send failed: ${e.javaClass.simpleName}: ${e.message}")
+                    e.printStackTrace()
+                    throw e
+                }
                 
                 Result.success(Unit)
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to send verification email", e)
+                Log.e(TAG, "Failed to send verification email: ${e.javaClass.simpleName}", e)
+                e.printStackTrace()
                 Result.failure(e)
             }
         }
