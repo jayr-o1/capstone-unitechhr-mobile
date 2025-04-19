@@ -14,8 +14,14 @@ class AuthViewModel : ViewModel() {
     private val _loginResult = MutableLiveData<Result<FirebaseUser>>()
     val loginResult: LiveData<Result<FirebaseUser>> = _loginResult
     
-    private val _registerResult = MutableLiveData<Result<FirebaseUser>>()
-    val registerResult: LiveData<Result<FirebaseUser>> = _registerResult
+    private val _registerResult = MutableLiveData<Result<String>>()
+    val registerResult: LiveData<Result<String>> = _registerResult
+    
+    private val _verifyEmailResult = MutableLiveData<Result<FirebaseUser>>()
+    val verifyEmailResult: LiveData<Result<FirebaseUser>> = _verifyEmailResult
+    
+    private val _resendCodeResult = MutableLiveData<Result<String>>()
+    val resendCodeResult: LiveData<Result<String>> = _resendCodeResult
     
     private val _resetPasswordResult = MutableLiveData<Result<Unit>>()
     val resetPasswordResult: LiveData<Result<Unit>> = _resetPasswordResult
@@ -43,14 +49,28 @@ class AuthViewModel : ViewModel() {
         }
     }
     
-    fun register(email: String, password: String) {
+    fun register(email: String, password: String, fullName: String) {
         viewModelScope.launch {
-            val result = authRepository.register(email, password)
+            val result = authRepository.register(email, password, fullName)
             _registerResult.postValue(result)
+        }
+    }
+    
+    fun verifyEmail(code: String) {
+        viewModelScope.launch {
+            val result = authRepository.verifyEmail(code)
+            _verifyEmailResult.postValue(result)
             
             if (result.isSuccess) {
                 _currentUser.postValue(result.getOrNull())
             }
+        }
+    }
+    
+    fun resendVerificationCode() {
+        viewModelScope.launch {
+            val result = authRepository.resendVerificationCode()
+            _resendCodeResult.postValue(result)
         }
     }
     

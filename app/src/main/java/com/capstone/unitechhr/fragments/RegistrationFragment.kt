@@ -63,16 +63,21 @@ class RegistrationFragment : Fragment() {
             registerButton.isEnabled = true
             
             result.fold(
-                onSuccess = {
+                onSuccess = { verificationCode ->
                     // Show success message
                     Toast.makeText(
                         requireContext(),
-                        "Registration successful! Please log in.",
+                        "Registration successful! Please verify your email.",
                         Toast.LENGTH_LONG
                     ).show()
                     
-                    // Navigate to login fragment
-                    findNavController().navigate(R.id.action_registrationFragment_to_loginFragment)
+                    // Navigate to verification fragment
+                    val action = RegistrationFragmentDirections
+                        .actionRegistrationFragmentToVerificationFragment(
+                            email = emailEditText.text.toString().trim(),
+                            code = verificationCode
+                        )
+                    findNavController().navigate(action)
                 },
                 onFailure = { exception ->
                     // Show error message
@@ -142,7 +147,7 @@ class RegistrationFragment : Fragment() {
         registerButton.isEnabled = false
         
         // Attempt registration
-        authViewModel.register(email, password)
+        authViewModel.register(email, password, fullName)
     }
     
     private fun isValidEmail(email: String): Boolean {
