@@ -16,7 +16,8 @@ class ProfileFragment : Fragment() {
     private val authViewModel: AuthViewModel by activityViewModels()
     
     private lateinit var logoutButton: Button
-    private lateinit var userEmailText: TextView
+    private lateinit var emailTextView: TextView
+    private lateinit var nameTextView: TextView
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -31,11 +32,13 @@ class ProfileFragment : Fragment() {
         
         // Initialize views
         logoutButton = view.findViewById(R.id.logoutButton)
-        userEmailText = view.findViewById(R.id.userEmailText)
+        emailTextView = view.findViewById(R.id.emailTextView)
+        nameTextView = view.findViewById(R.id.nameTextView)
         
         // Display current user email
         authViewModel.currentUser.observe(viewLifecycleOwner) { user ->
-            userEmailText.text = user?.email ?: "Not logged in"
+            emailTextView.text = user?.email ?: "Not logged in"
+            nameTextView.text = user?.displayName ?: "User"
         }
         
         // Set up logout button
