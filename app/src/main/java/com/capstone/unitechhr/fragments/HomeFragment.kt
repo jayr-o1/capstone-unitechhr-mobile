@@ -24,40 +24,80 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         
         // Setup navigation cards
-        setupNavigationCard(
+        setupJobCard(
             view.findViewById(R.id.jobsCard),
             "Find and apply for job opportunities",
             R.id.jobListingFragment
         )
         
-        setupNavigationCard(
+        setupInterviewCard(
             view.findViewById(R.id.interviewsCard),
             "View and manage your interview schedule",
             R.id.interviewScheduleFragment
         )
         
-        setupNavigationCard(
+        setupOnboardingCard(
             view.findViewById(R.id.onboardingCard),
             "Complete your onboarding tasks",
             R.id.onboardingChecklistFragment
         )
         
-        setupNavigationCard(
+        setupApplicationCard(
             view.findViewById(R.id.applicationsCard),
             "Track your application status",
             R.id.applicantListFragment
         )
         
-        setupNavigationCard(
+        setupProfileCard(
             view.findViewById(R.id.profileCard),
             "Update your profile information",
             R.id.profileFragment
         )
     }
     
-    private fun setupNavigationCard(card: CardView, description: String, destinationId: Int) {
+    private fun setupJobCard(card: CardView, description: String, destinationId: Int) {
         // Set description text
-        card.findViewById<TextView>(R.id.cardDescription).text = description
+        card.findViewById<TextView>(R.id.jobCardDescription).text = description
+        
+        // Set click listener
+        card.setOnClickListener {
+            findNavController().navigate(destinationId)
+        }
+    }
+    
+    private fun setupInterviewCard(card: CardView, description: String, destinationId: Int) {
+        // Set description text
+        card.findViewById<TextView>(R.id.interviewCardDescription).text = description
+        
+        // Set click listener
+        card.setOnClickListener {
+            findNavController().navigate(destinationId)
+        }
+    }
+    
+    private fun setupOnboardingCard(card: CardView, description: String, destinationId: Int) {
+        // Set description text
+        card.findViewById<TextView>(R.id.onboardingCardDescription).text = description
+        
+        // Set click listener
+        card.setOnClickListener {
+            findNavController().navigate(destinationId)
+        }
+    }
+    
+    private fun setupApplicationCard(card: CardView, description: String, destinationId: Int) {
+        // Set description text
+        card.findViewById<TextView>(R.id.applicationCardDescription).text = description
+        
+        // Set click listener
+        card.setOnClickListener {
+            findNavController().navigate(destinationId)
+        }
+    }
+    
+    private fun setupProfileCard(card: CardView, description: String, destinationId: Int) {
+        // Set description text
+        card.findViewById<TextView>(R.id.profileCardDescription).text = description
         
         // Set click listener
         card.setOnClickListener {
