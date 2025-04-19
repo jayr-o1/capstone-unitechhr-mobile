@@ -72,19 +72,17 @@ class MainActivity : AppCompatActivity() {
                 // Ask to resend a verification code
                 authViewModel.resendVerificationCode()
                 
-                Toast.makeText(
-                    this,
-                    "Please verify your email before accessing the app",
-                    Toast.LENGTH_SHORT
-                ).show()
+                // Add bundle with info about this being an app launch
+                val bundle = Bundle().apply {
+                    putBoolean("fromAppLaunch", true)
+                }
+                navController.setGraph(navGraph, bundle)
             } else {
                 // User is not logged in
                 navGraph.setStartDestination(R.id.loginFragment)
+                navController.graph = navGraph
             }
         }
-        
-        // Set the modified nav graph to the controller
-        navController.graph = navGraph
         
         // Define top level destinations
         appBarConfiguration = AppBarConfiguration(

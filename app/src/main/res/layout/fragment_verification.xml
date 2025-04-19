@@ -235,6 +235,20 @@
                 android:textSize="14sp"
                 android:fontFamily="@font/urbanist" />
 
+            <!-- Logout Button - hidden by default -->
+            <Button
+                android:id="@+id/logout_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/verification_info_text"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="16dp"
+                android:text="Logout and Try Again"
+                android:backgroundTint="#FF5252"
+                android:textColor="#FFFFFF"
+                android:fontFamily="@font/urbanist"
+                android:visibility="gone" />
+
         </RelativeLayout>
     </RelativeLayout>
 </ScrollView> 
