@@ -165,6 +165,27 @@
         <action
             android:id="@+id/action_registrationFragment_to_loginFragment"
             app:destination="@id/loginFragment" />
+        <action
+            android:id="@+id/action_registrationFragment_to_verificationFragment"
+            app:destination="@id/verificationFragment" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/verificationFragment"
+        android:name="com.capstone.unitechhr.fragments.VerificationFragment"
+        android:label="Email Verification"
+        tools:layout="@layout/fragment_verification">
+        <action
+            android:id="@+id/action_verificationFragment_to_loginFragment"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true" />
+        <argument
+            android:name="email"
+            app:argType="string" />
+        <argument
+            android:name="code"
+            app:argType="string" />
     </fragment>
     
     <fragment
