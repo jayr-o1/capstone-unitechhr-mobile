@@ -73,7 +73,7 @@
                         android:textStyle="bold" />
 
                     <TextView
-                        android:id="@+id/cardDescription"
+                        android:id="@+id/jobCardDescription"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/urbanist"
@@ -123,7 +123,7 @@
                         android:textStyle="bold" />
 
                     <TextView
-                        android:id="@+id/cardDescription"
+                        android:id="@+id/interviewCardDescription"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/urbanist"
@@ -173,7 +173,7 @@
                         android:textStyle="bold" />
 
                     <TextView
-                        android:id="@+id/cardDescription"
+                        android:id="@+id/onboardingCardDescription"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/urbanist"
@@ -223,7 +223,7 @@
                         android:textStyle="bold" />
 
                     <TextView
-                        android:id="@+id/cardDescription"
+                        android:id="@+id/applicationCardDescription"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/urbanist"
@@ -273,7 +273,7 @@
                         android:textStyle="bold" />
 
                     <TextView
-                        android:id="@+id/cardDescription"
+                        android:id="@+id/profileCardDescription"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/urbanist"
