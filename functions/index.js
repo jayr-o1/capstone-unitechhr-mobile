@@ -5,47 +5,44 @@ admin.initializeApp();
 // Function to mark a user's email as verified
 exports.verifyEmail = functions.https.onCall(async (data, context) => {
     try {
-        // Security check - only allow authenticated users to verify their own email
-        if (!context.auth) {
+        // Get email and code from data
+        const { email, code } = data;
+
+        if (!email || !code) {
             throw new functions.https.HttpsError(
-                "unauthenticated",
-                "The function must be called while authenticated."
+                "invalid-argument",
+                "Email and verification code are required."
             );
         }
 
-        const uid = data.uid;
-
-        // Ensure the user is trying to verify their own email
-        if (uid !== context.auth.uid) {
-            throw new functions.https.HttpsError(
-                "permission-denied",
-                "Users can only verify their own email."
-            );
-        }
-
-        // Verify the code from Firestore
-        const verificationDoc = await admin
+        // Find the user document by email
+        const usersSnapshot = await admin
             .firestore()
             .collection("verification_codes")
-            .doc(uid)
+            .where("email", "==", email)
+            .limit(1)
             .get();
 
-        if (!verificationDoc.exists) {
+        if (usersSnapshot.empty) {
             throw new functions.https.HttpsError(
                 "not-found",
-                "Verification record not found."
+                "User not found with the provided email."
             );
         }
 
-        const verificationData = verificationDoc.data();
-        const storedCode = verificationData.code;
-        const timestamp = verificationData.timestamp;
+        // Get user data
+        const userDoc = usersSnapshot.docs[0];
+        const uid = userDoc.id;
+        const userData = userDoc.data();
+
+        // Verify the code
+        const storedCode = userData.code;
+        const timestamp = userData.timestamp;
         const currentTime = Date.now();
-        const providedCode = data.code;
 
         // Check if the code is valid and not expired (10 minutes validity)
         const TEN_MINUTES_IN_MS = 10 * 60 * 1000;
-        if (storedCode !== providedCode) {
+        if (storedCode !== code) {
             throw new functions.https.HttpsError(
                 "invalid-argument",
                 "Invalid verification code."
@@ -70,7 +67,7 @@ exports.verifyEmail = functions.https.onCall(async (data, context) => {
             .collection("verification_codes")
             .doc(uid)
             .update({
-                verified: true,
+                isVerified: true,
             });
 
         return { success: true };
@@ -194,3 +191,90 @@ exports.sendVerificationEmail = functions.https.onCall(
         }
     }
 );
+
+// Trigger function to handle newly created users and send verification emails
+exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
+    try {
+        const { email, uid, displayName } = user;
+
+        // Generate a 6-digit verification code
+        const verificationCode = Math.floor(
+            100000 + Math.random() * 900000
+        ).toString();
+
+        // Check if document exists first
+        const docRef = admin
+            .firestore()
+            .collection("verification_codes")
+            .doc(uid);
+        const docSnapshot = await docRef.get();
+
+        if (docSnapshot.exists) {
+            // Update existing document
+            await docRef.update({
+                code: verificationCode,
+                timestamp: Date.now(),
+            });
+        } else {
+            // Create new document
+            await docRef.set({
+                email: email,
+                fullName: displayName || "New User",
+                isVerified: false,
+                code: verificationCode,
+                timestamp: Date.now(),
+                createdAt: Date.now(),
+            });
+        }
+
+        // Implementation with nodemailer
+        const nodemailer = require("nodemailer");
+
+        // Create a transporter with Gmail
+        const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+                user: "olores.jayrm@gmail.com", // Replace with your email
+                pass: "zpozgyqczzycyiql", // Replace with your app password
+            },
+        });
+
+        // Email template with nice formatting
+        const mailOptions = {
+            from: '"UniTech HR" <olores.jayrm@gmail.com>',
+            to: email,
+            subject: "Verify Your UniTech HR Account",
+            html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h1 style="color: #4a6ee0;">UniTech HR</h1>
+                </div>
+                <h2 style="color: #4a6ee0;">Welcome to UniTech HR, ${
+                    displayName || "New User"
+                }!</h2>
+                <p>Thank you for registering. To complete your account setup, please verify your email address using the code below:</p>
+                <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; text-align: center; margin: 20px 0;">
+                    <h1 style="color: #4a6ee0; letter-spacing: 5px; font-size: 32px;">${verificationCode}</h1>
+                </div>
+                <p>This code will expire in 10 minutes.</p>
+                <p>If you didn't create an account with UniTech HR, you can safely ignore this email.</p>
+                <div style="margin-top: 30px; text-align: center; color: #888; font-size: 12px;">
+                    <p>© ${new Date().getFullYear()} UniTech HR. All rights reserved.</p>
+                </div>
+            </div>
+        `,
+        };
+
+        // Send the email and log the attempt
+        console.log(
+            `Automatically sending verification email to ${email} with code ${verificationCode}`
+        );
+        await transporter.sendMail(mailOptions);
+        console.log(`Verification email automatically sent to ${email}`);
+
+        return { success: true };
+    } catch (error) {
+        console.error("Error automatically sending verification email:", error);
+        return { error: error.message };
+    }
+});

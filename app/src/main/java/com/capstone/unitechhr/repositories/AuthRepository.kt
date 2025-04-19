@@ -79,8 +79,8 @@ class AuthRepository {
                     authResult.user!!.sendEmailVerification().await()
                     Log.d("AuthRepository", "Firebase verification email sent successfully to $email")
                     
-                    // Sign out after registration
-                    firebaseAuth.signOut()
+                    // Return success instead of signing out
+                    return@withContext Result.success(Unit)
                 } catch (e: Exception) {
                     Log.e("AuthRepository", "Failed to send Firebase verification email: ${e.message}")
                     // Delete the user if we couldn't send verification email
@@ -91,9 +91,6 @@ class AuthRepository {
                     }
                     return@withContext Result.failure(e)
                 }
-                    
-                // Return success
-                Result.success(Unit)
             } else {
                 Result.failure(Exception("Registration failed"))
             }

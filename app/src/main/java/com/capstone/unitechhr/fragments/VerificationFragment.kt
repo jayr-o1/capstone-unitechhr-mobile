@@ -41,14 +41,19 @@ class VerificationFragment : Fragment() {
         progressIndicator = view.findViewById(R.id.progressIndicator)
         instructionsText = view.findViewById(R.id.instructions_text)
         
-        // Hide verification code inputs that are no longer needed
-        hideVerificationCodeInputs(view)
+        // Show verification code inputs
+        view.findViewById<View>(R.id.email_input)?.visibility = View.VISIBLE
+        view.findViewById<View>(R.id.digit1)?.visibility = View.VISIBLE
+        view.findViewById<View>(R.id.digit2)?.visibility = View.VISIBLE
+        view.findViewById<View>(R.id.digit3)?.visibility = View.VISIBLE
+        view.findViewById<View>(R.id.digit4)?.visibility = View.VISIBLE
+        view.findViewById<View>(R.id.digit5)?.visibility = View.VISIBLE
+        view.findViewById<View>(R.id.digit6)?.visibility = View.VISIBLE
+        view.findViewById<View>(R.id.verification_code_container)?.visibility = View.VISIBLE
         
-        // Update text to reflect new verification flow
-        verifyButton.text = "I've Verified My Email"
-        instructionsText.text = "Please check your email for a verification link from UniTech HR." +
-                                "\n\nClick the link in the email to verify your account." +
-                                "\n\nAfter clicking the link, return here and click 'I've Verified My Email' button."
+        // Update text to reflect code verification flow
+        verifyButton.text = "Verify"
+        instructionsText.text = "Enter your email and the 6-digit verification code that was sent to you when you registered."
         
         // Show resend link
         resendCodeLink.visibility = View.VISIBLE
@@ -58,7 +63,7 @@ class VerificationFragment : Fragment() {
         
         // Set up click listeners
         verifyButton.setOnClickListener {
-            checkVerification()
+            verifyWithCode()
         }
         
         backToLoginButton.setOnClickListener {
@@ -134,6 +139,44 @@ class VerificationFragment : Fragment() {
         }
     }
     
+    private fun verifyWithCode() {
+        // Get the email and verification code
+        val email = view?.findViewById<TextView>(R.id.email_input)?.text.toString().trim()
+        val digit1 = view?.findViewById<TextView>(R.id.digit1)?.text.toString()
+        val digit2 = view?.findViewById<TextView>(R.id.digit2)?.text.toString()
+        val digit3 = view?.findViewById<TextView>(R.id.digit3)?.text.toString()
+        val digit4 = view?.findViewById<TextView>(R.id.digit4)?.text.toString()
+        val digit5 = view?.findViewById<TextView>(R.id.digit5)?.text.toString()
+        val digit6 = view?.findViewById<TextView>(R.id.digit6)?.text.toString()
+        
+        val code = digit1 + digit2 + digit3 + digit4 + digit5 + digit6
+        
+        // Validate inputs
+        if (email.isEmpty()) {
+            Toast.makeText(requireContext(), "Please enter your email", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        if (code.length != 6) {
+            Toast.makeText(requireContext(), "Please enter the complete 6-digit code", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        // Show loading indicator and disable verify button
+        progressIndicator.visibility = View.VISIBLE
+        verifyButton.isEnabled = false
+        
+        // Show a toast message to let the user know the verification is in progress
+        Toast.makeText(
+            requireContext(),
+            "Verifying your code...",
+            Toast.LENGTH_SHORT
+        ).show()
+        
+        // Call the viewModel method to verify with code
+        authViewModel.verifyWithCode(email, code)
+    }
+    
     private fun hideVerificationCodeInputs(view: View) {
         // Hide all digit inputs and the email input
         view.findViewById<View>(R.id.email_input)?.visibility = View.GONE
@@ -144,22 +187,6 @@ class VerificationFragment : Fragment() {
         view.findViewById<View>(R.id.digit5)?.visibility = View.GONE
         view.findViewById<View>(R.id.digit6)?.visibility = View.GONE
         view.findViewById<View>(R.id.verification_code_container)?.visibility = View.GONE
-    }
-    
-    private fun checkVerification() {
-        // Show loading indicator and disable verify button
-        progressIndicator.visibility = View.VISIBLE
-        verifyButton.isEnabled = false
-        
-        // Show a toast message to let the user know the verification is in progress
-        Toast.makeText(
-            requireContext(),
-            "Checking verification status...",
-            Toast.LENGTH_SHORT
-        ).show()
-        
-        // Call the viewModel method to check if the user's email is verified
-        authViewModel.verifyUserAfterEmailClick()
     }
     
     private fun resendVerificationEmail() {
