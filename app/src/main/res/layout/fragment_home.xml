@@ -47,12 +47,15 @@
 
             <ImageView
                 android:id="@+id/notificationIcon"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
                 android:layout_alignParentEnd="true"
                 android:layout_alignParentTop="true"
                 android:contentDescription="Notifications"
-                android:src="@android:drawable/ic_popup_reminder" />
+                android:src="@android:drawable/ic_notification_overlay"
+                android:background="@drawable/notification_background"
+                android:padding="8dp"
+                android:tint="@color/blue" />
         </RelativeLayout>
 
         <!-- Interviews Card -->

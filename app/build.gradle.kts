@@ -56,6 +56,10 @@ dependencies {
     implementation("androidx.emoji2:emoji2:1.4.0")
     implementation("androidx.emoji2:emoji2-views:1.4.0")
     implementation("androidx.emoji2:emoji2-views-helper:1.4.0")
+    
+    // CircleImageView for profile picture
+    implementation("de.hdodenhof:circleimageview:3.1.0")
+    
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.firebase.firestore)
 
