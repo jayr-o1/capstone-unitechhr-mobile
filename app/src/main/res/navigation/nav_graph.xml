@@ -9,29 +9,17 @@
     <fragment
         android:id="@+id/homeFragment"
         android:name="com.capstone.unitechhr.fragments.HomeFragment"
-        android:label="Home"
+        android:label=""
         tools:layout="@layout/fragment_home">
         <action
             android:id="@+id/action_homeFragment_to_applicantListFragment"
-            app:destination="@id/applicantListFragment"
-            app:enterAnim="@anim/nav_default_enter_anim"
-            app:exitAnim="@anim/nav_default_exit_anim"
-            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
-            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+            app:destination="@id/applicantListFragment" />
         <action
             android:id="@+id/action_homeFragment_to_interviewListFragment"
-            app:destination="@id/interviewListFragment"
-            app:enterAnim="@anim/nav_default_enter_anim"
-            app:exitAnim="@anim/nav_default_exit_anim"
-            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
-            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+            app:destination="@id/interviewListFragment" />
         <action
             android:id="@+id/action_homeFragment_to_onboardingListFragment"
-            app:destination="@id/onboardingListFragment"
-            app:enterAnim="@anim/nav_default_enter_anim"
-            app:exitAnim="@anim/nav_default_exit_anim"
-            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
-            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+            app:destination="@id/onboardingListFragment" />
     </fragment>
 
     <!-- Job Listings -->

@@ -86,15 +86,8 @@ class HomeFragment : Fragment() {
     
     private fun safeNavigate(actionId: Int) {
         try {
-            // Create NavOptions to handle the back stack
-            val navOptions = NavOptions.Builder()
-                .setEnterAnim(R.anim.nav_default_enter_anim)
-                .setExitAnim(R.anim.nav_default_exit_anim)
-                .setPopEnterAnim(R.anim.nav_default_pop_enter_anim)
-                .setPopExitAnim(R.anim.nav_default_pop_exit_anim)
-                .build()
-                
-            findNavController().navigate(actionId, null, navOptions)
+            // Navigate without custom animations
+            findNavController().navigate(actionId)
         } catch (e: Exception) {
             // Handle navigation errors
             Toast.makeText(context, "Navigation error: ${e.message}", Toast.LENGTH_SHORT).show()

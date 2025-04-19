@@ -3,9 +3,12 @@ package com.capstone.unitechhr
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.NavController
+import androidx.navigation.NavGraph
+import androidx.navigation.NavOptions
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
@@ -22,6 +25,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
+        
+        // Set up the toolbar
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
         
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -50,15 +57,62 @@ class MainActivity : AppCompatActivity() {
         
         // Setup Bottom Navigation
         val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
-        bottomNavigationView.setupWithNavController(navController)
         
-        // Update bottom navigation when destination changes
+        // Instead of just using setupWithNavController, we'll handle navigation ourselves
+        bottomNavigationView.setOnItemSelectedListener { item ->
+            // Create navigation options that clear the back stack
+            val navOptions = NavOptions.Builder()
+                .setLaunchSingleTop(true)
+                .setPopUpTo(navController.graph.startDestinationId, false)
+                .build()
+                
+            when (item.itemId) {
+                R.id.homeFragment -> {
+                    navController.navigate(R.id.homeFragment, null, navOptions)
+                    true
+                }
+                R.id.jobListingFragment -> {
+                    navController.navigate(R.id.jobListingFragment, null, navOptions)
+                    true
+                }
+                R.id.interviewListFragment -> {
+                    navController.navigate(R.id.interviewListFragment, null, navOptions)
+                    true
+                }
+                R.id.onboardingListFragment -> {
+                    navController.navigate(R.id.onboardingListFragment, null, navOptions)
+                    true
+                }
+                R.id.profileFragment -> {
+                    navController.navigate(R.id.profileFragment, null, navOptions)
+                    true
+                }
+                else -> false
+            }
+        }
+        
+        // Make sure the menu item is properly checked based on the current destination
         navController.addOnDestinationChangedListener { _, destination, _ ->
-            // Show bottom navigation only for top-level destinations
-            if (appBarConfiguration.topLevelDestinations.contains(destination.id)) {
-                bottomNavigationView.visibility = android.view.View.VISIBLE
+            // Find the appropriate menu item ID based on the destination
+            val menuItemId = when (destination.id) {
+                R.id.homeFragment -> R.id.homeFragment
+                R.id.jobListingFragment -> R.id.jobListingFragment
+                R.id.interviewListFragment -> R.id.interviewListFragment
+                R.id.onboardingListFragment -> R.id.onboardingListFragment
+                R.id.profileFragment -> R.id.profileFragment
+                else -> null
+            }
+            
+            // Update the selected menu item if we have a valid ID
+            if (menuItemId != null) {
+                bottomNavigationView.menu.findItem(menuItemId)?.isChecked = true
+            }
+            
+            // Show/hide toolbar based on destination
+            if (destination.id == R.id.homeFragment) {
+                supportActionBar?.hide()
             } else {
-                bottomNavigationView.visibility = android.view.View.VISIBLE // Keep it visible for all screens
+                supportActionBar?.show()
             }
         }
     }
