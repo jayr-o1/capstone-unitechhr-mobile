@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/homeFragment"
+        android:icon="@android:drawable/ic_menu_compass"
+        android:title="Home" />
+    
+    <item
+        android:id="@+id/jobListingFragment"
+        android:icon="@android:drawable/ic_menu_search"
+        android:title="Jobs" />
+    
+    <item
+        android:id="@+id/interviewScheduleFragment"
+        android:icon="@android:drawable/ic_menu_my_calendar"
+        android:title="Interviews" />
+    
+    <item
+        android:id="@+id/onboardingChecklistFragment"
+        android:icon="@android:drawable/ic_menu_agenda"
+        android:title="Onboarding" />
+    
+    <item
+        android:id="@+id/applicantListFragment"
+        android:icon="@android:drawable/ic_menu_recent_history"
+        android:title="Applications" />
+    
+    <item
+        android:id="@+id/profileFragment"
+        android:icon="@android:drawable/ic_menu_myplaces"
+        android:title="Profile" />
+</menu> 
