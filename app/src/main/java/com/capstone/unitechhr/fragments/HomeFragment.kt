@@ -9,6 +9,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.cardview.widget.CardView
 import androidx.fragment.app.Fragment
+import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
 import com.capstone.unitechhr.R
 
@@ -59,7 +60,7 @@ class HomeFragment : Fragment() {
         
         // Set click listener
         card.setOnClickListener {
-            findNavController().navigate(actionId)
+            safeNavigate(actionId)
         }
     }
     
@@ -69,7 +70,7 @@ class HomeFragment : Fragment() {
         
         // Set click listener
         card.setOnClickListener {
-            findNavController().navigate(actionId)
+            safeNavigate(actionId)
         }
     }
     
@@ -79,7 +80,24 @@ class HomeFragment : Fragment() {
         
         // Set click listener
         card.setOnClickListener {
-            findNavController().navigate(actionId)
+            safeNavigate(actionId)
+        }
+    }
+    
+    private fun safeNavigate(actionId: Int) {
+        try {
+            // Create NavOptions to handle the back stack
+            val navOptions = NavOptions.Builder()
+                .setEnterAnim(R.anim.nav_default_enter_anim)
+                .setExitAnim(R.anim.nav_default_exit_anim)
+                .setPopEnterAnim(R.anim.nav_default_pop_enter_anim)
+                .setPopExitAnim(R.anim.nav_default_pop_exit_anim)
+                .build()
+                
+            findNavController().navigate(actionId, null, navOptions)
+        } catch (e: Exception) {
+            // Handle navigation errors
+            Toast.makeText(context, "Navigation error: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 } 

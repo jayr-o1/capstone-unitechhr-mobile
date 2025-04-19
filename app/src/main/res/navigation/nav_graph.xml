@@ -13,13 +13,25 @@
         tools:layout="@layout/fragment_home">
         <action
             android:id="@+id/action_homeFragment_to_applicantListFragment"
-            app:destination="@id/applicantListFragment" />
+            app:destination="@id/applicantListFragment"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
         <action
             android:id="@+id/action_homeFragment_to_interviewListFragment"
-            app:destination="@id/interviewListFragment" />
+            app:destination="@id/interviewListFragment"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
         <action
             android:id="@+id/action_homeFragment_to_onboardingListFragment"
-            app:destination="@id/onboardingListFragment" />
+            app:destination="@id/onboardingListFragment"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
     </fragment>
 
     <!-- Job Listings -->
@@ -52,6 +64,9 @@
         <action
             android:id="@+id/action_applicantListFragment_to_applicantDetailFragment"
             app:destination="@id/applicantDetailFragment" />
+        <action
+            android:id="@+id/action_applicantListFragment_to_applicantFormFragment"
+            app:destination="@id/applicantFormFragment" />
     </fragment>
     
     <fragment
@@ -62,6 +77,9 @@
         <action
             android:id="@+id/action_applicantDetailFragment_to_scheduleInterviewFragment"
             app:destination="@id/scheduleInterviewFragment" />
+        <action
+            android:id="@+id/action_applicantDetailFragment_to_applicantFormFragment"
+            app:destination="@id/applicantFormFragment" />
     </fragment>
     
     <!-- Interview Scheduling -->
@@ -191,5 +209,11 @@
         android:name="com.capstone.unitechhr.fragments.ApplicationFormFragment"
         android:label="Apply for Job"
         tools:layout="@layout/fragment_application_form" />
+
+    <fragment
+        android:id="@+id/applicantFormFragment"
+        android:name="com.capstone.unitechhr.fragments.ApplicantFormFragment"
+        android:label="Edit Applicant"
+        tools:layout="@layout/fragment_applicant_form" />
 
 </navigation> 
