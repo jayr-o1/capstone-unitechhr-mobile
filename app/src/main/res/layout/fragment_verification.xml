@@ -52,13 +52,29 @@
                 android:id="@+id/instructions_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Please enter the 6-digit verification code that was sent to your email address."
+                android:text="Enter your email and the 6-digit verification code that was sent to you when you registered."
                 android:fontFamily="@font/urbanist"
                 android:textSize="16sp"
                 android:textColor="@color/gray"
                 android:gravity="center"
                 android:layout_below="@id/verification_title"
-                android:layout_marginBottom="24dp" />
+                android:layout_marginBottom="16dp" />
+
+            <!-- Email Input -->
+            <EditText
+                android:id="@+id/email_input"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:hint="Your Email Address"
+                android:inputType="textEmailAddress"
+                android:fontFamily="@font/urbanist"
+                android:elevation="4dp"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
+                android:padding="12dp"
+                android:background="@drawable/rounded_edittext_background"
+                android:layout_below="@id/instructions_text"
+                android:layout_marginBottom="16dp" />
 
             <!-- Verification Code Input -->
             <LinearLayout
@@ -67,7 +83,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center"
-                android:layout_below="@id/instructions_text"
+                android:layout_below="@id/email_input"
                 android:layout_marginBottom="24dp">
 
                 <EditText
@@ -187,11 +203,24 @@
                 android:layout_marginTop="24dp"
                 android:gravity="center" />
 
+            <!-- Back to Login Button -->
+            <Button
+                android:id="@+id/back_to_login_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/verify_button"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="8dp"
+                android:text="Back to Login"
+                android:backgroundTint="#E0E0E0"
+                android:textColor="#757575"
+                android:fontFamily="@font/urbanist" />
+
             <View
                 android:id="@+id/horizontal_line"
                 android:layout_width="match_parent"
                 android:layout_height="2dp"
-                android:layout_below="@id/verify_button"
+                android:layout_below="@id/back_to_login_button"
                 android:layout_marginTop="24dp"
                 android:layout_marginBottom="16dp"
                 android:background="@color/blue"/>

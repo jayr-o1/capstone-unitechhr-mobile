@@ -128,9 +128,7 @@ exports.resendVerificationCode = functions.https.onCall(
 exports.sendVerificationEmail = functions.https.onCall(
     async (data, context) => {
         try {
-            // Allow this function to be called without authentication
-            // because it might be called during registration
-
+            // Get email parameters from the request
             const { email, code, name } = data;
 
             if (!email || !code) {
@@ -140,30 +138,50 @@ exports.sendVerificationEmail = functions.https.onCall(
                 );
             }
 
-            // Here you would normally integrate with an email service provider
-            // like SendGrid, Mailgun, AWS SES, etc.
-            // For this demo, we'll just log the attempt to send an email
+            // Implementation with nodemailer
+            const nodemailer = require("nodemailer");
+
+            // Create a transporter with Gmail or your preferred service
+            // For Gmail, you need to use an app password if 2FA is enabled
+            // https://support.google.com/accounts/answer/185833
+            const transporter = nodemailer.createTransport({
+                service: "gmail",
+                auth: {
+                    user: "olores.jayrm@gmail.com", // Replace with your email
+                    pass: "zpoz gyqc zzyc yiql", // Replace with your app password
+                },
+            });
+
+            // Email template with nice formatting
+            const mailOptions = {
+                from: '"UniTech HR" <olores.jayrm@gmail.com>',
+                to: email,
+                subject: "Verify Your UniTech HR Account",
+                html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <h1 style="color: #4a6ee0;">UniTech HR</h1>
+                    </div>
+                    <h2 style="color: #4a6ee0;">Welcome to UniTech HR, ${name}!</h2>
+                    <p>Thank you for registering. To complete your account setup, please verify your email address using the code below:</p>
+                    <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; text-align: center; margin: 20px 0;">
+                        <h1 style="color: #4a6ee0; letter-spacing: 5px; font-size: 32px;">${code}</h1>
+                    </div>
+                    <p>This code will expire in 10 minutes.</p>
+                    <p>If you didn't create an account with UniTech HR, you can safely ignore this email.</p>
+                    <div style="margin-top: 30px; text-align: center; color: #888; font-size: 12px;">
+                        <p>© ${new Date().getFullYear()} UniTech HR. All rights reserved.</p>
+                    </div>
+                </div>
+            `,
+            };
+
+            // Send the email and log the attempt
             console.log(
                 `Sending verification email to ${email} with code ${code}`
             );
-
-            // For demo purposes, we're returning success without actually sending
-            // an email since we're showing the code in the app UI
-
-            /* Example of actual email sending code:
-        const mailOptions = {
-            from: '"UniTech HR" <noreply@unitechhr.com>',
-            to: email,
-            subject: 'Email Verification',
-            html: `
-                <h2>Welcome to UniTech HR, ${name}!</h2>
-                <p>Your verification code is: <strong>${code}</strong></p>
-                <p>This code will expire in 10 minutes.</p>
-            `
-        };
-        
-        await transporter.sendMail(mailOptions);
-        */
+            await transporter.sendMail(mailOptions);
+            console.log(`Email sent successfully to ${email}`);
 
             return { success: true };
         } catch (error) {

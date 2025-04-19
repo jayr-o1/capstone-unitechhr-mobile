@@ -63,22 +63,17 @@ class RegistrationFragment : Fragment() {
             registerButton.isEnabled = true
             
             result.fold(
-                onSuccess = { verificationCode ->
+                onSuccess = {
                     // Show success message
                     Toast.makeText(
                         requireContext(),
-                        "Registration successful! Please verify your email.",
+                        "Registration successful! Please check your email for verification instructions.",
                         Toast.LENGTH_LONG
                     ).show()
                     
-                    // Navigate to verification fragment using Bundle
-                    val bundle = Bundle().apply {
-                        putString("email", emailEditText.text.toString().trim())
-                        putString("code", verificationCode)
-                    }
+                    // Navigate directly to login screen
                     findNavController().navigate(
-                        R.id.action_registrationFragment_to_verificationFragment,
-                        bundle
+                        R.id.action_registrationFragment_to_loginFragment
                     )
                 },
                 onFailure = { exception ->
