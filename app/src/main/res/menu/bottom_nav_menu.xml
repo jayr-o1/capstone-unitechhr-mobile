@@ -16,11 +16,6 @@
         android:title="Interviews" />
     
     <item
-        android:id="@+id/onboardingChecklistFragment"
-        android:icon="@android:drawable/ic_menu_agenda"
-        android:title="Onboarding" />
-    
-    <item
         android:id="@+id/applicantListFragment"
         android:icon="@android:drawable/ic_menu_recent_history"
         android:title="Applications" />
