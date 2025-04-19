@@ -39,12 +39,14 @@ class VerificationFragment : Fragment() {
     // Get arguments from bundle
     private var email: String? = null
     private var code: String? = null
+    private var fromAppLaunch: Boolean = false
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
             email = it.getString("email")
             code = it.getString("code")
+            fromAppLaunch = it.getBoolean("fromAppLaunch", false)
         }
     }
     
@@ -69,12 +71,41 @@ class VerificationFragment : Fragment() {
         timerText = view.findViewById(R.id.timer_text)
         progressIndicator = view.findViewById(R.id.progressIndicator)
         
+        // If this is from app launch, show a welcome back message
+        if (fromAppLaunch) {
+            Toast.makeText(
+                requireContext(),
+                "Please verify your email to continue",
+                Toast.LENGTH_LONG
+            ).show()
+            
+            // Add logout option
+            val logoutButton = view.findViewById<Button>(R.id.logout_button)
+            logoutButton?.visibility = View.VISIBLE
+            logoutButton?.setOnClickListener {
+                // Log out user
+                authViewModel.logout()
+                
+                // Navigate to login screen
+                findNavController().navigate(
+                    R.id.action_verificationFragment_to_loginFragment,
+                    null,
+                    androidx.navigation.NavOptions.Builder()
+                        .setPopUpTo(R.id.loginFragment, true)
+                        .build()
+                )
+            }
+        }
+        
         // If we have a verification code, prefill it
         code?.let { prefillCode(it) }
         
         // Add explanation text about the verification code
         view.findViewById<TextView>(R.id.verification_info_text)?.let { infoText ->
-            if (code != null) {
+            if (fromAppLaunch) {
+                // User is coming back to the app without verification
+                infoText.text = "Your email needs verification before you can continue. Please check your email for the verification code or request a new one."
+            } else if (code != null) {
                 infoText.text = "Your verification code is: $code\n\nYou can enter it above or check your email."
             } else {
                 infoText.text = "Please check your email for the verification code or tap 'Resend Code'."
@@ -141,6 +172,15 @@ class VerificationFragment : Fragment() {
             
             result.fold(
                 onSuccess = { code ->
+                    // Update the local code and prefill it
+                    this.code = code
+                    prefillCode(code)
+                    
+                    // Update the verification info text
+                    view.findViewById<TextView>(R.id.verification_info_text)?.let { infoText ->
+                        infoText.text = "Your new verification code is: $code\n\nYou can enter it above or check your email."
+                    }
+                    
                     // Show success message
                     Toast.makeText(
                         requireContext(),
