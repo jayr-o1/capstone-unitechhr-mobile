@@ -13,76 +13,47 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <TextView
-            android:id="@+id/welcomeText"
+        <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:fontFamily="@font/urbanist_semibold"
-            android:text="Welcome to UniTech HR"
-            android:textColor="@color/blue"
-            android:textSize="24sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/subtitleText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            android:fontFamily="@font/urbanist"
-            android:text="Your one-stop platform for job applications and recruitment management"
-            android:textColor="@color/black"
-            android:textSize="16sp" />
-
-        <!-- Jobs Card -->
-        <androidx.cardview.widget.CardView
-            android:id="@+id/jobsCard"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:clickable="true"
-            android:focusable="true"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="2dp">
+            android:layout_marginBottom="16dp">
 
             <LinearLayout
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="16dp">
+                android:orientation="vertical"
+                android:layout_alignParentStart="true">
 
-                <ImageView
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:contentDescription="Jobs Icon"
-                    android:src="@android:drawable/ic_menu_search" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <TextView
+                    android:id="@+id/welcomeText"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:orientation="vertical">
+                    android:fontFamily="@font/urbanist_semibold"
+                    android:text="Welcome to UniTech HR"
+                    android:textColor="@color/blue"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/urbanist_semibold"
-                        android:text="Job Listings"
-                        android:textColor="@color/blue"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/jobCardDescription"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/urbanist"
-                        android:textColor="@color/black"
-                        android:textSize="14sp"
-                        tools:text="Description text" />
-                </LinearLayout>
+                <TextView
+                    android:id="@+id/subtitleText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:fontFamily="@font/urbanist"
+                    android:text="Your one-stop platform for job applications and recruitment management"
+                    android:textColor="@color/black"
+                    android:textSize="16sp" />
             </LinearLayout>
-        </androidx.cardview.widget.CardView>
+
+            <ImageView
+                android:id="@+id/notificationIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentTop="true"
+                android:contentDescription="Notifications"
+                android:src="@android:drawable/ic_popup_reminder" />
+        </RelativeLayout>
 
         <!-- Interviews Card -->
         <androidx.cardview.widget.CardView
@@ -224,56 +195,6 @@
 
                     <TextView
                         android:id="@+id/applicationCardDescription"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/urbanist"
-                        android:textColor="@color/black"
-                        android:textSize="14sp"
-                        tools:text="Description text" />
-                </LinearLayout>
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <!-- Profile Card -->
-        <androidx.cardview.widget.CardView
-            android:id="@+id/profileCard"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:clickable="true"
-            android:focusable="true"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="2dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="16dp">
-
-                <ImageView
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:contentDescription="Profile Icon"
-                    android:src="@android:drawable/ic_menu_myplaces" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/urbanist_semibold"
-                        android:text="Profile"
-                        android:textColor="@color/blue"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/profileCardDescription"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/urbanist"

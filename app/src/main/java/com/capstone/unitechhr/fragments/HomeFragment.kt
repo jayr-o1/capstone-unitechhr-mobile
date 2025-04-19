@@ -4,7 +4,9 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.cardview.widget.CardView
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
@@ -23,13 +25,15 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        // Setup navigation cards
-        setupJobCard(
-            view.findViewById(R.id.jobsCard),
-            "Find and apply for job opportunities",
-            R.id.jobListingFragment
-        )
+        // Setup notification icon
+        val notificationIcon = view.findViewById<ImageView>(R.id.notificationIcon)
+        notificationIcon.setOnClickListener {
+            Toast.makeText(context, "Notifications", Toast.LENGTH_SHORT).show()
+            // You can navigate to notifications screen if needed
+            // findNavController().navigate(R.id.notificationsFragment)
+        }
         
+        // Setup navigation cards
         setupInterviewCard(
             view.findViewById(R.id.interviewsCard),
             "View and manage your interview schedule",
@@ -47,22 +51,6 @@ class HomeFragment : Fragment() {
             "Track your application status",
             R.id.applicantListFragment
         )
-        
-        setupProfileCard(
-            view.findViewById(R.id.profileCard),
-            "Update your profile information",
-            R.id.profileFragment
-        )
-    }
-    
-    private fun setupJobCard(card: CardView, description: String, destinationId: Int) {
-        // Set description text
-        card.findViewById<TextView>(R.id.jobCardDescription).text = description
-        
-        // Set click listener
-        card.setOnClickListener {
-            findNavController().navigate(destinationId)
-        }
     }
     
     private fun setupInterviewCard(card: CardView, description: String, destinationId: Int) {
@@ -88,16 +76,6 @@ class HomeFragment : Fragment() {
     private fun setupApplicationCard(card: CardView, description: String, destinationId: Int) {
         // Set description text
         card.findViewById<TextView>(R.id.applicationCardDescription).text = description
-        
-        // Set click listener
-        card.setOnClickListener {
-            findNavController().navigate(destinationId)
-        }
-    }
-    
-    private fun setupProfileCard(card: CardView, description: String, destinationId: Int) {
-        // Set description text
-        card.findViewById<TextView>(R.id.profileCardDescription).text = description
         
         // Set click listener
         card.setOnClickListener {
