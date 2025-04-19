@@ -20,6 +20,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import android.view.View
 import android.view.WindowManager
 import androidx.core.content.ContextCompat
+import android.os.Build
 
 class MainActivity : AppCompatActivity() {
     
@@ -30,9 +31,17 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Set status bar color and make icons visible
-        window.statusBarColor = ContextCompat.getColor(this, R.color.purple_500)
-        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+        // Make status bar transparent with visible icons
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
+        
+        // Make status bar icons dark or light based on Android version
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            // For light backgrounds, use dark status bar icons
+            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+        } else {
+            // For older versions, just ensure system UI is visible
+            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+        }
         
         setContentView(R.layout.activity_main)
         
