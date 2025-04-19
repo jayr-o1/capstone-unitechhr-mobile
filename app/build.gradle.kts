@@ -43,6 +43,10 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
+    // Downloadable Fonts
+    implementation("androidx.emoji2:emoji2:1.4.0")
+    implementation("androidx.emoji2:emoji2-views:1.4.0")
+    implementation("androidx.emoji2:emoji2-views-helper:1.4.0")
     testImplementation(libs.junit)
     androidTestImplementation("androidx.test.ext:junit:1.9.0")
     androidTestImplementation(libs.androidx.espresso.core)
