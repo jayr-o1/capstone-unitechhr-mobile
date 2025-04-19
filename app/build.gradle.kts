@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.capstone.unitechhr"
-    compileSdk = 35
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.capstone.unitechhr"
