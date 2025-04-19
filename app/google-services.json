@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1087281687437",
+    "project_id": "com-capstone-unitechhr-cecca",
+    "storage_bucket": "com-capstone-unitechhr-cecca.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1087281687437:android:590f1fbec640d13b042bc4",
+        "android_client_info": {
+          "package_name": "com.capstone.unitechhr"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyArsTnTgpmQVBSz9kAj6WGGoySO9kq5nuc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
