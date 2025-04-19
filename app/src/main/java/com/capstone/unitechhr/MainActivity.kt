@@ -56,33 +56,10 @@ class MainActivity : AppCompatActivity() {
             .findFragmentById(R.id.fragmentContainer) as NavHostFragment
         navController = navHostFragment.navController
         
-        // Get the nav graph and set the start destination based on auth status
+        // Get the nav graph
         val navGraph = navController.navInflater.inflate(R.navigation.nav_graph)
-        
-        // Set start destination based on authentication status
-        if (authViewModel.isUserLoggedIn()) {
-            navGraph.setStartDestination(R.id.homeFragment)
-        } else {
-            // Check if user is logged in but not verified
-            val currentUser = authViewModel.getCurrentUser()
-            if (currentUser != null && !currentUser.isEmailVerified) {
-                // User is logged in but not verified, navigate to verification
-                navGraph.setStartDestination(R.id.verificationFragment)
-                
-                // Ask to resend a verification code
-                authViewModel.resendVerificationCode()
-                
-                // Add bundle with info about this being an app launch
-                val bundle = Bundle().apply {
-                    putBoolean("fromAppLaunch", true)
-                }
-                navController.setGraph(navGraph, bundle)
-            } else {
-                // User is not logged in
-                navGraph.setStartDestination(R.id.loginFragment)
-                navController.graph = navGraph
-            }
-        }
+        navGraph.setStartDestination(R.id.loginFragment)
+        navController.graph = navGraph
         
         // Define top level destinations
         appBarConfiguration = AppBarConfiguration(

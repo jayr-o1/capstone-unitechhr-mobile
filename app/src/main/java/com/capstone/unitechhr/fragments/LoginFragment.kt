@@ -11,6 +11,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.NavOptions
 import com.capstone.unitechhr.R
 import com.capstone.unitechhr.viewmodels.AuthViewModel
 import com.google.android.material.progressindicator.CircularProgressIndicator
@@ -55,29 +56,45 @@ class LoginFragment : Fragment() {
             findNavController().navigate(R.id.action_loginFragment_to_forgotPasswordFragment)
         }
         
+        // Add verification link
+        val verifyAccountLink: TextView = view.findViewById(R.id.verify_account_link)
+        verifyAccountLink.setOnClickListener {
+            findNavController().navigate(R.id.action_loginFragment_to_verificationFragment)
+        }
+        
         // Observe login result
         authViewModel.loginResult.observe(viewLifecycleOwner) { result ->
             progressIndicator.visibility = View.GONE
             loginButton.isEnabled = true
             
             result.fold(
-                onSuccess = {
-                    // Navigate to home fragment on success
+                onSuccess = { user ->
+                    // Login successful, navigate to home
                     findNavController().navigate(
                         R.id.action_loginFragment_to_homeFragment,
                         null,
-                        androidx.navigation.NavOptions.Builder()
+                        NavOptions.Builder()
                             .setPopUpTo(R.id.loginFragment, true)
                             .build()
                     )
                 },
                 onFailure = { exception ->
-                    // Show error message
-                    Toast.makeText(
-                        requireContext(),
-                        "Login failed: ${exception.message}",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    val errorMessage = exception.message ?: "Login failed"
+                    
+                    // If it's a verification error, suggest verifying the email
+                    if (errorMessage.contains("not verified", ignoreCase = true)) {
+                        Toast.makeText(
+                            requireContext(),
+                            "Your email is not verified. Please verify your email to continue.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    } else {
+                        Toast.makeText(
+                            requireContext(),
+                            errorMessage,
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
                 }
             )
         }

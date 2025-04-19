@@ -1,7 +1,6 @@
 package com.capstone.unitechhr.fragments
 
 import android.os.Bundle
-import android.os.CountDownTimer
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
@@ -17,11 +16,11 @@ import androidx.navigation.fragment.findNavController
 import com.capstone.unitechhr.R
 import com.capstone.unitechhr.viewmodels.AuthViewModel
 import com.google.android.material.progressindicator.CircularProgressIndicator
-import java.util.concurrent.TimeUnit
 
 class VerificationFragment : Fragment() {
     private val authViewModel: AuthViewModel by activityViewModels()
     
+    private lateinit var emailInput: EditText
     private lateinit var digit1: EditText
     private lateinit var digit2: EditText
     private lateinit var digit3: EditText
@@ -29,26 +28,8 @@ class VerificationFragment : Fragment() {
     private lateinit var digit5: EditText
     private lateinit var digit6: EditText
     private lateinit var verifyButton: Button
-    private lateinit var resendCodeLink: TextView
-    private lateinit var timerText: TextView
+    private lateinit var backToLoginButton: Button
     private lateinit var progressIndicator: CircularProgressIndicator
-    
-    private lateinit var countDownTimer: CountDownTimer
-    private var isTimerRunning = false
-    
-    // Get arguments from bundle
-    private var email: String? = null
-    private var code: String? = null
-    private var fromAppLaunch: Boolean = false
-    
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            email = it.getString("email")
-            code = it.getString("code")
-            fromAppLaunch = it.getBoolean("fromAppLaunch", false)
-        }
-    }
     
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -60,6 +41,7 @@ class VerificationFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         
         // Initialize views
+        emailInput = view.findViewById(R.id.email_input)
         digit1 = view.findViewById(R.id.digit1)
         digit2 = view.findViewById(R.id.digit2)
         digit3 = view.findViewById(R.id.digit3)
@@ -67,66 +49,28 @@ class VerificationFragment : Fragment() {
         digit5 = view.findViewById(R.id.digit5)
         digit6 = view.findViewById(R.id.digit6)
         verifyButton = view.findViewById(R.id.verify_button)
-        resendCodeLink = view.findViewById(R.id.resend_code_link)
-        timerText = view.findViewById(R.id.timer_text)
+        backToLoginButton = view.findViewById(R.id.back_to_login_button)
         progressIndicator = view.findViewById(R.id.progressIndicator)
         
-        // If this is from app launch, show a welcome back message
-        if (fromAppLaunch) {
-            Toast.makeText(
-                requireContext(),
-                "Please verify your email to continue",
-                Toast.LENGTH_LONG
-            ).show()
-            
-            // Add logout option
-            val logoutButton = view.findViewById<Button>(R.id.logout_button)
-            logoutButton?.visibility = View.VISIBLE
-            logoutButton?.setOnClickListener {
-                // Log out user
-                authViewModel.logout()
-                
-                // Navigate to login screen
-                findNavController().navigate(
-                    R.id.action_verificationFragment_to_loginFragment,
-                    null,
-                    androidx.navigation.NavOptions.Builder()
-                        .setPopUpTo(R.id.loginFragment, true)
-                        .build()
-                )
-            }
-        }
+        // Hide the logout, timer elements, and resend code link - they're not needed in this flow
+        view.findViewById<TextView>(R.id.resend_code_link)?.visibility = View.GONE
+        view.findViewById<TextView>(R.id.timer_text)?.visibility = View.GONE
+        view.findViewById<Button>(R.id.logout_button)?.visibility = View.GONE
         
-        // If we have a verification code, prefill it
-        code?.let { prefillCode(it) }
-        
-        // Add explanation text about the verification code
-        view.findViewById<TextView>(R.id.verification_info_text)?.let { infoText ->
-            if (fromAppLaunch) {
-                // User is coming back to the app without verification
-                infoText.text = "Your email needs verification before you can continue. Please check your email for the verification code or request a new one."
-            } else if (code != null) {
-                infoText.text = "Your verification code is: $code\n\nYou can enter it above or check your email."
-            } else {
-                infoText.text = "Please check your email for the verification code or tap 'Resend Code'."
-            }
-        }
+        // Update instruction text
+        view.findViewById<TextView>(R.id.instructions_text)?.text = 
+            "Enter your email and the 6-digit verification code that was sent to you when you registered."
         
         // Set up the automatic focus change for verification code input
         setupVerificationCodeInput()
-        
-        // Start countdown timer for resend code
-        startResendTimer()
         
         // Set up click listeners
         verifyButton.setOnClickListener {
             verifyCode()
         }
         
-        resendCodeLink.setOnClickListener {
-            if (!isTimerRunning) {
-                resendVerificationCode()
-            }
+        backToLoginButton.setOnClickListener {
+            findNavController().navigate(R.id.action_verificationFragment_to_loginFragment)
         }
         
         // Observe verification result
@@ -139,63 +83,18 @@ class VerificationFragment : Fragment() {
                     // Show success message
                     Toast.makeText(
                         requireContext(),
-                        "Email verified successfully!",
+                        "Email verified successfully! You can now log in.",
                         Toast.LENGTH_LONG
                     ).show()
                     
-                    // Sign out the user to ensure they log in again with verified status
-                    authViewModel.logout()
-                    
-                    // Navigate to login screen with clear back stack
-                    findNavController().navigate(
-                        R.id.action_verificationFragment_to_loginFragment,
-                        null,
-                        androidx.navigation.NavOptions.Builder()
-                            .setPopUpTo(R.id.loginFragment, true)
-                            .build()
-                    )
+                    // Navigate to login screen
+                    findNavController().navigate(R.id.action_verificationFragment_to_loginFragment)
                 },
                 onFailure = { exception ->
                     // Show error message
                     Toast.makeText(
                         requireContext(),
                         "Verification failed: ${exception.message}",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            )
-        }
-        
-        // Observe resend code result
-        authViewModel.resendCodeResult.observe(viewLifecycleOwner) { result ->
-            progressIndicator.visibility = View.GONE
-            
-            result.fold(
-                onSuccess = { code ->
-                    // Update the local code and prefill it
-                    this.code = code
-                    prefillCode(code)
-                    
-                    // Update the verification info text
-                    view.findViewById<TextView>(R.id.verification_info_text)?.let { infoText ->
-                        infoText.text = "Your new verification code is: $code\n\nYou can enter it above or check your email."
-                    }
-                    
-                    // Show success message
-                    Toast.makeText(
-                        requireContext(),
-                        "Verification code resent to your email",
-                        Toast.LENGTH_LONG
-                    ).show()
-                    
-                    // Restart the timer
-                    startResendTimer()
-                },
-                onFailure = { exception ->
-                    // Show error message
-                    Toast.makeText(
-                        requireContext(),
-                        "Failed to resend code: ${exception.message}",
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -225,30 +124,15 @@ class VerificationFragment : Fragment() {
         moveToNext(digit3, digit4)
         moveToNext(digit4, digit5)
         moveToNext(digit5, digit6)
-        
-        // For the last digit, trigger verification if all digits are entered
-        digit6.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                if (s?.length == 1) {
-                    // Check if all digits are filled
-                    if (digit1.text.isNotEmpty() && 
-                        digit2.text.isNotEmpty() && 
-                        digit3.text.isNotEmpty() && 
-                        digit4.text.isNotEmpty() && 
-                        digit5.text.isNotEmpty() && 
-                        digit6.text.isNotEmpty()) {
-                        verifyCode()
-                    }
-                }
-            }
-            
-            override fun afterTextChanged(s: Editable?) {}
-        })
     }
     
     private fun verifyCode() {
+        val email = emailInput.text.toString().trim()
+        if (email.isEmpty()) {
+            emailInput.error = "Please enter your email"
+            return
+        }
+        
         // Combine all digits to form the verification code
         val verificationCode = digit1.text.toString() +
                 digit2.text.toString() +
@@ -271,71 +155,7 @@ class VerificationFragment : Fragment() {
         progressIndicator.visibility = View.VISIBLE
         verifyButton.isEnabled = false
         
-        // Attempt to verify
-        authViewModel.verifyEmail(verificationCode)
-    }
-    
-    private fun resendVerificationCode() {
-        progressIndicator.visibility = View.VISIBLE
-        
-        // Attempt to resend verification code
-        authViewModel.resendVerificationCode()
-    }
-    
-    private fun startResendTimer() {
-        // Disable resend link during countdown
-        resendCodeLink.isEnabled = false
-        resendCodeLink.alpha = 0.5f
-        isTimerRunning = true
-        
-        // Set up countdown timer for 10 minutes
-        countDownTimer = object : CountDownTimer(TimeUnit.MINUTES.toMillis(10), 1000) {
-            override fun onTick(millisUntilFinished: Long) {
-                val minutes = TimeUnit.MILLISECONDS.toMinutes(millisUntilFinished)
-                val seconds = TimeUnit.MILLISECONDS.toSeconds(millisUntilFinished) -
-                        TimeUnit.MINUTES.toSeconds(minutes)
-                
-                timerText.text = String.format("Resend available in: %02d:%02d", minutes, seconds)
-            }
-            
-            override fun onFinish() {
-                timerText.text = "You can resend the code now"
-                resendCodeLink.isEnabled = true
-                resendCodeLink.alpha = 1.0f
-                isTimerRunning = false
-            }
-        }
-        
-        countDownTimer.start()
-    }
-    
-    private fun prefillCode(code: String) {
-        if (code.length == 6) {
-            // Only prefill if we have exactly 6 digits
-            digit1.setText(code[0].toString())
-            digit2.setText(code[1].toString())
-            digit3.setText(code[2].toString())
-            digit4.setText(code[3].toString())
-            digit5.setText(code[4].toString())
-            digit6.setText(code[5].toString())
-        }
-    }
-    
-    override fun onDestroyView() {
-        super.onDestroyView()
-        if (::countDownTimer.isInitialized) {
-            countDownTimer.cancel()
-        }
-    }
-    
-    companion object {
-        @JvmStatic
-        fun newInstance(email: String, code: String) =
-            VerificationFragment().apply {
-                arguments = Bundle().apply {
-                    putString("email", email)
-                    putString("code", code)
-                }
-            }
+        // We need to login first with the entered email to retrieve the user
+        authViewModel.loginForVerification(email, verificationCode)
     }
 } 

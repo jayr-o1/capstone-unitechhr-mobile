@@ -14,8 +14,8 @@ class AuthViewModel : ViewModel() {
     private val _loginResult = MutableLiveData<Result<FirebaseUser>>()
     val loginResult: LiveData<Result<FirebaseUser>> = _loginResult
     
-    private val _registerResult = MutableLiveData<Result<String>>()
-    val registerResult: LiveData<Result<String>> = _registerResult
+    private val _registerResult = MutableLiveData<Result<Unit>>()
+    val registerResult: LiveData<Result<Unit>> = _registerResult
     
     private val _verifyEmailResult = MutableLiveData<Result<FirebaseUser>>()
     val verifyEmailResult: LiveData<Result<FirebaseUser>> = _verifyEmailResult
@@ -34,12 +34,24 @@ class AuthViewModel : ViewModel() {
         _currentUser.value = authRepository.getCurrentUser()
     }
     
-    fun getCurrentUser(): FirebaseUser? {
-        return authRepository.getCurrentUser()
-    }
-    
+    // Check if user is logged in
     fun isUserLoggedIn(): Boolean {
         return authRepository.isUserLoggedIn()
+    }
+    
+    // Check if user is verified
+    suspend fun isUserVerified(): Boolean {
+        val user = authRepository.getCurrentUser() ?: return false
+        return authRepository.isEmailVerified(user.uid)
+    }
+    
+    // Check if user is logged in and verified
+    suspend fun isUserLoggedInAndVerified(): Boolean {
+        return authRepository.isUserLoggedInAndVerified()
+    }
+    
+    fun getCurrentUser(): FirebaseUser? {
+        return authRepository.getCurrentUser()
     }
     
     fun login(email: String, password: String) {
@@ -63,6 +75,18 @@ class AuthViewModel : ViewModel() {
     fun verifyEmail(code: String) {
         viewModelScope.launch {
             val result = authRepository.verifyEmail(code)
+            _verifyEmailResult.postValue(result)
+            
+            if (result.isSuccess) {
+                _currentUser.postValue(result.getOrNull())
+            }
+        }
+    }
+    
+    fun loginForVerification(email: String, code: String) {
+        viewModelScope.launch {
+            // This will attempt to verify the email with the provided code
+            val result = authRepository.verifyEmailWithCredentials(email, code)
             _verifyEmailResult.postValue(result)
             
             if (result.isSuccess) {
