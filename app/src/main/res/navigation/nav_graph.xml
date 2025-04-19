@@ -10,14 +10,24 @@
         android:id="@+id/homeFragment"
         android:name="com.capstone.unitechhr.fragments.HomeFragment"
         android:label="Home"
-        tools:layout="@layout/fragment_home" />
+        tools:layout="@layout/fragment_home">
+        <action
+            android:id="@+id/action_homeFragment_to_applicantListFragment"
+            app:destination="@id/applicantListFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_interviewListFragment"
+            app:destination="@id/interviewListFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_onboardingListFragment"
+            app:destination="@id/onboardingListFragment" />
+    </fragment>
 
     <!-- Job Listings -->
     <fragment
         android:id="@+id/jobListingFragment"
         android:name="com.capstone.unitechhr.fragments.JobListingFragment"
         android:label="Job Listings"
-        tools:layout="@layout/fragment_job_listing" >
+        tools:layout="@layout/fragment_job_listing">
         <action
             android:id="@+id/action_jobListingFragment_to_jobDetailFragment"
             app:destination="@id/jobDetailFragment" />
@@ -27,77 +37,159 @@
         android:id="@+id/jobDetailFragment"
         android:name="com.capstone.unitechhr.fragments.JobDetailFragment"
         android:label="Job Details"
-        tools:layout="@layout/fragment_job_detail" >
+        tools:layout="@layout/fragment_job_detail">
         <action
             android:id="@+id/action_jobDetailFragment_to_applicationFormFragment"
             app:destination="@id/applicationFormFragment" />
     </fragment>
-
-    <!-- Interview Schedule -->
-    <fragment
-        android:id="@+id/interviewScheduleFragment"
-        android:name="com.capstone.unitechhr.fragments.InterviewScheduleFragment"
-        android:label="Interview Schedule"
-        tools:layout="@layout/fragment_interview_schedule" >
-        <action
-            android:id="@+id/action_interviewScheduleFragment_to_interviewDetailFragment"
-            app:destination="@id/interviewDetailFragment" />
-    </fragment>
     
-    <fragment
-        android:id="@+id/interviewDetailFragment"
-        android:name="com.capstone.unitechhr.fragments.InterviewDetailFragment"
-        android:label="Interview Details"
-        tools:layout="@layout/fragment_interview_detail" />
-
-    <!-- Onboarding Checklist -->
-    <fragment
-        android:id="@+id/onboardingChecklistFragment"
-        android:name="com.capstone.unitechhr.fragments.OnboardingChecklistFragment"
-        android:label="Onboarding Checklist"
-        tools:layout="@layout/fragment_onboarding_checklist" />
-
-    <!-- Application Tracking -->
+    <!-- Applicant Tracking -->
     <fragment
         android:id="@+id/applicantListFragment"
         android:name="com.capstone.unitechhr.fragments.ApplicantListFragment"
-        android:label="Application Tracking"
-        tools:layout="@layout/fragment_applicant_list" >
+        android:label="Applicants"
+        tools:layout="@layout/fragment_applicant_list">
         <action
             android:id="@+id/action_applicantListFragment_to_applicantDetailFragment"
             app:destination="@id/applicantDetailFragment" />
-        <action
-            android:id="@+id/action_applicantListFragment_to_applicantFormFragment"
-            app:destination="@id/applicantFormFragment" />
     </fragment>
     
     <fragment
         android:id="@+id/applicantDetailFragment"
         android:name="com.capstone.unitechhr.fragments.ApplicantDetailFragment"
         android:label="Applicant Details"
-        tools:layout="@layout/fragment_applicant_detail" >
+        tools:layout="@layout/fragment_applicant_detail">
         <action
-            android:id="@+id/action_applicantDetailFragment_to_applicantFormFragment"
-            app:destination="@id/applicantFormFragment" />
+            android:id="@+id/action_applicantDetailFragment_to_scheduleInterviewFragment"
+            app:destination="@id/scheduleInterviewFragment" />
+    </fragment>
+    
+    <!-- Interview Scheduling -->
+    <fragment
+        android:id="@+id/interviewListFragment"
+        android:name="com.capstone.unitechhr.fragments.InterviewListFragment"
+        android:label="Interviews"
+        tools:layout="@layout/fragment_interview_list">
+        <action
+            android:id="@+id/action_interviewListFragment_to_interviewDetailFragment"
+            app:destination="@id/interviewDetailFragment" />
+        <action
+            android:id="@+id/action_interviewListFragment_to_scheduleInterviewFragment"
+            app:destination="@id/scheduleInterviewFragment" />
     </fragment>
     
     <fragment
-        android:id="@+id/applicantFormFragment"
-        android:name="com.capstone.unitechhr.fragments.ApplicantFormFragment"
-        android:label="Add/Edit Applicant"
-        tools:layout="@layout/fragment_applicant_form" />
+        android:id="@+id/interviewDetailFragment"
+        android:name="com.capstone.unitechhr.fragments.InterviewDetailFragment"
+        android:label="Interview Details"
+        tools:layout="@layout/fragment_interview_detail">
+        <action
+            android:id="@+id/action_interviewDetailFragment_to_scheduleInterviewFragment"
+            app:destination="@id/scheduleInterviewFragment" />
+    </fragment>
     
     <fragment
-        android:id="@+id/applicationFormFragment"
-        android:name="com.capstone.unitechhr.fragments.ApplicationFormFragment"
-        android:label="Job Application"
-        tools:layout="@layout/fragment_application_form" />
-
+        android:id="@+id/scheduleInterviewFragment"
+        android:name="com.capstone.unitechhr.fragments.ScheduleInterviewFragment"
+        android:label="Schedule Interview"
+        tools:layout="@layout/fragment_schedule_interview" />
+    
+    <!-- Onboarding -->
+    <fragment
+        android:id="@+id/onboardingListFragment"
+        android:name="com.capstone.unitechhr.fragments.OnboardingListFragment"
+        android:label="Employee Onboarding"
+        tools:layout="@layout/fragment_onboarding_list">
+        <action
+            android:id="@+id/action_onboardingListFragment_to_onboardingDetailFragment"
+            app:destination="@id/onboardingDetailFragment" />
+        <action
+            android:id="@+id/action_onboardingListFragment_to_createOnboardingFragment"
+            app:destination="@id/createOnboardingFragment" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/onboardingDetailFragment"
+        android:name="com.capstone.unitechhr.fragments.OnboardingDetailFragment"
+        android:label="Onboarding Details"
+        tools:layout="@layout/fragment_onboarding_detail">
+        <action
+            android:id="@+id/action_onboardingDetailFragment_to_addTaskFragment"
+            app:destination="@id/addTaskFragment" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/createOnboardingFragment"
+        android:name="com.capstone.unitechhr.fragments.CreateOnboardingFragment"
+        android:label="Create Onboarding"
+        tools:layout="@layout/fragment_create_onboarding" />
+    
+    <fragment
+        android:id="@+id/addTaskFragment"
+        android:name="com.capstone.unitechhr.fragments.AddTaskFragment"
+        android:label="Add Task"
+        tools:layout="@layout/fragment_add_task" />
+    
+    <!-- Authentication -->
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.capstone.unitechhr.fragments.LoginFragment"
+        android:label="Login"
+        tools:layout="@layout/fragment_login">
+        <action
+            android:id="@+id/action_loginFragment_to_homeFragment"
+            app:destination="@id/homeFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_loginFragment_to_registrationFragment"
+            app:destination="@id/registrationFragment" />
+        <action
+            android:id="@+id/action_loginFragment_to_forgotPasswordFragment"
+            app:destination="@id/forgotPasswordFragment" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/registrationFragment"
+        android:name="com.capstone.unitechhr.fragments.RegistrationFragment"
+        android:label="Registration"
+        tools:layout="@layout/fragment_registration">
+        <action
+            android:id="@+id/action_registrationFragment_to_loginFragment"
+            app:destination="@id/loginFragment" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/forgotPasswordFragment"
+        android:name="com.capstone.unitechhr.fragments.ForgotPasswordFragment"
+        android:label="Forgot Password"
+        tools:layout="@layout/fragment_forgot_password">
+        <action
+            android:id="@+id/action_forgotPasswordFragment_to_resetPasswordFragment"
+            app:destination="@id/resetPasswordFragment" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/resetPasswordFragment"
+        android:name="com.capstone.unitechhr.fragments.ResetPasswordFragment"
+        android:label="Reset Password"
+        tools:layout="@layout/fragment_reset_password">
+        <action
+            android:id="@+id/action_resetPasswordFragment_to_loginFragment"
+            app:destination="@id/loginFragment" />
+    </fragment>
+    
     <!-- Profile -->
     <fragment
         android:id="@+id/profileFragment"
         android:name="com.capstone.unitechhr.fragments.ProfileFragment"
         android:label="Profile"
         tools:layout="@layout/fragment_profile" />
+    
+    <fragment
+        android:id="@+id/applicationFormFragment"
+        android:name="com.capstone.unitechhr.fragments.ApplicationFormFragment"
+        android:label="Apply for Job"
+        tools:layout="@layout/fragment_application_form" />
 
 </navigation> 
