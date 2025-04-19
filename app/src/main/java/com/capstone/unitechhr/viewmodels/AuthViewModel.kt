@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.capstone.unitechhr.repositories.AuthRepository
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class AuthViewModel : ViewModel() {
     private val authRepository = AuthRepository()
@@ -20,8 +21,8 @@ class AuthViewModel : ViewModel() {
     private val _verifyEmailResult = MutableLiveData<Result<FirebaseUser>>()
     val verifyEmailResult: LiveData<Result<FirebaseUser>> = _verifyEmailResult
     
-    private val _resendCodeResult = MutableLiveData<Result<String>>()
-    val resendCodeResult: LiveData<Result<String>> = _resendCodeResult
+    private val _resendVerificationEmailResult = MutableLiveData<Result<Unit>>()
+    val resendVerificationEmailResult: LiveData<Result<Unit>> = _resendVerificationEmailResult
     
     private val _resetPasswordResult = MutableLiveData<Result<Unit>>()
     val resetPasswordResult: LiveData<Result<Unit>> = _resetPasswordResult
@@ -72,33 +73,35 @@ class AuthViewModel : ViewModel() {
         }
     }
     
-    fun verifyEmail(code: String) {
-        viewModelScope.launch {
-            val result = authRepository.verifyEmail(code)
-            _verifyEmailResult.postValue(result)
-            
-            if (result.isSuccess) {
-                _currentUser.postValue(result.getOrNull())
+    // Call this after user clicks the verification link
+    fun verifyUserAfterEmailClick() {
+        val user = authRepository.getCurrentUser()
+        if (user != null) {
+            viewModelScope.launch {
+                val result = authRepository.verifyUserAfterEmailClick(user)
+                _verifyEmailResult.postValue(result)
+                
+                if (result.isSuccess) {
+                    _currentUser.postValue(result.getOrNull())
+                }
             }
         }
     }
     
-    fun loginForVerification(email: String, code: String) {
-        viewModelScope.launch {
-            // This will attempt to verify the email with the provided code
-            val result = authRepository.verifyEmailWithCredentials(email, code)
-            _verifyEmailResult.postValue(result)
-            
-            if (result.isSuccess) {
-                _currentUser.postValue(result.getOrNull())
+    // Resend verification email
+    fun resendVerificationEmail() {
+        val user = authRepository.getCurrentUser()
+        if (user != null) {
+            viewModelScope.launch {
+                try {
+                    user.sendEmailVerification().await()
+                    _resendVerificationEmailResult.postValue(Result.success(Unit))
+                } catch (e: Exception) {
+                    _resendVerificationEmailResult.postValue(Result.failure(e))
+                }
             }
-        }
-    }
-    
-    fun resendVerificationCode() {
-        viewModelScope.launch {
-            val result = authRepository.resendVerificationCode()
-            _resendCodeResult.postValue(result)
+        } else {
+            _resendVerificationEmailResult.postValue(Result.failure(Exception("User not logged in")))
         }
     }
     
