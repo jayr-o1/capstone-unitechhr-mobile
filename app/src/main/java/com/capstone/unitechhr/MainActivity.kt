@@ -124,7 +124,7 @@ class MainActivity : AppCompatActivity() {
                 // Check if already on verification fragment to avoid infinite loop
                 if (navController.currentDestination?.id != R.id.verificationFragment) {
                     // Navigate to verification fragment
-                    authViewModel.resendVerificationCode()
+                    authViewModel.resendVerificationEmail()
                     navController.navigate(R.id.verificationFragment)
                 }
                 return@setOnItemSelectedListener false
