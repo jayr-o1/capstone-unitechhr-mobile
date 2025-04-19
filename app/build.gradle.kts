@@ -62,6 +62,7 @@ dependencies {
     
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.firebase.firestore)
+    implementation("com.google.firebase:firebase-auth-ktx:22.3.1")
 
     testImplementation(libs.junit)
     androidTestImplementation("androidx.test.ext:junit:1.9.0")

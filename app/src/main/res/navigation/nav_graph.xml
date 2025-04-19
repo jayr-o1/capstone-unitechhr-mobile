@@ -5,6 +5,8 @@
     android:id="@+id/nav_graph"
     app:startDestination="@id/homeFragment">
 
+    <!-- Note: The startDestination is set programmatically in MainActivity based on login status -->
+
     <!-- Home Screen -->
     <fragment
         android:id="@+id/homeFragment"
