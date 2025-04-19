@@ -14,7 +14,6 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
-import androidx.navigation.fragment.navArgs
 import com.capstone.unitechhr.R
 import com.capstone.unitechhr.viewmodels.AuthViewModel
 import com.google.android.material.progressindicator.CircularProgressIndicator
@@ -22,7 +21,6 @@ import java.util.concurrent.TimeUnit
 
 class VerificationFragment : Fragment() {
     private val authViewModel: AuthViewModel by activityViewModels()
-    private val args: VerificationFragmentArgs by navArgs()
     
     private lateinit var digit1: EditText
     private lateinit var digit2: EditText
@@ -37,6 +35,18 @@ class VerificationFragment : Fragment() {
     
     private lateinit var countDownTimer: CountDownTimer
     private var isTimerRunning = false
+    
+    // Get arguments from bundle
+    private var email: String? = null
+    private var code: String? = null
+    
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        arguments?.let {
+            email = it.getString("email")
+            code = it.getString("code")
+        }
+    }
     
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -249,5 +259,16 @@ class VerificationFragment : Fragment() {
         if (::countDownTimer.isInitialized) {
             countDownTimer.cancel()
         }
+    }
+    
+    companion object {
+        @JvmStatic
+        fun newInstance(email: String, code: String) =
+            VerificationFragment().apply {
+                arguments = Bundle().apply {
+                    putString("email", email)
+                    putString("code", code)
+                }
+            }
     }
 } 

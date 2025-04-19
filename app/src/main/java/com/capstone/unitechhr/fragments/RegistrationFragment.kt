@@ -71,13 +71,15 @@ class RegistrationFragment : Fragment() {
                         Toast.LENGTH_LONG
                     ).show()
                     
-                    // Navigate to verification fragment
-                    val action = RegistrationFragmentDirections
-                        .actionRegistrationFragmentToVerificationFragment(
-                            email = emailEditText.text.toString().trim(),
-                            code = verificationCode
-                        )
-                    findNavController().navigate(action)
+                    // Navigate to verification fragment using Bundle
+                    val bundle = Bundle().apply {
+                        putString("email", emailEditText.text.toString().trim())
+                        putString("code", verificationCode)
+                    }
+                    findNavController().navigate(
+                        R.id.action_registrationFragment_to_verificationFragment,
+                        bundle
+                    )
                 },
                 onFailure = { exception ->
                     // Show error message
