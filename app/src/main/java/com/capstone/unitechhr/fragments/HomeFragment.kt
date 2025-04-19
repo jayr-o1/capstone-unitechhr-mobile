@@ -4,9 +4,12 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.cardview.widget.CardView
 import androidx.fragment.app.Fragment
+import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
 import com.capstone.unitechhr.R
 
@@ -23,85 +26,71 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        // Setup navigation cards
-        setupJobCard(
-            view.findViewById(R.id.jobsCard),
-            "Find and apply for job opportunities",
-            R.id.jobListingFragment
-        )
+        // Setup notification icon
+        val notificationIcon = view.findViewById<ImageView>(R.id.notificationIcon)
+        notificationIcon.setOnClickListener {
+            Toast.makeText(context, "Notifications", Toast.LENGTH_SHORT).show()
+            // You can navigate to notifications screen if needed
+            // findNavController().navigate(R.id.notificationsFragment)
+        }
         
+        // Setup navigation cards
         setupInterviewCard(
             view.findViewById(R.id.interviewsCard),
             "View and manage your interview schedule",
-            R.id.interviewScheduleFragment
+            R.id.action_homeFragment_to_interviewListFragment
         )
         
         setupOnboardingCard(
             view.findViewById(R.id.onboardingCard),
-            "Complete your onboarding tasks",
-            R.id.onboardingChecklistFragment
+            "Manage employee onboarding processes",
+            R.id.action_homeFragment_to_onboardingListFragment
         )
         
         setupApplicationCard(
             view.findViewById(R.id.applicationsCard),
-            "Track your application status",
-            R.id.applicantListFragment
-        )
-        
-        setupProfileCard(
-            view.findViewById(R.id.profileCard),
-            "Update your profile information",
-            R.id.profileFragment
+            "Track applicant status",
+            R.id.action_homeFragment_to_applicantListFragment
         )
     }
     
-    private fun setupJobCard(card: CardView, description: String, destinationId: Int) {
-        // Set description text
-        card.findViewById<TextView>(R.id.jobCardDescription).text = description
-        
-        // Set click listener
-        card.setOnClickListener {
-            findNavController().navigate(destinationId)
-        }
-    }
-    
-    private fun setupInterviewCard(card: CardView, description: String, destinationId: Int) {
+    private fun setupInterviewCard(card: CardView, description: String, actionId: Int) {
         // Set description text
         card.findViewById<TextView>(R.id.interviewCardDescription).text = description
         
         // Set click listener
         card.setOnClickListener {
-            findNavController().navigate(destinationId)
+            safeNavigate(actionId)
         }
     }
     
-    private fun setupOnboardingCard(card: CardView, description: String, destinationId: Int) {
+    private fun setupOnboardingCard(card: CardView, description: String, actionId: Int) {
         // Set description text
         card.findViewById<TextView>(R.id.onboardingCardDescription).text = description
         
         // Set click listener
         card.setOnClickListener {
-            findNavController().navigate(destinationId)
+            safeNavigate(actionId)
         }
     }
     
-    private fun setupApplicationCard(card: CardView, description: String, destinationId: Int) {
+    private fun setupApplicationCard(card: CardView, description: String, actionId: Int) {
         // Set description text
         card.findViewById<TextView>(R.id.applicationCardDescription).text = description
         
         // Set click listener
         card.setOnClickListener {
-            findNavController().navigate(destinationId)
+            safeNavigate(actionId)
         }
     }
     
-    private fun setupProfileCard(card: CardView, description: String, destinationId: Int) {
-        // Set description text
-        card.findViewById<TextView>(R.id.profileCardDescription).text = description
-        
-        // Set click listener
-        card.setOnClickListener {
-            findNavController().navigate(destinationId)
+    private fun safeNavigate(actionId: Int) {
+        try {
+            // Navigate without custom animations
+            findNavController().navigate(actionId)
+        } catch (e: Exception) {
+            // Handle navigation errors
+            Toast.makeText(context, "Navigation error: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 } 

@@ -11,14 +11,14 @@
         android:title="Jobs" />
     
     <item
-        android:id="@+id/interviewScheduleFragment"
-        android:icon="@android:drawable/ic_menu_my_calendar"
+        android:id="@+id/interviewListFragment"
+        android:icon="@android:drawable/ic_menu_recent_history"
         android:title="Interviews" />
     
     <item
-        android:id="@+id/applicantListFragment"
-        android:icon="@android:drawable/ic_menu_recent_history"
-        android:title="Applications" />
+        android:id="@+id/onboardingListFragment"
+        android:icon="@android:drawable/ic_menu_slideshow"
+        android:title="Onboarding" />
     
     <item
         android:id="@+id/profileFragment"

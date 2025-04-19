@@ -134,4 +134,29 @@ class ApplicantViewModel : ViewModel() {
             }
         }
     }
+
+    fun saveApplicant(applicant: Applicant) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val success = if (applicant.id.isEmpty()) {
+                    repository.addApplicant(applicant)
+                } else {
+                    repository.updateApplicant(applicant)
+                }
+                
+                if (success) {
+                    loadApplicants()
+                    _selectedApplicant.value = applicant
+                    _errorMessage.value = null
+                } else {
+                    _errorMessage.value = "Failed to save applicant"
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = "Error saving applicant: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
 } 
