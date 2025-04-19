@@ -148,7 +148,7 @@ exports.sendVerificationEmail = functions.https.onCall(
                 service: "gmail",
                 auth: {
                     user: "olores.jayrm@gmail.com", // Replace with your email
-                    pass: "zpoz gyqc zzyc yiql", // Replace with your app password
+                    pass: "zpozgyqczzycyiql", // Replace with your app password
                 },
             });
 

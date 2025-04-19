@@ -21,7 +21,7 @@ class EmailService {
         
         // Configure these with your email credentials
         private const val EMAIL_USERNAME = "olores.jayrm@gmail.com"
-        private const val EMAIL_PASSWORD = "zpoz gyqc zzyc yiql" // App password, not regular password
+        private const val EMAIL_PASSWORD = "zpozgyqczzycyiql" // App password, not regular password
         
         /**
          * Send a verification email with the provided code
