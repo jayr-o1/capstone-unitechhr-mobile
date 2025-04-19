@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true">
@@ -80,6 +81,30 @@
                 android:layout_marginBottom="24dp"
                 android:drawablePadding="10dp" />
 
+            <!-- Forgot Password Link -->
+            <TextView
+                android:id="@+id/forgotPasswordLink"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Forgot Password?"
+                android:textColor="@color/blue"
+                android:textSize="14sp"
+                android:layout_below="@id/password"
+                android:layout_alignEnd="@id/password"
+                android:layout_marginBottom="16dp"
+                android:fontFamily="@font/urbanist" />
+
+            <!-- Progress Indicator -->
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/progressIndicator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/forgotPasswordLink"
+                android:layout_centerHorizontal="true"
+                android:visibility="gone"
+                android:indeterminate="true"
+                app:indicatorColor="@color/blue" />
+
             <!-- Login Button -->
             <Button
                 android:id="@+id/login_button"
@@ -97,7 +122,8 @@
                 android:elevation="4dp"
                 android:translationZ="4dp"
                 android:textSize="24sp"
-                android:layout_below="@id/password"
+                android:layout_below="@id/forgotPasswordLink"
+                android:layout_marginTop="8dp"
                 android:gravity="center" />
 
             <View
@@ -106,8 +132,20 @@
                 android:layout_height="2dp"
                 android:layout_below="@id/login_button"
                 android:layout_marginTop="24dp"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="16dp"
                 android:background="@color/blue"/>
+
+            <!-- Register Link -->
+            <TextView
+                android:id="@+id/registerLink"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="New user? Register here"
+                android:textColor="@color/blue"
+                android:textSize="16sp"
+                android:layout_below="@id/horizontal_line"
+                android:layout_centerHorizontal="true"
+                android:fontFamily="@font/urbanist" />
 
         </RelativeLayout>
     </RelativeLayout>

@@ -34,10 +34,10 @@ class LoginFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        // Initialize views
-        emailEditText = view.findViewById(R.id.emailEditText)
-        passwordEditText = view.findViewById(R.id.passwordEditText)
-        loginButton = view.findViewById(R.id.loginButton)
+        // Initialize views with the correct IDs from layout
+        emailEditText = view.findViewById(R.id.email_input)
+        passwordEditText = view.findViewById(R.id.password)
+        loginButton = view.findViewById(R.id.login_button)
         registerLink = view.findViewById(R.id.registerLink)
         forgotPasswordLink = view.findViewById(R.id.forgotPasswordLink)
         progressIndicator = view.findViewById(R.id.progressIndicator)
