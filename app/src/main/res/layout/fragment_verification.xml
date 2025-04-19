@@ -221,6 +221,20 @@
                 android:layout_marginTop="8dp"
                 android:fontFamily="@font/urbanist" />
 
+            <!-- Verification Info Text -->
+            <TextView
+                android:id="@+id/verification_info_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/timer_text"
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:padding="8dp"
+                android:background="@drawable/rounded_bg_light_blue"
+                android:textColor="@color/blue"
+                android:textSize="14sp"
+                android:fontFamily="@font/urbanist" />
+
         </RelativeLayout>
     </RelativeLayout>
 </ScrollView> 

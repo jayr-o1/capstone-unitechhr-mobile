@@ -34,6 +34,10 @@ class AuthViewModel : ViewModel() {
         _currentUser.value = authRepository.getCurrentUser()
     }
     
+    fun getCurrentUser(): FirebaseUser? {
+        return authRepository.getCurrentUser()
+    }
+    
     fun isUserLoggedIn(): Boolean {
         return authRepository.isUserLoggedIn()
     }

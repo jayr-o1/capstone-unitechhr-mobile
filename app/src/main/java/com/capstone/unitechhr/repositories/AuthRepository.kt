@@ -12,6 +12,7 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.util.Random
 import java.util.concurrent.TimeUnit
+import android.util.Log
 
 class AuthRepository {
     private val firebaseAuth = FirebaseAuth.getInstance()
@@ -71,6 +72,23 @@ class AuthRepository {
                     .document(authResult.user!!.uid)
                     .set(verificationData)
                     .await()
+                
+                // Send verification email with the code
+                try {
+                    val sendData = hashMapOf(
+                        "email" to email,
+                        "code" to verificationCode,
+                        "name" to fullName
+                    )
+                    
+                    functions
+                        .getHttpsCallable("sendVerificationEmail")
+                        .call(sendData)
+                        .await()
+                } catch (e: Exception) {
+                    // Log the error but continue since we'll show the code in the app
+                    Log.e("AuthRepository", "Failed to send verification email: ${e.message}")
+                }
                     
                 // Return the verification code
                 Result.success(verificationCode)
