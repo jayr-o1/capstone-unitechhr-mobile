@@ -5,19 +5,17 @@ import android.content.SharedPreferences
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.functions.FirebaseFunctions
-import com.google.firebase.functions.FirebaseFunctionsException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.util.Random
 import java.util.concurrent.TimeUnit
 import android.util.Log
+import com.capstone.unitechhr.services.EmailService
 
 class AuthRepository {
     private val firebaseAuth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
-    private val functions = FirebaseFunctions.getInstance()
     private val verificationCodesCollection = firestore.collection("verification_codes")
     
     // Check if the user is logged in
@@ -75,18 +73,13 @@ class AuthRepository {
                     .set(verificationData)
                     .await()
                 
-                // Send verification email with the code
+                // Send verification email using our EmailService instead of Cloud Functions
                 try {
-                    val sendData = hashMapOf(
-                        "email" to email,
-                        "code" to verificationCode,
-                        "name" to fullName
-                    )
+                    val emailResult = EmailService.sendVerificationEmail(email, verificationCode, fullName)
                     
-                    functions
-                        .getHttpsCallable("sendVerificationEmail")
-                        .call(sendData)
-                        .await()
+                    if (emailResult.isFailure) {
+                        Log.e("AuthRepository", "Failed to send verification email: ${emailResult.exceptionOrNull()?.message}")
+                    }
                 } catch (e: Exception) {
                     Log.e("AuthRepository", "Failed to send verification email: ${e.message}")
                 }
@@ -173,18 +166,39 @@ class AuthRepository {
         try {
             val user = firebaseAuth.currentUser ?: return@withContext Result.failure(Exception("User not found"))
             
-            // Call the Cloud Function to resend the verification code
-            try {
-                val result = functions
-                    .getHttpsCallable("resendVerificationCode")
-                    .call()
-                    .await()
-                    .data as HashMap<*, *>
-                
-                return@withContext Result.success(result["code"] as String)
-            } catch (e: FirebaseFunctionsException) {
-                return@withContext Result.failure(Exception(e.message ?: "Failed to resend verification code"))
+            // Generate a new 6-digit verification code
+            val verificationCode = generateVerificationCode()
+            
+            // Get the user's email and name from Firestore
+            val verificationDoc = verificationCodesCollection.document(user.uid).get().await()
+            
+            if (!verificationDoc.exists()) {
+                return@withContext Result.failure(Exception("Verification record not found"))
             }
+            
+            val email = verificationDoc.getString("email") ?: return@withContext Result.failure(Exception("Email not found"))
+            val fullName = verificationDoc.getString("fullName") ?: ""
+            
+            // Update the verification code in Firestore
+            verificationCodesCollection.document(user.uid)
+                .update(mapOf(
+                    "code" to verificationCode,
+                    "timestamp" to System.currentTimeMillis()
+                ))
+                .await()
+            
+            // Send new verification email
+            try {
+                val emailResult = EmailService.sendVerificationEmail(email, verificationCode, fullName)
+                
+                if (emailResult.isFailure) {
+                    Log.e("AuthRepository", "Failed to send verification email: ${emailResult.exceptionOrNull()?.message}")
+                }
+            } catch (e: Exception) {
+                Log.e("AuthRepository", "Failed to send verification email: ${e.message}")
+            }
+            
+            return@withContext Result.success(verificationCode)
         } catch (e: Exception) {
             Result.failure(e)
         }

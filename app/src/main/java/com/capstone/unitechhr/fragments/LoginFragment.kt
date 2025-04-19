@@ -15,6 +15,7 @@ import androidx.navigation.NavOptions
 import com.capstone.unitechhr.R
 import com.capstone.unitechhr.viewmodels.AuthViewModel
 import com.google.android.material.progressindicator.CircularProgressIndicator
+import android.app.AlertDialog
 
 class LoginFragment : Fragment() {
     private val authViewModel: AuthViewModel by activityViewModels()
@@ -83,11 +84,15 @@ class LoginFragment : Fragment() {
                     
                     // If it's a verification error, suggest verifying the email
                     if (errorMessage.contains("not verified", ignoreCase = true)) {
-                        Toast.makeText(
-                            requireContext(),
-                            "Your email is not verified. Please verify your email to continue.",
-                            Toast.LENGTH_LONG
-                        ).show()
+                        // Show a dialog with more detailed information
+                        AlertDialog.Builder(requireContext())
+                            .setTitle("Email Not Verified")
+                            .setMessage("Your email is not verified. You need to verify your email before you can log in. Check your email for a verification code or click 'Verify Account' below.")
+                            .setPositiveButton("Verify Account") { _, _ ->
+                                findNavController().navigate(R.id.action_loginFragment_to_verificationFragment)
+                            }
+                            .setNegativeButton("Cancel", null)
+                            .show()
                     } else {
                         Toast.makeText(
                             requireContext(),
