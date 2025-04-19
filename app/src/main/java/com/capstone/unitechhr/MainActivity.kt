@@ -43,7 +43,6 @@ class MainActivity : AppCompatActivity() {
                 R.id.homeFragment,
                 R.id.jobListingFragment,
                 R.id.interviewScheduleFragment,
-                R.id.onboardingChecklistFragment,
                 R.id.applicantListFragment,
                 R.id.profileFragment
             )
