@@ -123,3 +123,56 @@ exports.resendVerificationCode = functions.https.onCall(
         }
     }
 );
+
+// Function to send verification email
+exports.sendVerificationEmail = functions.https.onCall(
+    async (data, context) => {
+        try {
+            // Allow this function to be called without authentication
+            // because it might be called during registration
+
+            const { email, code, name } = data;
+
+            if (!email || !code) {
+                throw new functions.https.HttpsError(
+                    "invalid-argument",
+                    "Email and verification code are required."
+                );
+            }
+
+            // Here you would normally integrate with an email service provider
+            // like SendGrid, Mailgun, AWS SES, etc.
+            // For this demo, we'll just log the attempt to send an email
+            console.log(
+                `Sending verification email to ${email} with code ${code}`
+            );
+
+            // For demo purposes, we're returning success without actually sending
+            // an email since we're showing the code in the app UI
+
+            /* Example of actual email sending code:
+        const mailOptions = {
+            from: '"UniTech HR" <noreply@unitechhr.com>',
+            to: email,
+            subject: 'Email Verification',
+            html: `
+                <h2>Welcome to UniTech HR, ${name}!</h2>
+                <p>Your verification code is: <strong>${code}</strong></p>
+                <p>This code will expire in 10 minutes.</p>
+            `
+        };
+        
+        await transporter.sendMail(mailOptions);
+        */
+
+            return { success: true };
+        } catch (error) {
+            console.error("Error sending verification email:", error);
+            throw new functions.https.HttpsError(
+                "internal",
+                error.message ||
+                    "An unknown error occurred while sending verification email."
+            );
+        }
+    }
+);

@@ -69,6 +69,18 @@ class VerificationFragment : Fragment() {
         timerText = view.findViewById(R.id.timer_text)
         progressIndicator = view.findViewById(R.id.progressIndicator)
         
+        // If we have a verification code, prefill it
+        code?.let { prefillCode(it) }
+        
+        // Add explanation text about the verification code
+        view.findViewById<TextView>(R.id.verification_info_text)?.let { infoText ->
+            if (code != null) {
+                infoText.text = "Your verification code is: $code\n\nYou can enter it above or check your email."
+            } else {
+                infoText.text = "Please check your email for the verification code or tap 'Resend Code'."
+            }
+        }
+        
         // Set up the automatic focus change for verification code input
         setupVerificationCodeInput()
         
@@ -100,12 +112,15 @@ class VerificationFragment : Fragment() {
                         Toast.LENGTH_LONG
                     ).show()
                     
-                    // Navigate to login screen
+                    // Sign out the user to ensure they log in again with verified status
+                    authViewModel.logout()
+                    
+                    // Navigate to login screen with clear back stack
                     findNavController().navigate(
                         R.id.action_verificationFragment_to_loginFragment,
                         null,
                         androidx.navigation.NavOptions.Builder()
-                            .setPopUpTo(R.id.registrationFragment, true)
+                            .setPopUpTo(R.id.loginFragment, true)
                             .build()
                     )
                 },
@@ -252,6 +267,18 @@ class VerificationFragment : Fragment() {
         }
         
         countDownTimer.start()
+    }
+    
+    private fun prefillCode(code: String) {
+        if (code.length == 6) {
+            // Only prefill if we have exactly 6 digits
+            digit1.setText(code[0].toString())
+            digit2.setText(code[1].toString())
+            digit3.setText(code[2].toString())
+            digit4.setText(code[3].toString())
+            digit5.setText(code[4].toString())
+            digit6.setText(code[5].toString())
+        }
     }
     
     override fun onDestroyView() {

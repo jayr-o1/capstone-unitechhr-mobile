@@ -21,6 +21,7 @@ import android.view.View
 import android.view.WindowManager
 import androidx.core.content.ContextCompat
 import android.os.Build
+import android.widget.Toast
 
 class MainActivity : AppCompatActivity() {
     
@@ -62,7 +63,24 @@ class MainActivity : AppCompatActivity() {
         if (authViewModel.isUserLoggedIn()) {
             navGraph.setStartDestination(R.id.homeFragment)
         } else {
-            navGraph.setStartDestination(R.id.loginFragment)
+            // Check if user is logged in but not verified
+            val currentUser = authViewModel.getCurrentUser()
+            if (currentUser != null && !currentUser.isEmailVerified) {
+                // User is logged in but not verified, navigate to verification
+                navGraph.setStartDestination(R.id.verificationFragment)
+                
+                // Ask to resend a verification code
+                authViewModel.resendVerificationCode()
+                
+                Toast.makeText(
+                    this,
+                    "Please verify your email before accessing the app",
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                // User is not logged in
+                navGraph.setStartDestination(R.id.loginFragment)
+            }
         }
         
         // Set the modified nav graph to the controller
@@ -91,6 +109,7 @@ class MainActivity : AppCompatActivity() {
             if (destination.id == R.id.loginFragment || 
                 destination.id == R.id.registrationFragment ||
                 destination.id == R.id.forgotPasswordFragment ||
+                destination.id == R.id.verificationFragment ||
                 destination.id == R.id.resetPasswordFragment) {
                 bottomNavigationView.visibility = android.view.View.GONE
             } else {
@@ -120,6 +139,21 @@ class MainActivity : AppCompatActivity() {
                 .setLaunchSingleTop(true)
                 .setPopUpTo(navController.graph.startDestinationId, false)
                 .build()
+            
+            // Check if user is not verified - redirect to verification if needed
+            val currentUser = authViewModel.getCurrentUser()
+            if (currentUser != null && !currentUser.isEmailVerified) {
+                // User is logged in but not verified - show a message and redirect to verification
+                Toast.makeText(this, "Please verify your email before accessing the app", Toast.LENGTH_SHORT).show()
+                
+                // Check if already on verification fragment to avoid infinite loop
+                if (navController.currentDestination?.id != R.id.verificationFragment) {
+                    // Navigate to verification fragment
+                    authViewModel.resendVerificationCode()
+                    navController.navigate(R.id.verificationFragment)
+                }
+                return@setOnItemSelectedListener false
+            }
                 
             when (item.itemId) {
                 R.id.homeFragment -> {
