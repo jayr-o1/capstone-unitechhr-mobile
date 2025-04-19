@@ -93,12 +93,8 @@ class AuthViewModel : ViewModel() {
         val user = authRepository.getCurrentUser()
         if (user != null) {
             viewModelScope.launch {
-                try {
-                    user.sendEmailVerification().await()
-                    _resendVerificationEmailResult.postValue(Result.success(Unit))
-                } catch (e: Exception) {
-                    _resendVerificationEmailResult.postValue(Result.failure(e))
-                }
+                val result = authRepository.resendVerificationCode()
+                _resendVerificationEmailResult.postValue(result)
             }
         } else {
             _resendVerificationEmailResult.postValue(Result.failure(Exception("User not logged in")))

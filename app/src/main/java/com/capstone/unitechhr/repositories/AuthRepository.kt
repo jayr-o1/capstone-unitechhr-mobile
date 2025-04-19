@@ -8,10 +8,8 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import java.util.Random
 import java.util.concurrent.TimeUnit
 import android.util.Log
-import com.capstone.unitechhr.services.EmailService
 
 class AuthRepository {
     private val firebaseAuth = FirebaseAuth.getInstance()
@@ -165,54 +163,20 @@ class AuthRepository {
         return isEmailVerified(user.uid)
     }
     
-    // Resend verification code
-    suspend fun resendVerificationCode(): Result<String> = withContext(Dispatchers.IO) {
+    // Resend verification email using Firebase Auth
+    suspend fun resendVerificationCode(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             val user = firebaseAuth.currentUser ?: return@withContext Result.failure(Exception("User not found"))
             
-            // Generate a new 6-digit verification code
-            val verificationCode = generateVerificationCode()
+            // Send verification email directly using Firebase
+            user.sendEmailVerification().await()
+            Log.d("AuthRepository", "Firebase verification email resent successfully")
             
-            // Get the user's email and name from Firestore
-            val verificationDoc = verificationCodesCollection.document(user.uid).get().await()
-            
-            if (!verificationDoc.exists()) {
-                return@withContext Result.failure(Exception("Verification record not found"))
-            }
-            
-            val email = verificationDoc.getString("email") ?: return@withContext Result.failure(Exception("Email not found"))
-            val fullName = verificationDoc.getString("fullName") ?: ""
-            
-            // Update the verification code in Firestore
-            verificationCodesCollection.document(user.uid)
-                .update(mapOf(
-                    "code" to verificationCode,
-                    "timestamp" to System.currentTimeMillis()
-                ))
-                .await()
-            
-            // Send new verification email
-            try {
-                val emailResult = EmailService.sendVerificationEmail(email, verificationCode, fullName)
-                
-                if (emailResult.isFailure) {
-                    Log.e("AuthRepository", "Failed to send verification email: ${emailResult.exceptionOrNull()?.message}")
-                }
-            } catch (e: Exception) {
-                Log.e("AuthRepository", "Failed to send verification email: ${e.message}")
-            }
-            
-            return@withContext Result.success(verificationCode)
+            return@withContext Result.success(Unit)
         } catch (e: Exception) {
-            Result.failure(e)
+            Log.e("AuthRepository", "Failed to resend verification email: ${e.message}")
+            return@withContext Result.failure(e)
         }
-    }
-    
-    // Generate a random 6-digit verification code
-    private fun generateVerificationCode(): String {
-        val random = Random()
-        val code = random.nextInt(900000) + 100000 // ensures 6 digits
-        return code.toString()
     }
     
     // Send password reset email
@@ -230,70 +194,9 @@ class AuthRepository {
         firebaseAuth.signOut()
     }
     
-    // Verify email with credentials (email + code)
+    // This method is no longer used with Firebase Auth verification
+    // It's kept for backward compatibility but should be removed in the future
     suspend fun verifyEmailWithCredentials(email: String, code: String): Result<FirebaseUser> = withContext(Dispatchers.IO) {
-        try {
-            // Check if the email exists in the verification_codes collection
-            val querySnapshot = verificationCodesCollection
-                .whereEqualTo("email", email)
-                .get()
-                .await()
-            
-            if (querySnapshot.isEmpty) {
-                return@withContext Result.failure(Exception("No verification record found for this email"))
-            }
-            
-            // Get the first document (there should be only one)
-            val verificationDoc = querySnapshot.documents[0]
-            val verificationData = verificationDoc.data
-            val storedCode = verificationData?.get("code") as? String
-            val timestamp = verificationData?.get("timestamp") as? Long
-            val currentTime = System.currentTimeMillis()
-            val userId = verificationDoc.id
-            
-            // Validate code
-            if (storedCode == null || storedCode != code) {
-                return@withContext Result.failure(Exception("Invalid verification code"))
-            }
-            
-            // Check if code is expired (10 minutes validity)
-            val TEN_MINUTES_MS = 10 * 60 * 1000
-            if (timestamp != null && currentTime - timestamp > TEN_MINUTES_MS) {
-                return@withContext Result.failure(Exception("Verification code expired. Please register again"))
-            }
-            
-            // Update Firestore to mark as verified
-            verificationCodesCollection.document(userId)
-                .update("isVerified", true)
-                .await()
-            
-            // Find the user in Firebase Auth
-            try {
-                // We need to sign in to get access to the user
-                val authResult = firebaseAuth.signInWithEmailAndPassword(email, "temporary").await()
-                val user = authResult.user
-                
-                if (user != null) {
-                    // Update the user's profile
-                    val fullName = verificationData?.get("fullName") as? String ?: ""
-                    val profileUpdates = com.google.firebase.auth.UserProfileChangeRequest.Builder()
-                        .setDisplayName(fullName)
-                        .build()
-                    user.updateProfile(profileUpdates).await()
-                    
-                    // Sign out as we just needed to get the user for verification
-                    firebaseAuth.signOut()
-                    
-                    return@withContext Result.success(user)
-                } else {
-                    return@withContext Result.failure(Exception("User not found"))
-                }
-            } catch (e: Exception) {
-                // If we can't sign in, the user likely doesn't exist or has incorrect credentials
-                return@withContext Result.failure(Exception("Could not verify this account: ${e.message}"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+        return@withContext Result.failure(Exception("This method is deprecated. Firebase handles email verification now."))
     }
 } 
