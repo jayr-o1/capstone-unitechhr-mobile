@@ -45,6 +45,7 @@ class ApplicationAdapter(
             statusChip.text = application.status.toString().replace("_", " ")
             
             // Set chip color based on application status
+            val status = application.status.toString()
             when (application.status) {
                 ApplicationStatus.PENDING -> {
                     statusChip.setChipBackgroundColorResource(R.color.status_pending)
@@ -52,14 +53,17 @@ class ApplicationAdapter(
                 ApplicationStatus.REVIEWING -> {
                     statusChip.setChipBackgroundColorResource(R.color.status_reviewing)
                 }
-                ApplicationStatus.INTERVIEW_SCHEDULED, ApplicationStatus.INTERVIEW -> {
+                ApplicationStatus.INTERVIEW_SCHEDULED -> {
                     statusChip.setChipBackgroundColorResource(R.color.status_interview)
                 }
-                ApplicationStatus.HIRED -> {
-                    statusChip.setChipBackgroundColorResource(R.color.status_hired)
-                }
-                ApplicationStatus.REJECTED -> {
-                    statusChip.setChipBackgroundColorResource(R.color.status_rejected)
+                else -> {
+                    // Handle other status values
+                    when (status) {
+                        "INTERVIEW" -> statusChip.setChipBackgroundColorResource(R.color.status_interview)
+                        "HIRED" -> statusChip.setChipBackgroundColorResource(R.color.status_hired)
+                        "REJECTED" -> statusChip.setChipBackgroundColorResource(R.color.status_rejected)
+                        else -> statusChip.setChipBackgroundColorResource(R.color.status_pending)
+                    }
                 }
             }
             

@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -51,14 +52,11 @@ class MyApplicationsFragment : Fragment() {
         // Find and update empty state texts
         val emptyTitle = noDataView.findViewById<TextView>(R.id.empty_title)
         val emptyDescription = noDataView.findViewById<TextView>(R.id.empty_description)
-        if (emptyTitle != null) {
-            emptyTitle.text = "No applications found"
-        }
-        if (emptyDescription != null) {
-            emptyDescription.text = "You haven't applied to any jobs yet"
-        }
         
-        // Hide the FAB if it exists
+        emptyTitle?.text = "No Applications Found"
+        emptyDescription?.text = "You haven't applied to any jobs yet. Browse available jobs and apply to start tracking your applications here."
+        
+        // Hide the FAB for adding applicants
         view.findViewById<View>(R.id.fab_add_applicant)?.visibility = View.GONE
         
         // Setup RecyclerView
@@ -75,6 +73,13 @@ class MyApplicationsFragment : Fragment() {
             progressIndicator.visibility = if (isLoading) View.VISIBLE else View.GONE
         }
         
+        // Observe errors
+        applicationViewModel.errorMessage.observe(viewLifecycleOwner) { errorMessage ->
+            if (!errorMessage.isNullOrEmpty()) {
+                Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+            }
+        }
+        
         // Load user's applications
         loadUserApplications()
     }
@@ -83,8 +88,8 @@ class MyApplicationsFragment : Fragment() {
         adapter = ApplicationAdapter { application ->
             // Handle application click - view details
             applicationViewModel.selectApplication(application)
-            // Navigate to application detail
-            // findNavController().navigate(R.id.action_myApplicationsFragment_to_applicationDetailFragment)
+            // Get job details if needed (for future implementation)
+            Toast.makeText(context, "Application for: ${application.jobTitle}", Toast.LENGTH_SHORT).show()
         }
         
         recyclerView.adapter = adapter

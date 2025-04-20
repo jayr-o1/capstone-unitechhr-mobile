@@ -33,12 +33,4 @@ data class WorkExperience(
     val startDate: Date = Date(),
     val endDate: Date? = null,
     val isCurrentlyWorking: Boolean = false
-)
-
-enum class ApplicationStatus {
-    PENDING,
-    REVIEWING,
-    INTERVIEW_SCHEDULED,
-    HIRED,
-    REJECTED
-} 
+) 

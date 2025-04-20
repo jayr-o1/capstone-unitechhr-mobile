@@ -140,10 +140,11 @@ class HomeFragment : Fragment() {
     
     private fun setupApplicationCard(card: CardView, description: String, actionId: Int) {
         // Set description text
-        card.findViewById<TextView>(R.id.applicationCardDescription).text = description
+        card.findViewById<TextView>(R.id.applicationCardDescription).text = "Track your job applications and see their status updates"
         
         // Set click listener
         card.setOnClickListener {
+            // Always navigate to MyApplicationsFragment
             safeNavigate(R.id.action_homeFragment_to_myApplicationsFragment)
         }
     }

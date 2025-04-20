@@ -73,6 +73,7 @@ class ApplicantDetailFragment : Fragment() {
                 ApplicationStatus.PENDING -> R.color.status_pending
                 ApplicationStatus.REVIEWING -> R.color.status_reviewing
                 ApplicationStatus.INTERVIEW_SCHEDULED -> R.color.status_interview
+                ApplicationStatus.INTERVIEW -> R.color.status_interview
                 ApplicationStatus.HIRED -> R.color.status_hired
                 ApplicationStatus.REJECTED -> R.color.status_rejected
             }
@@ -156,6 +157,10 @@ class ApplicantDetailFragment : Fragment() {
                 addActionButton(statusActionsLayout, "Reject", ApplicationStatus.REJECTED)
             }
             ApplicationStatus.INTERVIEW_SCHEDULED -> {
+                addActionButton(statusActionsLayout, "Hire", ApplicationStatus.HIRED)
+                addActionButton(statusActionsLayout, "Reject", ApplicationStatus.REJECTED)
+            }
+            ApplicationStatus.INTERVIEW -> {
                 addActionButton(statusActionsLayout, "Hire", ApplicationStatus.HIRED)
                 addActionButton(statusActionsLayout, "Reject", ApplicationStatus.REJECTED)
             }

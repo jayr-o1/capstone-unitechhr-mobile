@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.capstone.unitechhr.R
 import com.capstone.unitechhr.models.Applicant
+import com.capstone.unitechhr.models.ApplicationStatus
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -46,11 +47,12 @@ class ApplicantAdapter(private val onItemClick: (Applicant) -> Unit) :
             
             // Set status color based on application status
             val statusColor = when (applicant.status) {
-                com.capstone.unitechhr.models.ApplicationStatus.PENDING -> R.color.status_pending
-                com.capstone.unitechhr.models.ApplicationStatus.REVIEWING -> R.color.status_reviewing
-                com.capstone.unitechhr.models.ApplicationStatus.INTERVIEW_SCHEDULED -> R.color.status_interview
-                com.capstone.unitechhr.models.ApplicationStatus.HIRED -> R.color.status_hired
-                com.capstone.unitechhr.models.ApplicationStatus.REJECTED -> R.color.status_rejected
+                ApplicationStatus.PENDING -> R.color.status_pending
+                ApplicationStatus.REVIEWING -> R.color.status_reviewing
+                ApplicationStatus.INTERVIEW_SCHEDULED -> R.color.status_interview
+                ApplicationStatus.INTERVIEW -> R.color.status_interview
+                ApplicationStatus.HIRED -> R.color.status_hired
+                ApplicationStatus.REJECTED -> R.color.status_rejected
             }
             statusTextView.setTextColor(itemView.context.getColor(statusColor))
             
