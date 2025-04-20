@@ -136,7 +136,7 @@ class MyApplicationsFragment : Fragment() {
      */
     private fun sendTestNotification() {
         context?.let { ctx ->
-            NotificationUtils.sendTestNotification(
+            NotificationUtils.showNotification(
                 ctx,
                 "UniTech HR Update",
                 "This is a test notification. Your application status may have changed!"
