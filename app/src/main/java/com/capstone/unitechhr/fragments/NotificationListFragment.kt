@@ -10,6 +10,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.capstone.unitechhr.R
@@ -42,6 +43,11 @@ class NotificationListFragment : Fragment() {
         recyclerView = view.findViewById(R.id.notificationsRecyclerView)
         progressBar = view.findViewById(R.id.progressBar)
         emptyStateContainer = view.findViewById(R.id.emptyStateContainer)
+        
+        // Set up back button
+        view.findViewById<View>(R.id.backButton).setOnClickListener {
+            findNavController().navigateUp()
+        }
         
         // Setup adapter
         adapter = NotificationAdapter { notification ->

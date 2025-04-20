@@ -119,26 +119,40 @@ class LoginFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        // Initialize views
-        googleSignInButton = view.findViewById(R.id.google_sign_in_button)
-        progressIndicator = view.findViewById(R.id.progressIndicator)
-        appTitle = view.findViewById(R.id.app_title)
-        appDescription = view.findViewById(R.id.app_description)
-        
-        // Set up Google Sign-In
-        val webClientId = getString(R.string.web_client_id)
-        googleSignInClient = authViewModel.getGoogleSignInClient(requireContext(), webClientId)
-        
-        // Set up click listeners
-        googleSignInButton.setOnClickListener {
-            signInWithGoogle()
+        // IMMEDIATE CHECK: If we have the system property set, ensure we stay on login
+        if (System.getProperty("com.capstone.unitechhr.user.logged_out") == "true") {
+            Log.d("LoginFragment", "Found system property for logout, staying on login")
+            
+            // Clear the property now that we're handling it
+            System.clearProperty("com.capstone.unitechhr.user.logged_out")
+            
+            // Ensure SharedPreferences is consistent
+            context?.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+                   ?.edit()
+                   ?.putBoolean("is_logged_out", true)
+                   ?.apply()
+                   
+            // Ensure bottom navigation is hidden
+            activity?.findViewById<View>(R.id.bottom_navigation)?.visibility = View.GONE
+            
+            // Exit early - no auto login checks
+            setupViews(view)
+            return
         }
         
-        // Check if we arrived from logout
-        val fromLogout = arguments?.getBoolean("from_logout", false) ?: false
+        // Initialize views
+        setupViews(view)
         
-        if (fromLogout) {
-            Log.d("LoginFragment", "Coming from logout, preventing auto-login")
+        // Check if we arrived from logout or if logged out flag is set
+        val fromLogout = arguments?.getBoolean("from_logout", false) ?: false
+        val isLoggedOut = context?.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+            ?.getBoolean("is_logged_out", false) ?: false
+        
+        // Ensure bottom navigation is hidden if we're on login
+        activity?.findViewById<View>(R.id.bottom_navigation)?.visibility = View.GONE
+        
+        if (fromLogout || isLoggedOut) {
+            Log.d("LoginFragment", "Coming from logout or is_logged_out flag is set, preventing auto-login")
             // Force reset state
             context?.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
                    ?.edit()
@@ -147,7 +161,7 @@ class LoginFragment : Fragment() {
         } else {
             // Only check sign-in status after a delay to ensure any logout has been processed
             Handler(Looper.getMainLooper()).postDelayed({
-                if (isAdded() && !isDetached() && !fromLogout) {
+                if (isAdded() && !isDetached() && !fromLogout && !isLoggedOut) {
                     if (authViewModel.checkSignInStatus(requireContext())) {
                         Log.d("LoginFragment", "User already signed in, navigating to home")
                         navigateToHome()
@@ -165,16 +179,26 @@ class LoginFragment : Fragment() {
             // Show the card view again
             view?.findViewById<androidx.cardview.widget.CardView>(R.id.google_sign_in_card)?.visibility = View.VISIBLE
             
-            val fromLogout = arguments?.getBoolean("from_logout", false) ?: false
-            
             result.fold(
                 onSuccess = { email ->
-                    // Only show success dialog if not coming from logout
-                    if (!fromLogout) {
-                        showSuccessDialog(email)
-                    } else {
-                        Log.d("LoginFragment", "Ignoring auto sign-in after logout")
-                    }
+                    // Clear the logged_out flag since we're signing in now
+                    context?.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+                           ?.edit()
+                           ?.putBoolean("is_logged_out", false)
+                           ?.apply()
+                    
+                    // Clear any system property that might be set
+                    System.clearProperty("com.capstone.unitechhr.user.logged_out")
+                    
+                    // Ensure user profile is fully loaded before showing welcome dialog
+                    authViewModel.loadCurrentUser(requireContext())
+                    
+                    // Add a short delay to ensure data is loaded
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        if (isAdded() && !isDetached()) {
+                            showSuccessDialog(email)
+                        }
+                    }, 500)
                 },
                 onFailure = { exception ->
                     Toast.makeText(
@@ -184,6 +208,23 @@ class LoginFragment : Fragment() {
                     ).show()
                 }
             )
+        }
+    }
+    
+    private fun setupViews(view: View) {
+        // Initialize views
+        googleSignInButton = view.findViewById(R.id.google_sign_in_button)
+        progressIndicator = view.findViewById(R.id.progressIndicator)
+        appTitle = view.findViewById(R.id.app_title)
+        appDescription = view.findViewById(R.id.app_description)
+        
+        // Set up Google Sign-In
+        val webClientId = getString(R.string.web_client_id)
+        googleSignInClient = authViewModel.getGoogleSignInClient(requireContext(), webClientId)
+        
+        // Set up click listeners
+        googleSignInButton.setOnClickListener {
+            signInWithGoogle()
         }
     }
     
@@ -229,18 +270,27 @@ class LoginFragment : Fragment() {
      * Show a success dialog when login is successful
      */
     private fun showSuccessDialog(email: String) {
-        // Check again if we're coming from logout
+        // Check if we're coming from logout or if logged out flag is set
         val fromLogout = arguments?.getBoolean("from_logout", false) ?: false
-        if (fromLogout) {
-            Log.d("LoginFragment", "Blocking success dialog because we came from logout")
+        val isLoggedOut = context?.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+            ?.getBoolean("is_logged_out", false) ?: false
+            
+        if (fromLogout || isLoggedOut) {
+            Log.d("LoginFragment", "Blocking success dialog because we came from logout or logged out state")
             return
         }
         
-        // Get user's name if available
-        val displayName = authViewModel.currentUser.value?.displayName ?: "User"
+        // Get user's name from SharedPreferences directly to ensure we have the latest data
+        val prefs = context?.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+        val displayName = prefs?.getString("current_user_name", null) 
+            ?: authViewModel.currentUser.value?.displayName 
+            ?: email.substringBefore("@")
+            ?: "User"
         
         // Get first name only for more personal greeting
         val firstName = displayName.split(" ")[0]
+        
+        Log.d("LoginFragment", "Showing welcome dialog for user: $firstName (full name: $displayName)")
         
         MaterialAlertDialogBuilder(requireContext())
             .setIcon(R.drawable.ic_check_circle)

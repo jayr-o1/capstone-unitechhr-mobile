@@ -50,6 +50,16 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Check login status first before setting up UI
+        val isLoggedOut = checkInitialLoginState()
+        Log.d(TAG, "Is logged out on startup: $isLoggedOut")
+        
+        // If the user is logged in, load their profile data
+        if (!isLoggedOut) {
+            authViewModel.loadCurrentUser(this)
+            Log.d(TAG, "Loading user profile on startup")
+        }
+
         // Set up the toolbar
         val toolbar: Toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
@@ -57,7 +67,13 @@ class MainActivity : AppCompatActivity() {
         // Setup Navigation
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.fragmentContainer) as NavHostFragment
+        val inflater = navHostFragment.navController.navInflater
+        val graph = inflater.inflate(R.navigation.nav_graph)
+        
+        // Set start destination based on login status
+        graph.setStartDestination(if (isLoggedOut) R.id.loginFragment else R.id.homeFragment)
         navController = navHostFragment.navController
+        navController.graph = graph
         
         // Define top level destinations
         appBarConfiguration = AppBarConfiguration(
@@ -74,6 +90,15 @@ class MainActivity : AppCompatActivity() {
         // Setup Bottom Navigation
         val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
         bottomNavigationView.setupWithNavController(navController)
+        
+        // Hide bottom navigation for login fragment
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            if (destination.id == R.id.loginFragment) {
+                bottomNavigationView.visibility = android.view.View.GONE
+            } else {
+                bottomNavigationView.visibility = android.view.View.VISIBLE
+            }
+        }
 
         // Check and request notification permission
         askNotificationPermission()
@@ -134,5 +159,52 @@ class MainActivity : AppCompatActivity() {
             // All users in this app are job seekers
             NotificationUtils.subscribeToTopic("job_seekers")
         }
+    }
+
+    /**
+     * Checks if the user is logged in or out
+     * @return true if the user is logged out, false if logged in
+     */
+    private fun checkInitialLoginState(): Boolean {
+        // First check for system property that would indicate a logout across process boundaries
+        val systemLoggedOut = System.getProperty("com.capstone.unitechhr.user.logged_out")
+        if (systemLoggedOut == "true") {
+            Log.d(TAG, "Found system property indicating user is logged out")
+            // Clear this flag now that we've detected it
+            System.clearProperty("com.capstone.unitechhr.user.logged_out")
+            // Ensure shared prefs are consistent
+            getSharedPreferences("auth_prefs", MODE_PRIVATE).edit()
+                .putBoolean("is_logged_out", true)
+                .apply()
+            return true
+        }
+        
+        val sharedPreferences = getSharedPreferences("auth_prefs", MODE_PRIVATE)
+        
+        // Next, directly check if logged_out flag is set
+        if (sharedPreferences.getBoolean("is_logged_out", false)) {
+            Log.d(TAG, "User is flagged as logged out in shared prefs")
+            return true
+        }
+        
+        // Check if we have no stored email (another indicator of being logged out)
+        val storedEmail = sharedPreferences.getString("current_user_email", null)
+        if (storedEmail == null) {
+            // No email stored means not logged in - set logged out flag for consistency
+            sharedPreferences.edit()
+                .putBoolean("is_logged_out", true)
+                .apply()
+            Log.d(TAG, "No stored email, treating as logged out")
+            return true
+        }
+        
+        // If we reach here, we seem to be logged in
+        // Reset the is_logged_out flag to false to ensure consistency
+        sharedPreferences.edit()
+            .putBoolean("is_logged_out", false)
+            .apply()
+            
+        Log.d(TAG, "User appears to be logged in with email: $storedEmail")
+        return false
     }
 }

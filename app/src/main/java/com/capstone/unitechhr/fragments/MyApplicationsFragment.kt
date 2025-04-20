@@ -8,6 +8,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.capstone.unitechhr.R
@@ -51,13 +52,13 @@ class MyApplicationsFragment : Fragment() {
         // Change the title
         titleText.text = "My Applications"
         
+        // Set up back button
+        view.findViewById<View>(R.id.backButton).setOnClickListener {
+            findNavController().navigateUp()
+        }
+        
         // Hide the search view
         view.findViewById<View>(R.id.search_view)?.visibility = View.GONE
-        
-        // Update RecyclerView constraints to attach to title instead of search view
-        recyclerView.layoutParams = (recyclerView.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams).apply {
-            topToBottom = R.id.title
-        }
         
         // Find and update empty state texts
         val emptyTitle = noDataView.findViewById<TextView>(R.id.empty_title)
@@ -136,7 +137,7 @@ class MyApplicationsFragment : Fragment() {
      */
     private fun sendTestNotification() {
         context?.let { ctx ->
-            NotificationUtils.sendTestNotification(
+            NotificationUtils.showNotification(
                 ctx,
                 "UniTech HR Update",
                 "This is a test notification. Your application status may have changed!"

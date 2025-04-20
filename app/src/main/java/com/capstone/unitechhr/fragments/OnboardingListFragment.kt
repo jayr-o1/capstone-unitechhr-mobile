@@ -26,7 +26,7 @@ class OnboardingListFragment : Fragment() {
     
     private lateinit var recyclerView: RecyclerView
     private lateinit var progressBar: ProgressBar
-    private lateinit var emptyText: TextView
+    private lateinit var emptyStateContainer: View
     private lateinit var addOnboardingFab: FloatingActionButton
     private lateinit var tabLayout: TabLayout
     
@@ -44,9 +44,14 @@ class OnboardingListFragment : Fragment() {
         // Initialize views
         recyclerView = view.findViewById(R.id.onboardingRecyclerView)
         progressBar = view.findViewById(R.id.progressBar)
-        emptyText = view.findViewById(R.id.emptyText)
+        emptyStateContainer = view.findViewById(R.id.emptyStateContainer)
         addOnboardingFab = view.findViewById(R.id.addOnboardingFab)
         tabLayout = view.findViewById(R.id.tabLayout)
+        
+        // Set up back button
+        view.findViewById<View>(R.id.backButton).setOnClickListener {
+            findNavController().navigateUp()
+        }
         
         // Setup RecyclerView adapter
         adapter = OnboardingAdapter { onboarding ->
@@ -78,9 +83,11 @@ class OnboardingListFragment : Fragment() {
         // Observe ViewModel data
         viewModel.onboardingProcesses.observe(viewLifecycleOwner) { processes ->
             if (processes.isEmpty()) {
-                emptyText.visibility = View.VISIBLE
+                emptyStateContainer.visibility = View.VISIBLE
+                recyclerView.visibility = View.GONE
             } else {
-                emptyText.visibility = View.GONE
+                emptyStateContainer.visibility = View.GONE
+                recyclerView.visibility = View.VISIBLE
             }
             
             val currentTabPosition = tabLayout.selectedTabPosition
@@ -134,9 +141,11 @@ class OnboardingListFragment : Fragment() {
         }
         
         if (filteredProcesses.isEmpty()) {
-            emptyText.visibility = View.VISIBLE
+            emptyStateContainer.visibility = View.VISIBLE
+            recyclerView.visibility = View.GONE
         } else {
-            emptyText.visibility = View.GONE
+            emptyStateContainer.visibility = View.GONE
+            recyclerView.visibility = View.VISIBLE
         }
         
         adapter.submitList(filteredProcesses)

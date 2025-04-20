@@ -27,7 +27,7 @@ class InterviewListFragment : Fragment() {
     
     private lateinit var recyclerView: RecyclerView
     private lateinit var progressBar: ProgressBar
-    private lateinit var emptyText: TextView
+    private lateinit var emptyStateContainer: View
     private lateinit var scheduleFab: FloatingActionButton
     private lateinit var tabLayout: TabLayout
     
@@ -45,9 +45,14 @@ class InterviewListFragment : Fragment() {
         // Initialize views
         recyclerView = view.findViewById(R.id.interviewsRecyclerView)
         progressBar = view.findViewById(R.id.progressBar)
-        emptyText = view.findViewById(R.id.emptyText)
+        emptyStateContainer = view.findViewById(R.id.emptyStateContainer)
         scheduleFab = view.findViewById(R.id.scheduleInterviewFab)
         tabLayout = view.findViewById(R.id.tabLayout)
+        
+        // Set up back button
+        view.findViewById<View>(R.id.backButton).setOnClickListener {
+            findNavController().navigateUp()
+        }
         
         // Setup RecyclerView adapter
         adapter = InterviewAdapter(
@@ -149,9 +154,11 @@ class InterviewListFragment : Fragment() {
         }
         
         if (interviewWithDetailsList.isEmpty()) {
-            emptyText.visibility = View.VISIBLE
+            emptyStateContainer.visibility = View.VISIBLE
+            recyclerView.visibility = View.GONE
         } else {
-            emptyText.visibility = View.GONE
+            emptyStateContainer.visibility = View.GONE
+            recyclerView.visibility = View.VISIBLE
         }
         
         val currentTabPosition = tabLayout.selectedTabPosition
@@ -178,9 +185,11 @@ class InterviewListFragment : Fragment() {
         }
         
         if (interviewWithDetailsList.isEmpty()) {
-            emptyText.visibility = View.VISIBLE
+            emptyStateContainer.visibility = View.VISIBLE
+            recyclerView.visibility = View.GONE
         } else {
-            emptyText.visibility = View.GONE
+            emptyStateContainer.visibility = View.GONE
+            recyclerView.visibility = View.VISIBLE
         }
         
         adapter.submitList(interviewWithDetailsList)

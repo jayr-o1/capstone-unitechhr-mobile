@@ -26,16 +26,25 @@ object NotificationUtils {
     private const val NOTIFICATION_ID = 100
     private const val PREFS_NAME = "notification_prefs"
     private const val FCM_TOKEN_KEY = "fcm_token"
+    
+    // Define notification topics
+    private const val TOPIC_ALL_USERS = "all_users"
+    private const val TOPIC_JOB_SEEKERS = "job_seekers"
+    private const val TOPIC_PREFIX_UNIVERSITY = "university_"
+    private const val TOPIC_PREFIX_JOB = "job_"
 
     /**
-     * Creates the notification channel for API 26+
-     * This method should be called when the app starts (in Application class or MainActivity's onCreate)
+     * Create notification channel for Android O and above
      */
     fun createNotificationChannel(context: Context) {
-        // Create the notification channel only on API 26+
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val importance = NotificationManager.IMPORTANCE_HIGH
-            val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, importance).apply {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
                 description = CHANNEL_DESCRIPTION
                 enableLights(true)
                 lightColor = Color.BLUE
@@ -46,73 +55,72 @@ object NotificationUtils {
             // Register the channel with the system
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
+            
             Log.d(TAG, "Notification channel created")
         }
     }
 
     /**
-     * Sends a test notification for debugging purposes
+     * Subscribe to all general and job seeker topics
      */
-    fun sendTestNotification(context: Context, title: String, message: String) {
-        // Create the notification channel first
-        createNotificationChannel(context)
+    fun subscribeToDefaultTopics() {
+        // Subscribe to all users topic
+        subscribeToTopic(TOPIC_ALL_USERS)
         
-        // Create an explicit intent for the MainActivity
-        val intent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
+        // Subscribe to job seekers topic
+        subscribeToTopic(TOPIC_JOB_SEEKERS)
         
-        // Create a PendingIntent
-        val pendingIntent = PendingIntent.getActivity(
-            context, 0, intent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-        
-        // Build the notification
-        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_assessment) // Use existing assessment icon
-            .setContentTitle(title)
-            .setContentText(message)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
-        
-        try {
-            with(NotificationManagerCompat.from(context)) {
-                // Check permission on Android 13+
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    if (context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == 
-                        android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                        notify(NOTIFICATION_ID, builder.build())
-                        Log.d(TAG, "Test notification sent")
-                    } else {
-                        Log.d(TAG, "Notification permission not granted")
-                    }
-                } else {
-                    // For Android 12 and below
-                    notify(NOTIFICATION_ID, builder.build())
-                    Log.d(TAG, "Test notification sent")
-                }
-            }
-        } catch (e: SecurityException) {
-            Log.e(TAG, "Error sending notification: ${e.message}")
-        }
+        Log.d(TAG, "Subscribed to default topics")
     }
 
     /**
-     * Display a notification with the given title and message
+     * Subscribe to university-specific topics
      */
-    fun showNotification(context: Context, title: String, message: String, notificationId: Int = NOTIFICATION_ID) {
-        // Create the notification channel first (does nothing if already created)
-        createNotificationChannel(context)
-        
-        // Create an explicit intent for the MainActivity
+    fun subscribeToUniversityTopic(universityId: String) {
+        subscribeToTopic("$TOPIC_PREFIX_UNIVERSITY$universityId")
+        Log.d(TAG, "Subscribed to university topic for ID: $universityId")
+    }
+
+    /**
+     * Subscribe to a job-specific topic
+     */
+    fun subscribeToJobTopic(jobId: String) {
+        subscribeToTopic("$TOPIC_PREFIX_JOB$jobId")
+        Log.d(TAG, "Subscribed to job topic for ID: $jobId")
+    }
+
+    /**
+     * Unsubscribe from a university topic
+     */
+    fun unsubscribeFromUniversityTopic(universityId: String) {
+        unsubscribeFromTopic("$TOPIC_PREFIX_UNIVERSITY$universityId")
+        Log.d(TAG, "Unsubscribed from university topic for ID: $universityId")
+    }
+
+    /**
+     * Unsubscribe from a job topic
+     */
+    fun unsubscribeFromJobTopic(jobId: String) {
+        unsubscribeFromTopic("$TOPIC_PREFIX_JOB$jobId")
+        Log.d(TAG, "Unsubscribed from job topic for ID: $jobId")
+    }
+
+    /**
+     * Show notification with title and message
+     */
+    fun showNotification(context: Context, title: String, message: String) {
+        showNotification(context, title, message, System.currentTimeMillis().toInt())
+    }
+
+    /**
+     * Show notification with a specific ID
+     */
+    fun showNotification(context: Context, title: String, message: String, notificationId: Int) {
+        // Create a PendingIntent for when the notification is tapped
         val intent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
         
-        // Create a PendingIntent
         val pendingIntent = PendingIntent.getActivity(
             context, 0, intent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
@@ -128,6 +136,7 @@ object NotificationUtils {
             .setAutoCancel(true)
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
         
+        // Show the notification
         try {
             with(NotificationManagerCompat.from(context)) {
                 // Check permission on Android 13+

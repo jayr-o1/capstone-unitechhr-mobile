@@ -48,11 +48,19 @@ class AuthViewModel : ViewModel() {
             try {
                 val account = completedTask.getResult(ApiException::class.java)
                 val result = authRepository.handleGoogleSignInResult(context, account)
-                _signInResult.postValue(result)
                 
                 if (result.isSuccess) {
+                    // Immediately load current user after successful sign-in
                     loadCurrentUser(context)
+                    
+                    // For debugging: Log the currently loaded user data
+                    val email = result.getOrNull()
+                    val userName = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+                        .getString("current_user_name", "User")
+                    Log.d("AuthViewModel", "Successfully signed in user: $userName ($email)")
                 }
+                
+                _signInResult.postValue(result)
             } catch (e: ApiException) {
                 // Provide more detailed error message based on status code
                 val errorMessage = when (e.statusCode) {
@@ -75,33 +83,55 @@ class AuthViewModel : ViewModel() {
     
     // Load current user data from shared preferences
     fun loadCurrentUser(context: Context) {
-        val email = authRepository.getCurrentUserEmail(context)
-        if (email != null) {
+        try {
             val sharedPreferences = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-            val displayName = sharedPreferences.getString("current_user_name", "User") ?: "User"
-            _currentUser.value = UserData(email, displayName)
-            _currentUserEmail.value = email
-        } else {
-            _currentUser.value = null
-            _currentUserEmail.value = null
+            val email = authRepository.getCurrentUserEmail(context)
+            
+            if (email != null) {
+                // Try to get displayName from SharedPreferences
+                val displayName = sharedPreferences.getString("current_user_name", null)
+                    ?: email.substringBefore("@") // Fallback to email username if no name stored
+                
+                // Update the current user value and email
+                val userData = UserData(email, displayName)
+                _currentUser.value = userData
+                _currentUserEmail.value = email
+                
+                Log.d("AuthViewModel", "Successfully loaded user: $displayName ($email)")
+                
+                // If we somehow didn't have the name stored properly, update it
+                if (!sharedPreferences.contains("current_user_name")) {
+                    sharedPreferences.edit()
+                        .putString("current_user_name", displayName)
+                        .apply()
+                    Log.d("AuthViewModel", "Updated missing user name in preferences: $displayName")
+                }
+            } else {
+                _currentUser.value = null
+                _currentUserEmail.value = null
+                Log.d("AuthViewModel", "No user email found, user data set to null")
+            }
+        } catch (e: Exception) {
+            Log.e("AuthViewModel", "Error loading current user data", e)
+            // Don't reset the user data on error to avoid potential data loss
         }
     }
     
     // Check if user is already signed in
     fun checkSignInStatus(context: Context): Boolean {
-        // First, check if the user was recently logged out
-        if (authRepository.wasRecentlyLoggedOut(context)) {
-            Log.d("AuthViewModel", "User was recently logged out, blocking auto-login for safety")
-            return false
-        }
-        
-        // Check shared preferences next
+        // First and foremost, check if the is_logged_out flag is set
         val sharedPreferences = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
         val isLoggedOut = sharedPreferences.getBoolean("is_logged_out", false)
         
-        // If we explicitly logged out, don't auto-login
+        // If logged out flag is set, always return false
         if (isLoggedOut) {
-            Log.d("AuthViewModel", "User was explicitly logged out, preventing auto-login")
+            Log.d("AuthViewModel", "User is explicitly logged out, preventing auto-login")
+            return false
+        }
+        
+        // Check if the user was recently logged out
+        if (authRepository.wasRecentlyLoggedOut(context)) {
+            Log.d("AuthViewModel", "User was recently logged out, blocking auto-login for safety")
             return false
         }
         
@@ -153,20 +183,43 @@ class AuthViewModel : ViewModel() {
     
     // Sign out
     fun logout(context: Context, googleSignInClient: GoogleSignInClient? = null) {
-        // Sign out from Google with completion listener
-        googleSignInClient?.signOut()?.addOnCompleteListener {
-            // Clear local storage after Google sign-out completes
-            authRepository.signOut(context)
-            _currentUserEmail.postValue(null)
-            _currentUser.postValue(null)
+        try {
+            // Clear all shared preferences first
+            val sharedPreferences = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
             
-            // Log the sign-out for debugging
-            Log.d("AuthViewModel", "User signed out successfully")
-        } ?: run {
-            // If no googleSignInClient provided, just clear local storage
-            authRepository.signOut(context)
-            _currentUserEmail.postValue(null)
-            _currentUser.postValue(null)
+            // First remove any user-related data
+            sharedPreferences.edit().clear().apply()
+            
+            // Then specifically set logged out flags - do this in a separate edit for reliability
+            sharedPreferences.edit()
+                .putBoolean("is_logged_out", true)
+                .putLong("logout_timestamp", System.currentTimeMillis())
+                .apply()
+                
+            // Set a system property to force logout across app restarts
+            System.setProperty("com.capstone.unitechhr.user.logged_out", "true")
+                
+            // Sign out from Google with completion listener
+            googleSignInClient?.signOut()?.addOnCompleteListener {
+                // Clear local storage after Google sign-out completes
+                authRepository.signOut(context)
+                _currentUserEmail.postValue(null)
+                _currentUser.postValue(null)
+                
+                // Log the sign-out for debugging
+                Log.d("AuthViewModel", "User signed out successfully via Google client")
+            } ?: run {
+                // If no googleSignInClient provided, just clear local storage
+                authRepository.signOut(context)
+                _currentUserEmail.postValue(null)
+                _currentUser.postValue(null)
+                
+                Log.d("AuthViewModel", "User signed out successfully without Google client")
+            }
+            
+            Log.d("AuthViewModel", "Logout process completed, is_logged_out flag is set to true")
+        } catch (e: Exception) {
+            Log.e("AuthViewModel", "Error during logout", e)
         }
     }
 } 

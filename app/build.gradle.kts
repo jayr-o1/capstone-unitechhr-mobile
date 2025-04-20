@@ -77,12 +77,14 @@ dependencies {
     // CircleImageView for profile picture
     implementation("de.hdodenhof:circleimageview:3.1.0")
     
-    implementation(libs.firebase.firestore.ktx)
-    implementation(libs.firebase.firestore)
-    implementation("com.google.firebase:firebase-functions-ktx:20.4.0")
+    // Firebase BOM (Bill of Materials)
+    implementation(platform("com.google.firebase:firebase-bom:32.7.2"))
     
-    // Firebase Cloud Messaging for notifications
-    implementation("com.google.firebase:firebase-messaging-ktx:23.3.1")
+    // Firebase dependencies (without version numbers)
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-functions-ktx")
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-messaging-ktx")
     
     // Google Auth
     implementation("com.google.android.gms:play-services-auth:20.7.0")
@@ -90,7 +92,6 @@ dependencies {
     // Email sending libraries
     implementation("com.sun.mail:android-mail:1.6.7")
     implementation("com.sun.mail:android-activation:1.6.7")
-    implementation(libs.firebase.messaging.ktx)
 
     testImplementation(libs.junit)
     androidTestImplementation("androidx.test.ext:junit:1.9.0")
