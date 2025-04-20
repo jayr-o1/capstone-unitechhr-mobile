@@ -2,13 +2,14 @@ package com.capstone.unitechhr.repositories
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import java.util.concurrent.TimeUnit
-import android.util.Log
-import java.util.Random
 
 class AuthRepository {
     private val firestore = FirebaseFirestore.getInstance()
@@ -26,139 +27,113 @@ class AuthRepository {
         return sharedPreferences.getString("current_user_email", null)
     }
     
-    // Sign in with email and password
-    suspend fun signIn(context: Context, email: String, password: String): Result<String> = withContext(Dispatchers.IO) {
+    // Process Google Sign-In result
+    suspend fun handleGoogleSignInResult(context: Context, account: GoogleSignInAccount?): Result<String> = withContext(Dispatchers.IO) {
         try {
-            // Query the applicants collection for the user
+            if (account == null) {
+                return@withContext Result.failure(Exception("Google sign-in failed"))
+            }
+            
+            val email = account.email ?: return@withContext Result.failure(Exception("Email not available"))
+            val fullName = account.displayName ?: "User"
+            val googleId = account.id ?: return@withContext Result.failure(Exception("Google ID not available"))
+            
+            // Create a document ID from the email
             val emailSlug = emailToCollectionId(email)
+            
+            // Check if user already exists
             val userDoc = applicantsCollection.document(emailSlug).get().await()
             
             if (!userDoc.exists()) {
-                return@withContext Result.failure(Exception("No account found with this email"))
-            }
-            
-            val storedPassword = userDoc.getString("password")
-            if (storedPassword != password) {
-                return@withContext Result.failure(Exception("Incorrect password"))
-            }
-            
-            val isVerified = userDoc.getBoolean("isVerified") ?: false
-            if (!isVerified) {
-                return@withContext Result.failure(Exception("Email not verified. Please verify your account first."))
+                // New user - create a profile
+                val userData = hashMapOf(
+                    "email" to email,
+                    "fullName" to fullName,
+                    "googleId" to googleId,
+                    "createdAt" to System.currentTimeMillis()
+                )
+                
+                applicantsCollection.document(emailSlug).set(userData).await()
+                Log.d("AuthRepository", "New user created: $email")
+            } else {
+                // Existing user - update Google ID if needed
+                if (userDoc.getString("googleId") != googleId) {
+                    applicantsCollection.document(emailSlug)
+                        .update("googleId", googleId)
+                        .await()
+                }
             }
             
             // Save user session
             val sharedPreferences = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
             sharedPreferences.edit().apply {
                 putString("current_user_email", email)
-                putString("current_user_name", userDoc.getString("fullName"))
+                putString("current_user_name", fullName)
+                putString("current_user_id", googleId)
+                putBoolean("is_logged_out", false)
                 apply()
             }
             
             return@withContext Result.success(email)
         } catch (e: Exception) {
+            Log.e("AuthRepository", "Google sign-in error", e)
             return@withContext Result.failure(e)
         }
     }
     
-    // Register a new user
-    suspend fun register(email: String, password: String, fullName: String): Result<String> = withContext(Dispatchers.IO) {
-        try {
-            // Create a collection ID from the email
-            val emailSlug = emailToCollectionId(email)
-            
-            // Check if user already exists
-            val existingUser = applicantsCollection.document(emailSlug).get().await()
-            if (existingUser.exists()) {
-                return@withContext Result.failure(Exception("An account with this email already exists"))
-            }
-            
-            // Generate verification code
-            val verificationCode = generateVerificationCode()
-            
-            // Store user info in Firestore with isVerified flag
-            val userData = hashMapOf(
-                "email" to email,
-                "fullName" to fullName,
-                "password" to password,  // In a real app, you should hash this
-                "isVerified" to false,
-                "verificationCode" to verificationCode,
-                "createdAt" to System.currentTimeMillis()
-            )
-            
-            applicantsCollection.document(emailSlug).set(userData).await()
-            
-            // In a real app, you would send the verification code via email here
-            Log.d("AuthRepository", "Registration successful. Verification code: $verificationCode")
-            
-            return@withContext Result.success(email)
-        } catch (e: Exception) {
-            return@withContext Result.failure(e)
-        }
-    }
-    
-    // Verify email with 6-digit code
-    suspend fun verifyEmail(email: String, code: String): Result<String> = withContext(Dispatchers.IO) {
-        try {
-            val emailSlug = emailToCollectionId(email)
-            val userDoc = applicantsCollection.document(emailSlug).get().await()
-            
-            if (!userDoc.exists()) {
-                return@withContext Result.failure(Exception("No account found with this email"))
-            }
-            
-            val storedCode = userDoc.getString("verificationCode")
-            if (storedCode != code) {
-                return@withContext Result.failure(Exception("Invalid verification code"))
-            }
-            
-            // Mark the user as verified
-            applicantsCollection.document(emailSlug)
-                .update("isVerified", true)
-                .await()
-            
-            return@withContext Result.success(email)
-        } catch (e: Exception) {
-            return@withContext Result.failure(e)
-        }
-    }
-    
-    // Generate a new verification code and save it
-    suspend fun resendVerificationCode(email: String): Result<String> = withContext(Dispatchers.IO) {
-        try {
-            val emailSlug = emailToCollectionId(email)
-            val userDoc = applicantsCollection.document(emailSlug).get().await()
-            
-            if (!userDoc.exists()) {
-                return@withContext Result.failure(Exception("No account found with this email"))
-            }
-            
-            // Generate a new verification code
-            val newCode = generateVerificationCode()
-            
-            // Update the verification code in Firestore
-            applicantsCollection.document(emailSlug)
-                .update("verificationCode", newCode)
-                .await()
-            
-            // In a real app, you would send this code via email
-            Log.d("AuthRepository", "New verification code for $email: $newCode")
-            
-            return@withContext Result.success(newCode)
-        } catch (e: Exception) {
-            return@withContext Result.failure(e)
-        }
+    // Check if Google account is currently signed in
+    fun getLastSignedInAccount(context: Context): GoogleSignInAccount? {
+        return GoogleSignIn.getLastSignedInAccount(context)
     }
     
     // Sign out
     fun signOut(context: Context) {
+        // Get shared preferences
         val sharedPreferences = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-        sharedPreferences.edit().clear().apply()
+        
+        // Set the logged out flag and timestamp before clearing
+        sharedPreferences.edit()
+            .putBoolean("is_logged_out", true)
+            .putLong("logout_timestamp", System.currentTimeMillis())
+            .apply()
+        
+        // Then clear other user data
+        sharedPreferences.edit()
+            .remove("current_user_email")
+            .remove("current_user_name")
+            .remove("current_user_id")
+            .apply()
+        
+        try {
+            // Try to clear any Google Sign-In account caches manually
+            val googleSignIn = GoogleSignIn.getClient(context, 
+                GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).build())
+            googleSignIn.signOut() // This is a backup to ensure Google sign-out
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Error during manual Google sign-out", e)
+        }
+        
+        Log.d("AuthRepository", "User data cleared from local storage and logged_out flag set")
     }
     
-    // Helper function to generate a 6-digit verification code
-    private fun generateVerificationCode(): String {
-        return String.format("%06d", Random().nextInt(999999))
+    // Check if user was recently logged out (within the last minute)
+    fun wasRecentlyLoggedOut(context: Context): Boolean {
+        val sharedPreferences = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+        val isLoggedOut = sharedPreferences.getBoolean("is_logged_out", false)
+        
+        if (!isLoggedOut) {
+            return false
+        }
+        
+        // Check if logout happened within the last minute
+        val logoutTime = sharedPreferences.getLong("logout_timestamp", 0)
+        val currentTime = System.currentTimeMillis()
+        val timeDifference = currentTime - logoutTime
+        
+        // Block auto-login for 60 seconds after logout
+        val blockPeriod = 60 * 1000L // 60 seconds in milliseconds
+        
+        return timeDifference < blockPeriod
     }
     
     // Helper function to convert email to a valid collection ID

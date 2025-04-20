@@ -76,11 +76,48 @@ class InterviewViewModel : ViewModel() {
         val jobsMap = mutableMapOf<String, Job>()
         
         for (id in jobIds) {
-            jobRepository.getJobById(id)?.let { job ->
-                jobsMap[id] = job
+            try {
+                // First extract universityId and jobId if possible (format: "universityId:jobId")
+                val parts = id.split(":")
+                if (parts.size == 2) {
+                    // If the jobId contains universityId
+                    val universityId = parts[0]
+                    val jobId = parts[1]
+                    jobRepository.getJobById(universityId, jobId)?.let { job ->
+                        jobsMap[id] = job
+                    }
+                } else {
+                    // For backwards compatibility, try getting job from all universities
+                    val allUniversities = getUniversitiesWithJob(id)
+                    if (allUniversities.isNotEmpty()) {
+                        val (universityId, job) = allUniversities.first()
+                        jobsMap[id] = job
+                    }
+                }
+            } catch (e: Exception) {
+                // Log error but continue processing other jobs
+                // Log.e("InterviewViewModel", "Error loading job $id: ${e.message}")
             }
         }
         _interviewJobs.value = jobsMap
+    }
+    
+    // Helper method to find a job across all universities
+    private suspend fun getUniversitiesWithJob(jobId: String): List<Pair<String, Job>> {
+        val result = mutableListOf<Pair<String, Job>>()
+        try {
+            // Get all jobs
+            val allJobs = jobRepository.getJobs()
+            
+            // Find matching job by ID
+            val matchingJob = allJobs.find { it.id == jobId }
+            if (matchingJob != null) {
+                result.add(Pair(matchingJob.universityId, matchingJob))
+            }
+        } catch (e: Exception) {
+            // Handle any errors
+        }
+        return result
     }
     
     fun loadInterviewsByApplicant(applicantId: String) {
@@ -95,8 +132,27 @@ class InterviewViewModel : ViewModel() {
                 val jobsMap = mutableMapOf<String, Job>()
                 
                 for (id in jobIds) {
-                    jobRepository.getJobById(id)?.let { job ->
-                        jobsMap[id] = job
+                    try {
+                        // First extract universityId and jobId if possible (format: "universityId:jobId")
+                        val parts = id.split(":")
+                        if (parts.size == 2) {
+                            // If the jobId contains universityId
+                            val universityId = parts[0]
+                            val jobId = parts[1]
+                            jobRepository.getJobById(universityId, jobId)?.let { job ->
+                                jobsMap[id] = job
+                            }
+                        } else {
+                            // For backwards compatibility, try getting job from all universities
+                            val allUniversities = getUniversitiesWithJob(id)
+                            if (allUniversities.isNotEmpty()) {
+                                val (universityId, job) = allUniversities.first()
+                                jobsMap[id] = job
+                            }
+                        }
+                    } catch (e: Exception) {
+                        // Log error but continue processing other jobs
+                        // Log.e("InterviewViewModel", "Error loading job $id: ${e.message}")
                     }
                 }
                 _interviewJobs.value = jobsMap

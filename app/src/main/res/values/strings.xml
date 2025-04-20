@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">UnitechHR</string>
+    <!-- 
+    IMPORTANT: To fix Google Sign-In issues ("login cancelled" error):
+    1. Replace this with your actual Web Client ID from Google Cloud Console
+    2. Go to Google Cloud Console (https://console.cloud.google.com/)
+    3. Navigate to APIs & Services > Credentials
+    4. Create or select your OAuth 2.0 Client ID 
+    5. Copy the Client ID value (long string ending with .apps.googleusercontent.com)
+    6. Paste it below replacing the placeholder text
+    -->
+    <string name="web_client_id">1087281687437-vtms620hg66vtd88bko6gn7530kg7n06.apps.googleusercontent.com</string>
 </resources>

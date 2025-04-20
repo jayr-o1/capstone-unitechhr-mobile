@@ -79,12 +79,18 @@ dependencies {
     
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.firebase.firestore)
-    implementation("com.google.firebase:firebase-auth-ktx:22.3.1")
     implementation("com.google.firebase:firebase-functions-ktx:20.4.0")
+    
+    // Firebase Cloud Messaging for notifications
+    implementation("com.google.firebase:firebase-messaging-ktx:23.3.1")
+    
+    // Google Auth
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
 
     // Email sending libraries
     implementation("com.sun.mail:android-mail:1.6.7")
     implementation("com.sun.mail:android-activation:1.6.7")
+    implementation(libs.firebase.messaging.ktx)
 
     testImplementation(libs.junit)
     androidTestImplementation("androidx.test.ext:junit:1.9.0")

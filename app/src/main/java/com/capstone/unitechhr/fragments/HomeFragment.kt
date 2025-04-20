@@ -9,12 +9,24 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.cardview.widget.CardView
 import androidx.fragment.app.Fragment
-import androidx.navigation.NavOptions
+import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.capstone.unitechhr.R
+import com.capstone.unitechhr.models.Notification
+import com.capstone.unitechhr.models.NotificationType
+import com.capstone.unitechhr.viewmodels.AuthViewModel
+import com.capstone.unitechhr.viewmodels.NotificationViewModel
+import java.util.Date
 
 class HomeFragment : Fragment() {
-
+    
+    private val authViewModel: AuthViewModel by activityViewModels()
+    private val notificationViewModel: NotificationViewModel by viewModels()
+    
+    private lateinit var notificationIcon: ImageView
+    private lateinit var notificationBadge: View
+    
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -26,32 +38,84 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        // Setup notification icon
-        val notificationIcon = view.findViewById<ImageView>(R.id.notificationIcon)
+        // Setup notification icon and badge
+        notificationIcon = view.findViewById(R.id.notificationIcon)
+        notificationBadge = view.findViewById(R.id.notificationBadge)
+        
         notificationIcon.setOnClickListener {
-            Toast.makeText(context, "Notifications", Toast.LENGTH_SHORT).show()
-            // You can navigate to notifications screen if needed
-            // findNavController().navigate(R.id.notificationsFragment)
+            navigateToNotifications()
+        }
+        
+        // Setup welcome message with user's name
+        val welcomeText = view.findViewById<TextView>(R.id.welcomeText)
+        authViewModel.currentUser.observe(viewLifecycleOwner) { userData ->
+            userData?.let {
+                // Get the first name only
+                val firstName = it.displayName.split(" ").firstOrNull() ?: "User"
+                welcomeText.text = "Welcome, $firstName"
+                
+                // Now that we have the user, check for notifications
+                checkForNotifications(it.email)
+            }
+        }
+        
+        // Observe notification status
+        notificationViewModel.hasUnreadNotifications.observe(viewLifecycleOwner) { hasUnread ->
+            notificationBadge.visibility = if (hasUnread) View.VISIBLE else View.GONE
         }
         
         // Setup navigation cards
         setupInterviewCard(
             view.findViewById(R.id.interviewsCard),
-            "View and manage your interview schedule",
+            "View your upcoming interview schedule",
             R.id.action_homeFragment_to_interviewListFragment
         )
         
         setupOnboardingCard(
             view.findViewById(R.id.onboardingCard),
-            "Manage employee onboarding processes",
+            "Complete your onboarding checklist",
             R.id.action_homeFragment_to_onboardingListFragment
         )
         
         setupApplicationCard(
             view.findViewById(R.id.applicationsCard),
-            "Track applicant status",
-            R.id.action_homeFragment_to_applicantListFragment
+            "Track your job application status",
+            R.id.action_homeFragment_to_myApplicationsFragment
         )
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        // Check for notifications again when fragment resumes
+        authViewModel.currentUser.value?.let {
+            checkForNotifications(it.email)
+        }
+    }
+    
+    private fun checkForNotifications(email: String) {
+        // Convert email to applicant ID format (same as in AuthRepository.emailToCollectionId)
+        val applicantId = email.replace("@", "-").replace(".", "-")
+        notificationViewModel.checkUnreadNotifications(applicantId)
+        
+        // For testing only - uncomment to add a test notification
+        // addTestNotification(applicantId)
+    }
+    
+    private fun navigateToNotifications() {
+        // Navigate to the notification list fragment
+        findNavController().navigate(R.id.action_homeFragment_to_notificationListFragment)
+    }
+    
+    // For testing purposes only
+    private fun addTestNotification(applicantId: String) {
+        val testNotification = Notification(
+            title = "New Job Posted",
+            message = "A new job matching your skills has been posted.",
+            timestamp = Date(),
+            isRead = false,
+            type = NotificationType.JOB_POSTED
+        )
+        notificationViewModel.addSampleNotification(applicantId, testNotification)
     }
     
     private fun setupInterviewCard(card: CardView, description: String, actionId: Int) {
@@ -76,11 +140,12 @@ class HomeFragment : Fragment() {
     
     private fun setupApplicationCard(card: CardView, description: String, actionId: Int) {
         // Set description text
-        card.findViewById<TextView>(R.id.applicationCardDescription).text = description
+        card.findViewById<TextView>(R.id.applicationCardDescription).text = "Track your job applications and see their status updates"
         
         // Set click listener
         card.setOnClickListener {
-            safeNavigate(actionId)
+            // Always navigate to MyApplicationsFragment
+            safeNavigate(R.id.action_homeFragment_to_myApplicationsFragment)
         }
     }
     

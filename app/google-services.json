@@ -12,7 +12,20 @@
           "package_name": "com.capstone.unitechhr"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1087281687437-d1a9qm155d5cvto660ggm5eh6q6uf0vd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.capstone.unitechhr",
+            "certificate_hash": "01fc538ec6977962ab59b19a880a07c722feb732"
+          }
+        },
+        {
+          "client_id": "1087281687437-vtms620hg66vtd88bko6gn7530kg7n06.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyArsTnTgpmQVBSz9kAj6WGGoySO9kq5nuc"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1087281687437-vtms620hg66vtd88bko6gn7530kg7n06.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

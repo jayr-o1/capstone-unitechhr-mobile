@@ -22,7 +22,27 @@
         <action
             android:id="@+id/action_homeFragment_to_onboardingListFragment"
             app:destination="@id/onboardingListFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_notificationListFragment"
+            app:destination="@id/notificationListFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_myApplicationsFragment"
+            app:destination="@id/myApplicationsFragment" />
     </fragment>
+
+    <!-- My Applications -->
+    <fragment
+        android:id="@+id/myApplicationsFragment"
+        android:name="com.capstone.unitechhr.fragments.MyApplicationsFragment"
+        android:label="My Applications"
+        tools:layout="@layout/fragment_applicant_list" />
+
+    <!-- Notifications -->
+    <fragment
+        android:id="@+id/notificationListFragment"
+        android:name="com.capstone.unitechhr.fragments.NotificationListFragment"
+        android:label="Notifications"
+        tools:layout="@layout/fragment_notification_list" />
 
     <!-- Job Listings -->
     <fragment
@@ -145,62 +165,10 @@
         android:label="Login"
         tools:layout="@layout/fragment_login">
         <action
-            android:id="@+id/action_loginFragment_to_registrationFragment"
-            app:destination="@id/registrationFragment" />
-        <action
             android:id="@+id/action_loginFragment_to_homeFragment"
             app:destination="@id/homeFragment"
             app:popUpTo="@id/loginFragment"
             app:popUpToInclusive="true" />
-        <action
-            android:id="@+id/action_loginFragment_to_forgotPasswordFragment"
-            app:destination="@id/forgotPasswordFragment" />
-        <action
-            android:id="@+id/action_loginFragment_to_verificationFragment"
-            app:destination="@id/verificationFragment" />
-    </fragment>
-    
-    <fragment
-        android:id="@+id/registrationFragment"
-        android:name="com.capstone.unitechhr.fragments.RegistrationFragment"
-        android:label="Registration"
-        tools:layout="@layout/fragment_registration">
-        <action
-            android:id="@+id/action_registrationFragment_to_loginFragment"
-            app:destination="@id/loginFragment" />
-        <action
-            android:id="@+id/action_registrationFragment_to_verificationFragment"
-            app:destination="@id/verificationFragment" />
-    </fragment>
-    
-    <fragment
-        android:id="@+id/verificationFragment"
-        android:name="com.capstone.unitechhr.fragments.VerificationFragment"
-        android:label="Email Verification"
-        tools:layout="@layout/fragment_verification">
-        <action
-            android:id="@+id/action_verificationFragment_to_loginFragment"
-            app:destination="@id/loginFragment" />
-    </fragment>
-    
-    <fragment
-        android:id="@+id/forgotPasswordFragment"
-        android:name="com.capstone.unitechhr.fragments.ForgotPasswordFragment"
-        android:label="Forgot Password"
-        tools:layout="@layout/fragment_forgot_password">
-        <action
-            android:id="@+id/action_forgotPasswordFragment_to_resetPasswordFragment"
-            app:destination="@id/resetPasswordFragment" />
-    </fragment>
-    
-    <fragment
-        android:id="@+id/resetPasswordFragment"
-        android:name="com.capstone.unitechhr.fragments.ResetPasswordFragment"
-        android:label="Reset Password"
-        tools:layout="@layout/fragment_reset_password">
-        <action
-            android:id="@+id/action_resetPasswordFragment_to_loginFragment"
-            app:destination="@id/loginFragment" />
     </fragment>
     
     <!-- Profile -->

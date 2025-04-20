@@ -14,5 +14,16 @@ data class Job(
     val postedDate: Date = Date(),
     val isFavorite: Boolean = false,
     val universityId: String = "",
-    val universityName: String = ""
+    val universityName: String = "",
+    
+    // Additional fields from Firestore structure
+    val department: String? = null,
+    val summary: String? = null,
+    val status: String? = null,
+    val workSetup: String? = null,
+    val availableSlots: Int? = null,
+    val essentialSkills: List<String>? = null,
+    val keyDuties: List<String>? = null,
+    val qualifications: List<String>? = null,
+    val isDeleted: Boolean = false
 ) 
