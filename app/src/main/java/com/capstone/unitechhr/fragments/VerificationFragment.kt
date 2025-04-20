@@ -13,8 +13,6 @@ import androidx.navigation.fragment.findNavController
 import com.capstone.unitechhr.R
 import com.capstone.unitechhr.viewmodels.AuthViewModel
 import com.google.android.material.progressindicator.CircularProgressIndicator
-import android.content.Intent
-import android.net.Uri
 
 class VerificationFragment : Fragment() {
     private val authViewModel: AuthViewModel by activityViewModels()
@@ -25,6 +23,8 @@ class VerificationFragment : Fragment() {
     private lateinit var progressIndicator: CircularProgressIndicator
     private lateinit var instructionsText: TextView
     
+    private var userEmail: String? = null
+    
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? {
@@ -34,6 +34,9 @@ class VerificationFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
+        // Get email from arguments
+        userEmail = arguments?.getString("email")
+        
         // Initialize views
         verifyButton = view.findViewById(R.id.verify_button)
         backToLoginButton = view.findViewById(R.id.back_to_login_button)
@@ -41,8 +44,8 @@ class VerificationFragment : Fragment() {
         progressIndicator = view.findViewById(R.id.progressIndicator)
         instructionsText = view.findViewById(R.id.instructions_text)
         
-        // Show verification code inputs
-        view.findViewById<View>(R.id.email_input)?.visibility = View.VISIBLE
+        // Hide email input and show verification code inputs
+        view.findViewById<View>(R.id.email_input)?.visibility = View.GONE
         view.findViewById<View>(R.id.digit1)?.visibility = View.VISIBLE
         view.findViewById<View>(R.id.digit2)?.visibility = View.VISIBLE
         view.findViewById<View>(R.id.digit3)?.visibility = View.VISIBLE
@@ -53,7 +56,7 @@ class VerificationFragment : Fragment() {
         
         // Update text to reflect code verification flow
         verifyButton.text = "Verify"
-        instructionsText.text = "Enter your email and the 6-digit verification code that was sent to you when you registered."
+        instructionsText.text = "Enter the 6-digit verification code that was sent when you registered."
         
         // Show resend link
         resendCodeLink.visibility = View.VISIBLE
@@ -71,20 +74,12 @@ class VerificationFragment : Fragment() {
         }
         
         resendCodeLink.setOnClickListener {
-            resendVerificationEmail()
+            resendVerificationCode()
         }
         
         // Add a logout button if the user is logged in
         val logoutButton = view.findViewById<Button>(R.id.logout_button)
-        if (authViewModel.isUserLoggedIn()) {
-            logoutButton?.visibility = View.VISIBLE
-            logoutButton?.setOnClickListener {
-                authViewModel.logout()
-                findNavController().navigate(R.id.action_verificationFragment_to_loginFragment)
-            }
-        } else {
-            logoutButton?.visibility = View.GONE
-        }
+        logoutButton?.visibility = View.GONE
         
         // Observe verification result
         authViewModel.verifyEmailResult.observe(viewLifecycleOwner) { result ->
@@ -114,16 +109,16 @@ class VerificationFragment : Fragment() {
             )
         }
         
-        // Observe resend verification email result
-        authViewModel.resendVerificationEmailResult.observe(viewLifecycleOwner) { result ->
+        // Observe resend verification code result
+        authViewModel.resendVerificationCodeResult.observe(viewLifecycleOwner) { result ->
             progressIndicator.visibility = View.GONE
             
             result.fold(
-                onSuccess = {
-                    // Show success message
+                onSuccess = { code ->
+                    // Show success message with the code (for demo purposes)
                     Toast.makeText(
                         requireContext(),
-                        "Verification email sent. Please check your inbox.",
+                        "New verification code sent! For demo: $code",
                         Toast.LENGTH_LONG
                     ).show()
                 },
@@ -131,7 +126,7 @@ class VerificationFragment : Fragment() {
                     // Show error message
                     Toast.makeText(
                         requireContext(),
-                        "Failed to send verification email: ${exception.message}",
+                        "Failed to resend code: ${exception.message}",
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -140,8 +135,13 @@ class VerificationFragment : Fragment() {
     }
     
     private fun verifyWithCode() {
-        // Get the email and verification code
-        val email = view?.findViewById<TextView>(R.id.email_input)?.text.toString().trim()
+        // If we don't have the email, we can't verify
+        if (userEmail == null) {
+            Toast.makeText(requireContext(), "Email address is missing. Please go back to registration.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        // Get verification code
         val digit1 = view?.findViewById<TextView>(R.id.digit1)?.text.toString()
         val digit2 = view?.findViewById<TextView>(R.id.digit2)?.text.toString()
         val digit3 = view?.findViewById<TextView>(R.id.digit3)?.text.toString()
@@ -151,12 +151,7 @@ class VerificationFragment : Fragment() {
         
         val code = digit1 + digit2 + digit3 + digit4 + digit5 + digit6
         
-        // Validate inputs
-        if (email.isEmpty()) {
-            Toast.makeText(requireContext(), "Please enter your email", Toast.LENGTH_SHORT).show()
-            return
-        }
-        
+        // Validate code
         if (code.length != 6) {
             Toast.makeText(requireContext(), "Please enter the complete 6-digit code", Toast.LENGTH_SHORT).show()
             return
@@ -166,34 +161,21 @@ class VerificationFragment : Fragment() {
         progressIndicator.visibility = View.VISIBLE
         verifyButton.isEnabled = false
         
-        // Show a toast message to let the user know the verification is in progress
-        Toast.makeText(
-            requireContext(),
-            "Verifying your code...",
-            Toast.LENGTH_SHORT
-        ).show()
-        
         // Call the viewModel method to verify with code
-        authViewModel.verifyWithCode(email, code)
+        authViewModel.verifyEmail(userEmail!!, code)
     }
     
-    private fun hideVerificationCodeInputs(view: View) {
-        // Hide all digit inputs and the email input
-        view.findViewById<View>(R.id.email_input)?.visibility = View.GONE
-        view.findViewById<View>(R.id.digit1)?.visibility = View.GONE
-        view.findViewById<View>(R.id.digit2)?.visibility = View.GONE
-        view.findViewById<View>(R.id.digit3)?.visibility = View.GONE
-        view.findViewById<View>(R.id.digit4)?.visibility = View.GONE
-        view.findViewById<View>(R.id.digit5)?.visibility = View.GONE
-        view.findViewById<View>(R.id.digit6)?.visibility = View.GONE
-        view.findViewById<View>(R.id.verification_code_container)?.visibility = View.GONE
-    }
-    
-    private fun resendVerificationEmail() {
+    private fun resendVerificationCode() {
+        // If we don't have the email, we can't resend the code
+        if (userEmail == null) {
+            Toast.makeText(requireContext(), "Email address is missing. Please go back to registration.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
         // Show loading indicator
         progressIndicator.visibility = View.VISIBLE
         
-        // Request a new verification email
-        authViewModel.resendVerificationEmail()
+        // Request a new verification code
+        authViewModel.resendVerificationCode(userEmail!!)
     }
 } 

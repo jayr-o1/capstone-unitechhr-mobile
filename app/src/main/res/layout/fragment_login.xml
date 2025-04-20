@@ -47,6 +47,21 @@
                 android:layout_centerHorizontal="true"
                 android:layout_marginBottom="24dp" />
 
+            <!-- Verification Notice -->
+            <TextView
+                android:id="@+id/verification_notice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Please verify your account first. Verify Now"
+                android:textColor="@color/pink"
+                android:textSize="16sp"
+                android:padding="8dp"
+                android:background="#FFEEEE"
+                android:layout_below="@id/login_title"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone"
+                android:fontFamily="@font/urbanist" />
+
             <!-- Employee ID Input -->
             <EditText
                 android:id="@+id/email_input"
@@ -60,7 +75,7 @@
                 android:layout_marginEnd="4dp"
                 android:padding="12dp"
                 android:background="@drawable/rounded_edittext_background"
-                android:layout_below="@id/login_title"
+                android:layout_below="@id/verification_notice"
                 android:layout_marginBottom="16dp" />
 
             <!-- Password Input -->

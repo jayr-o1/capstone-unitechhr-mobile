@@ -24,6 +24,20 @@ class JobRepository {
         }
     }
     
+    suspend fun getJobsByUniversity(universityId: String): List<Job> = withContext(Dispatchers.IO) {
+        try {
+            val snapshot = jobsCollection
+                .whereEqualTo("universityId", universityId)
+                .orderBy("postedDate", Query.Direction.DESCENDING)
+                .get()
+                .await()
+            return@withContext snapshot.toObjects(Job::class.java)
+        } catch (e: Exception) {
+            // Handle errors
+            return@withContext emptyList()
+        }
+    }
+    
     suspend fun getJobById(id: String): Job? = withContext(Dispatchers.IO) {
         try {
             val document = jobsCollection.document(id).get().await()
@@ -40,6 +54,20 @@ class JobRepository {
             // where clauses or a more sophisticated search strategy
             val allJobs = getJobs()
             return@withContext allJobs.filter { job ->
+                job.title.contains(query, ignoreCase = true) ||
+                job.company.contains(query, ignoreCase = true) ||
+                job.description.contains(query, ignoreCase = true) ||
+                job.universityName.contains(query, ignoreCase = true)
+            }
+        } catch (e: Exception) {
+            return@withContext emptyList()
+        }
+    }
+    
+    suspend fun searchJobsByUniversity(query: String, universityId: String): List<Job> = withContext(Dispatchers.IO) {
+        try {
+            val universityJobs = getJobsByUniversity(universityId)
+            return@withContext universityJobs.filter { job ->
                 job.title.contains(query, ignoreCase = true) ||
                 job.company.contains(query, ignoreCase = true) ||
                 job.description.contains(query, ignoreCase = true)

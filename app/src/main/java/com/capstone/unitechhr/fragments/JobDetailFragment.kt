@@ -30,6 +30,7 @@ class JobDetailFragment : Fragment() {
         
         // Initialize views
         val jobTitleTextView = view.findViewById<TextView>(R.id.jobTitle)
+        val universityNameTextView = view.findViewById<TextView>(R.id.universityName)
         val companyNameTextView = view.findViewById<TextView>(R.id.companyName)
         val locationTextView = view.findViewById<TextView>(R.id.location)
         val salaryValueTextView = view.findViewById<TextView>(R.id.salaryValue)
@@ -52,6 +53,15 @@ class JobDetailFragment : Fragment() {
             
             // Populate views with job data
             jobTitleTextView.text = job.title
+            
+            // Show university name if available
+            if (job.universityName.isNotEmpty()) {
+                universityNameTextView.text = job.universityName
+                universityNameTextView.visibility = View.VISIBLE
+            } else {
+                universityNameTextView.visibility = View.GONE
+            }
+            
             companyNameTextView.text = job.company
             locationTextView.text = job.location
             salaryValueTextView.text = job.salary

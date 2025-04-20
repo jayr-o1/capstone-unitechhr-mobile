@@ -1,5 +1,6 @@
 package com.capstone.unitechhr.viewmodels
 
+import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -12,20 +13,20 @@ import kotlinx.coroutines.tasks.await
 class AuthViewModel : ViewModel() {
     private val authRepository = AuthRepository()
     
-    private val _loginResult = MutableLiveData<Result<FirebaseUser>>()
-    val loginResult: LiveData<Result<FirebaseUser>> = _loginResult
+    private val _loginResult = MutableLiveData<Result<String>>()
+    val loginResult: LiveData<Result<String>> = _loginResult
     
-    private val _registerResult = MutableLiveData<Result<Unit>>()
-    val registerResult: LiveData<Result<Unit>> = _registerResult
+    private val _registerResult = MutableLiveData<Result<String>>()
+    val registerResult: LiveData<Result<String>> = _registerResult
     
-    private val _verifyEmailResult = MutableLiveData<Result<FirebaseUser>>()
-    val verifyEmailResult: LiveData<Result<FirebaseUser>> = _verifyEmailResult
+    private val _verifyEmailResult = MutableLiveData<Result<String>>()
+    val verifyEmailResult: LiveData<Result<String>> = _verifyEmailResult
     
-    private val _resendVerificationEmailResult = MutableLiveData<Result<Unit>>()
-    val resendVerificationEmailResult: LiveData<Result<Unit>> = _resendVerificationEmailResult
+    private val _resendVerificationCodeResult = MutableLiveData<Result<String>>()
+    val resendVerificationCodeResult: LiveData<Result<String>> = _resendVerificationCodeResult
     
-    private val _resetPasswordResult = MutableLiveData<Result<Unit>>()
-    val resetPasswordResult: LiveData<Result<Unit>> = _resetPasswordResult
+    private val _currentUserEmail = MutableLiveData<String?>()
+    val currentUserEmail: LiveData<String?> = _currentUserEmail
     
     private val _currentUser = MutableLiveData<FirebaseUser?>()
     val currentUser: LiveData<FirebaseUser?> = _currentUser
@@ -36,8 +37,8 @@ class AuthViewModel : ViewModel() {
     }
     
     // Check if user is logged in
-    fun isUserLoggedIn(): Boolean {
-        return authRepository.isUserLoggedIn()
+    fun isUserLoggedIn(context: Context): Boolean {
+        return authRepository.isUserLoggedIn(context)
     }
     
     // Check if user is verified
@@ -51,17 +52,20 @@ class AuthViewModel : ViewModel() {
         return authRepository.isUserLoggedInAndVerified()
     }
     
-    fun getCurrentUser(): FirebaseUser? {
-        return authRepository.getCurrentUser()
+    // Get current user email
+    fun getCurrentUserEmail(context: Context): String? {
+        val email = authRepository.getCurrentUserEmail(context)
+        _currentUserEmail.value = email
+        return email
     }
     
-    fun login(email: String, password: String) {
+    fun login(context: Context, email: String, password: String) {
         viewModelScope.launch {
-            val result = authRepository.signIn(email, password)
+            val result = authRepository.signIn(context, email, password)
             _loginResult.postValue(result)
             
             if (result.isSuccess) {
-                _currentUser.postValue(result.getOrNull())
+                _currentUserEmail.postValue(result.getOrNull())
             }
         }
     }
@@ -73,79 +77,22 @@ class AuthViewModel : ViewModel() {
         }
     }
     
-    // Call this after user clicks the verification link
-    fun verifyUserAfterEmailClick() {
-        val user = authRepository.getCurrentUser()
-        if (user != null) {
-            viewModelScope.launch {
-                val result = authRepository.verifyUserAfterEmailClick(user)
-                _verifyEmailResult.postValue(result)
-                
-                if (result.isSuccess) {
-                    _currentUser.postValue(result.getOrNull())
-                }
-            }
-        }
-    }
-    
-    // Resend verification email
-    fun resendVerificationEmail() {
-        val user = authRepository.getCurrentUser()
-        if (user != null) {
-            viewModelScope.launch {
-                val result = authRepository.resendVerificationCode()
-                _resendVerificationEmailResult.postValue(result)
-            }
-        } else {
-            _resendVerificationEmailResult.postValue(Result.failure(Exception("User not logged in")))
-        }
-    }
-    
-    // Verify with code
-    fun verifyWithCode(email: String, code: String) {
+    fun verifyEmail(email: String, code: String) {
         viewModelScope.launch {
-            try {
-                // Call Firebase Function to verify code
-                val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
-                val data = hashMapOf(
-                    "email" to email,
-                    "code" to code
-                )
-                
-                val result = functions
-                    .getHttpsCallable("verifyEmail")
-                    .call(data)
-                    .await()
-                
-                val success = (result.data as? Map<String, Any>)?.get("success") as? Boolean ?: false
-                
-                if (success) {
-                    // Try to sign in with saved credentials to get the verified user
-                    val user = authRepository.getCurrentUser()
-                    if (user != null) {
-                        // Update user's verification status
-                        _verifyEmailResult.postValue(Result.success(user))
-                    } else {
-                        _verifyEmailResult.postValue(Result.failure(Exception("Verification successful, please sign in again.")))
-                    }
-                } else {
-                    _verifyEmailResult.postValue(Result.failure(Exception("Verification failed. Please try again.")))
-                }
-            } catch (e: Exception) {
-                _verifyEmailResult.postValue(Result.failure(e))
-            }
+            val result = authRepository.verifyEmail(email, code)
+            _verifyEmailResult.postValue(result)
         }
     }
     
-    fun sendPasswordResetEmail(email: String) {
+    fun resendVerificationCode(email: String) {
         viewModelScope.launch {
-            val result = authRepository.sendPasswordResetEmail(email)
-            _resetPasswordResult.postValue(result)
+            val result = authRepository.resendVerificationCode(email)
+            _resendVerificationCodeResult.postValue(result)
         }
     }
     
-    fun logout() {
-        authRepository.signOut()
-        _currentUser.postValue(null)
+    fun logout(context: Context) {
+        authRepository.signOut(context)
+        _currentUserEmail.postValue(null)
     }
 } 

@@ -33,6 +33,7 @@ class JobAdapter(private val onItemClick: (Job) -> Unit) :
     ) : RecyclerView.ViewHolder(itemView) {
         
         private val jobTitleTextView: TextView = itemView.findViewById(R.id.jobTitleTextView)
+        private val universityTextView: TextView = itemView.findViewById(R.id.universityTextView)
         private val companyTextView: TextView = itemView.findViewById(R.id.companyTextView)
         private val locationTextView: TextView = itemView.findViewById(R.id.locationTextView)
         private val salaryTextView: TextView = itemView.findViewById(R.id.salaryTextView)
@@ -42,37 +43,40 @@ class JobAdapter(private val onItemClick: (Job) -> Unit) :
         
         fun bind(job: Job) {
             jobTitleTextView.text = job.title
+            
+            // Show university name if available
+            if (job.universityName.isNotEmpty()) {
+                universityTextView.text = job.universityName
+                universityTextView.visibility = View.VISIBLE
+            } else {
+                universityTextView.visibility = View.GONE
+            }
+            
             companyTextView.text = job.company
             locationTextView.text = job.location
             salaryTextView.text = job.salary
             jobTypeTextView.text = job.jobType
             
-            // Calculate days since posted
+            // Format posted date as relative time
             val now = System.currentTimeMillis()
             val postedTime = job.postedDate.time
             val diffInMillis = now - postedTime
             val diffInDays = TimeUnit.MILLISECONDS.toDays(diffInMillis)
             
             postedDateTextView.text = when {
-                diffInDays == 0L -> "Posted today"
-                diffInDays == 1L -> "Posted yesterday"
-                diffInDays < 30L -> "Posted $diffInDays days ago"
-                else -> {
-                    val formatter = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-                    "Posted on ${formatter.format(job.postedDate)}"
-                }
+                diffInDays > 30 -> "Posted ${diffInDays / 30} months ago"
+                diffInDays > 0 -> "Posted $diffInDays days ago"
+                else -> "Posted today"
             }
             
-            // Set favorite icon
+            // Set favorite icon based on job's favorite status
             favoriteIcon.setImageResource(
-                if (job.isFavorite) android.R.drawable.star_on 
-                else android.R.drawable.star_off
+                if (job.isFavorite) android.R.drawable.btn_star_big_on
+                else android.R.drawable.btn_star_big_off
             )
             
-            // Set click listener for the entire item
-            itemView.setOnClickListener {
-                onItemClick(job)
-            }
+            // Set item click listener
+            itemView.setOnClickListener { onItemClick(job) }
         }
     }
     
