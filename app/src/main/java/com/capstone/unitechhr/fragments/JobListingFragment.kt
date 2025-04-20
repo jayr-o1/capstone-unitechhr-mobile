@@ -9,6 +9,7 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.Spinner
+import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -29,6 +30,7 @@ class JobListingFragment : Fragment() {
     private lateinit var searchIcon: ImageView
     private lateinit var universitySpinner: Spinner
     private lateinit var progressBar: ProgressBar
+    private lateinit var headerTitle: TextView
     
     private val jobViewModel: JobViewModel by viewModels()
     private val universityViewModel: UniversityViewModel by viewModels()
@@ -55,6 +57,10 @@ class JobListingFragment : Fragment() {
         searchIcon = view.findViewById(R.id.searchIcon)
         universitySpinner = view.findViewById(R.id.universitySpinner)
         progressBar = view.findViewById(R.id.progressBar)
+        headerTitle = view.findViewById(R.id.headerTitle)
+        
+        // Setup header
+        headerTitle.text = "Job Opportunities"
         
         // Set up job adapter
         jobAdapter = JobAdapter { job ->

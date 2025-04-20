@@ -12,10 +12,13 @@ import androidx.navigation.fragment.findNavController
 import com.capstone.unitechhr.R
 import com.capstone.unitechhr.viewmodels.JobViewModel
 import com.google.android.material.button.MaterialButton
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class JobDetailFragment : Fragment() {
 
     private val viewModel: JobViewModel by activityViewModels()
+    private val dateFormatter = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
     
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -30,6 +33,7 @@ class JobDetailFragment : Fragment() {
         
         // Initialize views
         val jobTitleTextView = view.findViewById<TextView>(R.id.jobTitle)
+        val postedDateTextView = view.findViewById<TextView>(R.id.postedDate)
         val universityNameTextView = view.findViewById<TextView>(R.id.universityName)
         val companyNameTextView = view.findViewById<TextView>(R.id.companyName)
         val locationTextView = view.findViewById<TextView>(R.id.location)
@@ -38,10 +42,18 @@ class JobDetailFragment : Fragment() {
         val descriptionTextView = view.findViewById<TextView>(R.id.descriptionText)
         val requirementsTextView = view.findViewById<TextView>(R.id.requirementsText)
         val applicationStatusTextView = view.findViewById<TextView>(R.id.applicationStatusText)
+        val applyButton = view.findViewById<MaterialButton>(R.id.applyButton)
         
         // Set up back button
         view.findViewById<View>(R.id.backButton).setOnClickListener {
             findNavController().navigateUp()
+        }
+        
+        // Set up apply button
+        applyButton.setOnClickListener {
+            // In a complete implementation, this would navigate to an application form
+            // For now, just show a toast
+            Toast.makeText(context, "Application functionality coming soon!", Toast.LENGTH_SHORT).show()
         }
         
         // Observe selected job
@@ -54,6 +66,9 @@ class JobDetailFragment : Fragment() {
             // Populate views with job data
             jobTitleTextView.text = job.title
             
+            // Format and display posted date
+            postedDateTextView.text = "Posted on: ${dateFormatter.format(job.postedDate)}"
+            
             // Show university name if available
             if (job.universityName.isNotEmpty()) {
                 universityNameTextView.text = job.universityName
@@ -62,12 +77,29 @@ class JobDetailFragment : Fragment() {
                 universityNameTextView.visibility = View.GONE
             }
             
-            companyNameTextView.text = job.company
-            locationTextView.text = job.location
-            salaryValueTextView.text = job.salary
-            jobTypeValueTextView.text = job.jobType
-            descriptionTextView.text = job.description
-            requirementsTextView.text = job.requirements
+            // Set department as company name with fallback
+            companyNameTextView.text = job.company.takeIf { it.isNotEmpty() } 
+                ?: "University Department"
+            
+            // Set work setup as location with fallback
+            locationTextView.text = job.location.takeIf { it.isNotEmpty() } 
+                ?: "Location not specified"
+            
+            // Set salary with fallback
+            salaryValueTextView.text = job.salary.takeIf { it.isNotEmpty() } 
+                ?: "Not specified"
+            
+            // Set job status as job type with fallback
+            jobTypeValueTextView.text = job.jobType.takeIf { it.isNotEmpty() } 
+                ?: "Full-time" // Default to full-time if not specified
+                
+            // Set description with proper formatting and fallback
+            descriptionTextView.text = job.description.takeIf { it.isNotEmpty() } 
+                ?: "No description provided."
+                
+            // Set requirements with proper formatting and fallback
+            requirementsTextView.text = job.requirements.takeIf { it.isNotEmpty() } 
+                ?: "• No specific requirements listed."
             
             // For now, show a placeholder for application status
             // This would be replaced with real status check in a full implementation
