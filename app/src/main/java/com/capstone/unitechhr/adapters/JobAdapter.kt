@@ -1,5 +1,6 @@
 package com.capstone.unitechhr.adapters
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -17,6 +18,8 @@ import java.util.concurrent.TimeUnit
 class JobAdapter(private val onItemClick: (Job) -> Unit) : 
     ListAdapter<Job, JobAdapter.JobViewHolder>(JobDiffCallback()) {
 
+    private val TAG = "JobAdapter"
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): JobViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_job, parent, false)
@@ -24,7 +27,21 @@ class JobAdapter(private val onItemClick: (Job) -> Unit) :
     }
 
     override fun onBindViewHolder(holder: JobViewHolder, position: Int) {
-        holder.bind(getItem(position))
+        val job = getItem(position)
+        Log.d(TAG, "Binding job at position $position: ${job.id} - ${job.title}")
+        holder.bind(job)
+    }
+
+    override fun submitList(list: List<Job>?) {
+        Log.d(TAG, "Submitting job list: ${list?.size ?: 0} items")
+        if (list != null && list.isNotEmpty()) {
+            // Log first job as an example
+            val firstJob = list[0]
+            Log.d(TAG, "First job in list: ${firstJob.id} - ${firstJob.title}")
+            Log.d(TAG, "First job university: ${firstJob.universityId} - ${firstJob.universityName}")
+            Log.d(TAG, "Job list types: ${list.map { it.jobType }.distinct()}")
+        }
+        super.submitList(list)
     }
 
     class JobViewHolder(
@@ -32,6 +49,7 @@ class JobAdapter(private val onItemClick: (Job) -> Unit) :
         private val onItemClick: (Job) -> Unit
     ) : RecyclerView.ViewHolder(itemView) {
         
+        private val TAG = "JobViewHolder"
         private val jobTitleTextView: TextView = itemView.findViewById(R.id.jobTitleTextView)
         private val universityTextView: TextView = itemView.findViewById(R.id.universityTextView)
         private val companyTextView: TextView = itemView.findViewById(R.id.companyTextView)
@@ -42,6 +60,8 @@ class JobAdapter(private val onItemClick: (Job) -> Unit) :
         private val favoriteIcon: ImageView = itemView.findViewById(R.id.favoriteIcon)
         
         fun bind(job: Job) {
+            Log.d(TAG, "Binding job ${job.id} - ${job.title}")
+            
             jobTitleTextView.text = job.title
             
             // Show university name if available
@@ -52,10 +72,19 @@ class JobAdapter(private val onItemClick: (Job) -> Unit) :
                 universityTextView.visibility = View.GONE
             }
             
-            companyTextView.text = job.company
-            locationTextView.text = job.location
+            // Use department as company if available
+            val companyText = job.department?.takeIf { it.isNotEmpty() } ?: job.company
+            companyTextView.text = companyText
+            
+            // Use workSetup as location if available
+            val locationText = job.workSetup?.takeIf { it.isNotEmpty() } ?: job.location
+            locationTextView.text = locationText
+            
             salaryTextView.text = job.salary
-            jobTypeTextView.text = job.jobType
+            
+            // Use status as job type if available
+            val jobTypeText = job.status?.takeIf { it.isNotEmpty() } ?: job.jobType
+            jobTypeTextView.text = jobTypeText
             
             // Format posted date as relative time
             val now = System.currentTimeMillis()
@@ -76,7 +105,20 @@ class JobAdapter(private val onItemClick: (Job) -> Unit) :
             )
             
             // Set item click listener
-            itemView.setOnClickListener { onItemClick(job) }
+            itemView.setOnClickListener { 
+                Log.d(TAG, "Job clicked: ${job.id} - ${job.title}")
+                
+                // Log if the job has the needed detailed information
+                val hasKeyDuties = !job.keyDuties.isNullOrEmpty()
+                val hasEssentialSkills = !job.essentialSkills.isNullOrEmpty() 
+                val hasQualifications = !job.qualifications.isNullOrEmpty()
+                
+                Log.d(TAG, "Job has key duties: $hasKeyDuties")
+                Log.d(TAG, "Job has essential skills: $hasEssentialSkills")
+                Log.d(TAG, "Job has qualifications: $hasQualifications")
+                
+                onItemClick(job)
+            }
         }
     }
     

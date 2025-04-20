@@ -153,6 +153,7 @@ class JobRepository {
             val status = document.getString("status") ?: ""
             val workSetup = document.getString("workSetup") ?: ""
             val postedDate = document.getTimestamp("datePosted")?.toDate() ?: Date()
+            val availableSlots = document.getLong("availableSlots")?.toInt()
             
             // Get arrays
             val essentialSkills = document.get("essentialSkills") as? List<String> ?: emptyList()
@@ -162,9 +163,8 @@ class JobRepository {
             // Format duties and qualifications for display
             val dutiesText = keyDuties.joinToString("\n• ", "• ")
             val qualificationsText = qualifications.joinToString("\n• ", "• ")
-            val skillsText = essentialSkills.joinToString(", ")
             
-            // Create Job object
+            // Create Job object with all fields populated
             return Job(
                 id = id,
                 title = title,
@@ -172,11 +172,20 @@ class JobRepository {
                 location = workSetup, // Using workSetup as location
                 salary = salary,
                 jobType = status, // Using status as jobType
-                description = "$summary\n\nKey Duties:\n$dutiesText\n\nRequired Skills:\n$skillsText",
-                requirements = qualificationsText,
+                description = summary, // Just using summary as description
+                requirements = qualificationsText, // Still keeping the formatted requirements
                 postedDate = postedDate,
                 universityId = universityId,
-                universityName = universityName
+                universityName = universityName,
+                department = department,
+                summary = summary,
+                status = status,
+                workSetup = workSetup,
+                availableSlots = availableSlots,
+                essentialSkills = essentialSkills,
+                keyDuties = keyDuties,
+                qualifications = qualifications,
+                isDeleted = document.getBoolean("isDeleted") ?: false
             )
         } catch (e: Exception) {
             Log.e("JobRepository", "Error converting document to Job: ${e.message}")

@@ -12,38 +12,65 @@
         android:layout_height="match_parent"
         android:padding="16dp">
 
-        <ImageView
-            android:id="@+id/backButton"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@android:drawable/ic_menu_close_clear_cancel"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/jobTitle"
+        <!-- Header Section with Back Button and Title -->
+        <LinearLayout
+            android:id="@+id/headerLayout"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:fontFamily="@font/urbanist_semibold"
-            android:textColor="@color/blue"
-            android:textSize="24sp"
-            app:layout_constraintEnd_toEndOf="parent"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/backButton"
-            tools:text="Senior Software Engineer" />
+            app:layout_constraintEnd_toStartOf="@+id/infoButton"
+            android:layout_marginEnd="8dp">
+
+            <ImageView
+                android:id="@+id/backButton"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_back_arrow"
+                android:tint="@color/blue"
+                android:contentDescription="Back"
+                android:padding="2dp" />
+
+            <TextView
+                android:id="@+id/jobTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:fontFamily="@font/urbanist_semibold"
+                android:textColor="@color/blue"
+                android:textSize="20sp"
+                tools:text="Senior Software Engineer" />
+        </LinearLayout>
+
+        <!-- Info Button -->
+        <ImageView
+            android:id="@+id/infoButton"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@android:drawable/ic_menu_info_details"
+            android:tint="@color/blue"
+            android:padding="4dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Job Information"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/headerLayout"
+            app:layout_constraintBottom_toBottomOf="@id/headerLayout" />
 
         <TextView
             android:id="@+id/postedDate"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="24dp"
             android:fontFamily="@font/urbanist"
             android:textColor="#666666"
             android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/jobTitle"
+            app:layout_constraintTop_toBottomOf="@id/headerLayout"
             tools:text="Posted on: Apr 15, 2025" />
 
         <TextView
@@ -85,69 +112,32 @@
             app:layout_constraintTop_toBottomOf="@id/companyName"
             tools:text="San Francisco, CA (Remote)" />
 
+        <!-- About the Job Section -->
         <TextView
-            android:id="@+id/salaryLabel"
-            android:layout_width="wrap_content"
+            android:id="@+id/aboutJobTitle"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:fontFamily="@font/urbanist_semibold"
-            android:text="Salary"
+            android:text="About the Job"
             android:textColor="@color/black"
-            android:textSize="16sp"
-            app:layout_constraintStart_toStartOf="parent"
+            android:textSize="20sp"
             app:layout_constraintTop_toBottomOf="@id/location" />
 
+        <!-- Summary -->
         <TextView
-            android:id="@+id/salaryValue"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:fontFamily="@font/urbanist"
-            android:textColor="@color/black"
-            android:textSize="16sp"
-            app:layout_constraintBaseline_toBaselineOf="@id/salaryLabel"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@id/salaryLabel"
-            tools:text="$120,000 - $150,000 per year" />
-
-        <TextView
-            android:id="@+id/jobTypeLabel"
-            android:layout_width="wrap_content"
+            android:id="@+id/summaryTitle"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:fontFamily="@font/urbanist_semibold"
-            android:text="Job Type"
-            android:textColor="@color/black"
-            android:textSize="16sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/salaryLabel" />
-
-        <TextView
-            android:id="@+id/jobTypeValue"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:fontFamily="@font/urbanist"
-            android:textColor="@color/black"
-            android:textSize="16sp"
-            app:layout_constraintBaseline_toBaselineOf="@id/jobTypeLabel"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@id/jobTypeLabel"
-            tools:text="Full-time" />
-
-        <TextView
-            android:id="@+id/descriptionTitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:fontFamily="@font/urbanist_semibold"
-            android:text="Job Description"
+            android:text="Summary"
             android:textColor="@color/black"
             android:textSize="18sp"
-            app:layout_constraintTop_toBottomOf="@id/jobTypeLabel" />
+            app:layout_constraintTop_toBottomOf="@id/aboutJobTitle" />
 
         <TextView
-            android:id="@+id/descriptionText"
+            android:id="@+id/summaryText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
@@ -156,22 +146,23 @@
             android:textSize="16sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/descriptionTitle"
-            tools:text="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat." />
+            app:layout_constraintTop_toBottomOf="@id/summaryTitle"
+            tools:text="We are looking for a Senior Software Engineer to join our team." />
 
+        <!-- Key Duties -->
         <TextView
-            android:id="@+id/requirementsTitle"
+            android:id="@+id/keyDutiesTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="16dp"
             android:fontFamily="@font/urbanist_semibold"
-            android:text="Requirements"
+            android:text="Key Duties"
             android:textColor="@color/black"
             android:textSize="18sp"
-            app:layout_constraintTop_toBottomOf="@id/descriptionText" />
+            app:layout_constraintTop_toBottomOf="@id/summaryText" />
 
         <TextView
-            android:id="@+id/requirementsText"
+            android:id="@+id/keyDutiesText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
@@ -180,9 +171,60 @@
             android:textSize="16sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/requirementsTitle"
-            tools:text="• Bachelor's degree in Computer Science or related field\n• 5+ years of experience in software development\n• Proficiency in Java, Kotlin, and Android development\n• Experience with modern Android architecture patterns" />
+            app:layout_constraintTop_toBottomOf="@id/keyDutiesTitle"
+            tools:text="• Design and implement new features\n• Write clean, maintainable code\n• Collaborate with other engineers" />
 
+        <!-- Essential Skills -->
+        <TextView
+            android:id="@+id/essentialSkillsTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:fontFamily="@font/urbanist_semibold"
+            android:text="Essential Skills"
+            android:textColor="@color/black"
+            android:textSize="18sp"
+            app:layout_constraintTop_toBottomOf="@id/keyDutiesText" />
+
+        <TextView
+            android:id="@+id/essentialSkillsText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:fontFamily="@font/urbanist"
+            android:textColor="@color/black"
+            android:textSize="16sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/essentialSkillsTitle"
+            tools:text="• Java\n• Kotlin\n• Android development\n• Firebase" />
+
+        <!-- Qualifications -->
+        <TextView
+            android:id="@+id/qualificationsTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:fontFamily="@font/urbanist_semibold"
+            android:text="Qualifications"
+            android:textColor="@color/black"
+            android:textSize="18sp"
+            app:layout_constraintTop_toBottomOf="@id/essentialSkillsText" />
+
+        <TextView
+            android:id="@+id/qualificationsText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:fontFamily="@font/urbanist"
+            android:textColor="@color/black"
+            android:textSize="16sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/qualificationsTitle"
+            tools:text="• Bachelor's degree in Computer Science\n• 5+ years of experience\n• Experience with modern architecture patterns" />
+
+        <!-- Application Status -->
         <androidx.cardview.widget.CardView
             android:id="@+id/applicationStatusCard"
             android:layout_width="match_parent"
@@ -190,7 +232,7 @@
             android:layout_margin="16dp"
             app:cardCornerRadius="8dp"
             app:cardElevation="4dp"
-            app:layout_constraintTop_toBottomOf="@id/requirementsText"
+            app:layout_constraintTop_toBottomOf="@id/qualificationsText"
             app:layout_constraintBottom_toTopOf="@id/applyButton"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"

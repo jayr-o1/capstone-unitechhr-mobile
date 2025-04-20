@@ -1,6 +1,7 @@
 package com.capstone.unitechhr.fragments
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,6 +13,7 @@ import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -25,6 +27,8 @@ import com.capstone.unitechhr.viewmodels.UniversityViewModel
 
 class JobListingFragment : Fragment() {
     
+    private val TAG = "JobListingFragment"
+    
     private lateinit var jobsRecyclerView: RecyclerView
     private lateinit var searchEditText: EditText
     private lateinit var searchIcon: ImageView
@@ -32,7 +36,8 @@ class JobListingFragment : Fragment() {
     private lateinit var progressBar: ProgressBar
     private lateinit var headerTitle: TextView
     
-    private val jobViewModel: JobViewModel by viewModels()
+    // Use activityViewModels to share with JobDetailFragment
+    private val jobViewModel: JobViewModel by activityViewModels()
     private val universityViewModel: UniversityViewModel by viewModels()
     private lateinit var jobAdapter: JobAdapter
     private lateinit var universityAdapter: UniversitySpinnerAdapter
@@ -45,11 +50,13 @@ class JobListingFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        Log.d(TAG, "onCreateView called")
         return inflater.inflate(R.layout.fragment_job_listing, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        Log.d(TAG, "onViewCreated called")
         
         // Initialize views
         jobsRecyclerView = view.findViewById(R.id.jobsRecyclerView)
@@ -65,7 +72,15 @@ class JobListingFragment : Fragment() {
         // Set up job adapter
         jobAdapter = JobAdapter { job ->
             // Navigate to job details
+            Log.d(TAG, "Job selected: ${job.id} - ${job.title}, navigating to details")
+            
+            // Clear any previous job first
+            jobViewModel.clearSelectedJob()
+            
+            // Then select the new job
             jobViewModel.selectJob(job)
+            
+            // Navigate to details
             findNavController().navigate(R.id.action_jobListingFragment_to_jobDetailFragment)
         }
         
@@ -127,12 +142,14 @@ class JobListingFragment : Fragment() {
         
         // Observe job data
         jobViewModel.jobs.observe(viewLifecycleOwner) { jobs ->
+            Log.d(TAG, "Received ${jobs.size} jobs")
             jobAdapter.submitList(jobs)
         }
         
         // Observe job errors
         jobViewModel.errorMessage.observe(viewLifecycleOwner) { message ->
             message?.let {
+                Log.e(TAG, "Error message: $it")
                 Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
             }
         }
@@ -147,6 +164,7 @@ class JobListingFragment : Fragment() {
         // Observe university errors
         universityViewModel.errorMessage.observe(viewLifecycleOwner) { message ->
             message?.let {
+                Log.e(TAG, "University error: $it")
                 Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
             }
         }
@@ -155,8 +173,10 @@ class JobListingFragment : Fragment() {
         searchIcon.setOnClickListener {
             val query = searchEditText.text.toString().trim()
             if (query.isNotEmpty()) {
+                Log.d(TAG, "Searching for: $query")
                 jobViewModel.searchJobs(query)
             } else {
+                Log.d(TAG, "Empty search, loading all jobs")
                 jobViewModel.loadJobs()
             }
         }
@@ -164,6 +184,7 @@ class JobListingFragment : Fragment() {
     
     override fun onResume() {
         super.onResume()
+        Log.d(TAG, "onResume called")
         universityViewModel.loadUniversities()
         jobViewModel.loadJobs()
     }
