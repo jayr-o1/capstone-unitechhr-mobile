@@ -3,178 +3,147 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true">
+    android:fillViewport="true"
+    android:background="@color/background">
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/background"
-        android:padding="16dp">
+        android:padding="24dp">
 
-        <!-- Logo -->
-        <ImageView
-            android:id="@+id/logo"
+        <!-- Welcome Text -->
+        <TextView
+            android:id="@+id/app_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/logo"
+            android:text="UniTech HR"
+            android:fontFamily="@font/urbanist_semibold"
+            android:textSize="36sp"
+            android:textStyle="bold"
+            android:textColor="@color/blue"
+            android:layout_alignParentTop="true"
             android:layout_centerHorizontal="true"
-            android:contentDescription="UniTech Logo"
-            android:layout_marginTop="-130dp"
-            android:layout_marginBottom="-130dp"/>
+            android:layout_marginTop="80dp"
+            android:elevation="4dp"/>
 
-        <!-- Login Card -->
-        <RelativeLayout
-            android:id="@+id/login_card"
+        <TextView
+            android:id="@+id/app_description"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/rounded_white_background"
-            android:elevation="2dp"
-            android:padding="24dp"
-            android:layout_below="@id/logo"
+            android:text="Your gateway to campus recruitment opportunities"
+            android:fontFamily="@font/urbanist"
+            android:textSize="18sp"
+            android:textColor="@android:color/darker_gray"
+            android:layout_below="@id/app_title"
+            android:gravity="center"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="60dp"
+            android:elevation="4dp"/>
+
+        <!-- Decorative Element -->
+        <View
+            android:id="@+id/decorative_line"
+            android:layout_width="80dp"
+            android:layout_height="4dp"
+            android:background="@color/pink"
+            android:layout_below="@id/app_title"
             android:layout_centerHorizontal="true"
-            android:layout_marginTop="24dp">
+            android:layout_marginTop="8dp"
+            android:elevation="4dp" />
 
-            <!-- Title -->
-            <TextView
-                android:id="@+id/login_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Sign In"
-                android:fontFamily="@font/urbanist_semibold"
-                android:textSize="24sp"
-                android:textStyle="bold"
-                android:textColor="@color/blue"
-                android:layout_centerHorizontal="true"
-                android:layout_marginBottom="24dp" />
+        <!-- Login Title (Moved out of card) -->
+        <TextView
+            android:id="@+id/login_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Welcome Back"
+            android:fontFamily="@font/urbanist_semibold"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="@color/blue"
+            android:layout_below="@id/app_description"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="8dp" />
+        
+        <TextView
+            android:id="@+id/login_subtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sign in to continue"
+            android:fontFamily="@font/urbanist"
+            android:textSize="16sp"
+            android:textColor="@android:color/darker_gray"
+            android:layout_below="@id/login_title"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="36dp" />
 
-            <!-- Verification Notice -->
-            <TextView
-                android:id="@+id/verification_notice"
+        <!-- Progress Indicator - Make it centered over the sign-in button -->
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/progressIndicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/login_subtitle"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="24dp"
+            android:visibility="gone"
+            android:indeterminate="true"
+            app:indicatorSize="36dp"
+            app:indicatorColor="@color/blue" />
+
+        <!-- Google Sign In Button -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/google_sign_in_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/login_subtitle"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="2dp"
+            app:cardUseCompatPadding="true">
+            
+            <LinearLayout
+                android:id="@+id/google_sign_in_button"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Please verify your account first. Verify Now"
-                android:textColor="@color/pink"
-                android:textSize="16sp"
-                android:padding="8dp"
-                android:background="#FFEEEE"
-                android:layout_below="@id/login_title"
-                android:layout_marginBottom="8dp"
-                android:visibility="gone"
-                android:fontFamily="@font/urbanist" />
+                android:orientation="horizontal"
+                android:background="@android:color/white"
+                android:gravity="center_vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="12dp"
+                android:paddingEnd="24dp"
+                android:foreground="?android:attr/selectableItemBackground">
+                
+                <ImageView
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_google_logo"
+                    android:contentDescription="Google logo" />
+                
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:text="Sign in with Google"
+                    android:textColor="#757575"
+                    android:textSize="14sp"
+                    android:gravity="center_vertical"
+                    android:fontFamily="@font/urbanist_semibold" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
 
-            <!-- Employee ID Input -->
-            <EditText
-                android:id="@+id/email_input"
-                android:layout_width="match_parent"
-                android:layout_height="60dp"
-                android:hint="Applicant Email"
-                android:inputType="text"
-                android:fontFamily="@font/urbanist"
-                android:elevation="4dp"
-                android:layout_marginStart="4dp"
-                android:layout_marginEnd="4dp"
-                android:padding="12dp"
-                android:background="@drawable/rounded_edittext_background"
-                android:layout_below="@id/verification_notice"
-                android:layout_marginBottom="16dp" />
+        <!-- Privacy Policy Text -->
+        <TextView
+            android:id="@+id/privacy_policy"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="By signing in, you agree to our Terms of Service and Privacy Policy"
+            android:textColor="@android:color/darker_gray"
+            android:textSize="14sp"
+            android:layout_alignParentBottom="true"
+            android:gravity="center"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="24dp"
+            android:fontFamily="@font/urbanist"/>
 
-            <!-- Password Input -->
-            <EditText
-                android:id="@+id/password"
-                android:layout_width="match_parent"
-                android:layout_height="60dp"
-                android:hint="Password"
-                android:fontFamily="@font/urbanist"
-                android:inputType="textPassword"
-                android:padding="12dp"
-                android:elevation="4dp"
-                android:layout_marginStart="4dp"
-                android:layout_marginEnd="4dp"
-                android:drawableEnd="@drawable/eye_closed"
-                android:background="@drawable/rounded_edittext_background"
-                android:layout_below="@id/email_input"
-                android:layout_marginBottom="24dp"
-                android:drawablePadding="10dp" />
-
-            <!-- Forgot Password Link -->
-            <TextView
-                android:id="@+id/forgotPasswordLink"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Forgot Password?"
-                android:textColor="@color/blue"
-                android:textSize="14sp"
-                android:layout_below="@id/password"
-                android:layout_alignEnd="@id/password"
-                android:layout_marginBottom="16dp"
-                android:fontFamily="@font/urbanist" />
-
-            <!-- Progress Indicator -->
-            <com.google.android.material.progressindicator.CircularProgressIndicator
-                android:id="@+id/progressIndicator"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/forgotPasswordLink"
-                android:layout_centerHorizontal="true"
-                android:visibility="gone"
-                android:indeterminate="true"
-                app:indicatorColor="@color/blue" />
-
-            <!-- Login Button -->
-            <Button
-                android:id="@+id/login_button"
-                android:layout_width="wrap_content"
-                android:layout_height="60dp"
-                android:layout_centerHorizontal="true"
-                android:text="Login"
-                android:backgroundTint="@color/pink"
-                android:textColor="@color/black"
-                android:drawableEnd="@drawable/arrow_forward"
-                android:paddingStart="20dp"
-                android:paddingEnd="20dp"
-                android:layout_marginStart="4dp"
-                android:layout_marginEnd="4dp"
-                android:elevation="4dp"
-                android:translationZ="4dp"
-                android:textSize="24sp"
-                android:layout_below="@id/forgotPasswordLink"
-                android:layout_marginTop="8dp"
-                android:gravity="center" />
-
-            <View
-                android:id="@+id/horizontal_line"
-                android:layout_width="match_parent"
-                android:layout_height="2dp"
-                android:layout_below="@id/login_button"
-                android:layout_marginTop="24dp"
-                android:layout_marginBottom="16dp"
-                android:background="@color/blue"/>
-
-            <!-- Register Link -->
-            <TextView
-                android:id="@+id/registerLink"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="New user? Register here"
-                android:textColor="@color/blue"
-                android:textSize="16sp"
-                android:layout_below="@id/horizontal_line"
-                android:layout_centerHorizontal="true"
-                android:fontFamily="@font/urbanist" />
-
-            <!-- Verify Account Link -->
-            <TextView
-                android:id="@+id/verify_account_link"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Need to verify your account?"
-                android:textColor="@color/blue"
-                android:textSize="16sp"
-                android:layout_below="@id/registerLink"
-                android:layout_centerHorizontal="true"
-                android:layout_marginTop="8dp"
-                android:fontFamily="@font/urbanist" />
-
-        </RelativeLayout>
     </RelativeLayout>
 </ScrollView>

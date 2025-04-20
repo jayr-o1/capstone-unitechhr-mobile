@@ -67,8 +67,6 @@ class MainActivity : AppCompatActivity() {
             setOf(
                 R.id.homeFragment,
                 R.id.jobListingFragment,
-                R.id.interviewListFragment,
-                R.id.onboardingListFragment,
                 R.id.profileFragment
             )
         )
@@ -82,11 +80,7 @@ class MainActivity : AppCompatActivity() {
         // Show/hide bottom navigation based on current destination
         navController.addOnDestinationChangedListener { _, destination, _ ->
             // Hide bottom navigation on auth screens
-            if (destination.id == R.id.loginFragment || 
-                destination.id == R.id.registrationFragment ||
-                destination.id == R.id.forgotPasswordFragment ||
-                destination.id == R.id.verificationFragment ||
-                destination.id == R.id.resetPasswordFragment) {
+            if (destination.id == R.id.loginFragment) {
                 bottomNavigationView.visibility = android.view.View.GONE
             } else {
                 bottomNavigationView.visibility = android.view.View.VISIBLE
@@ -96,8 +90,6 @@ class MainActivity : AppCompatActivity() {
             val menuItemId = when (destination.id) {
                 R.id.homeFragment -> R.id.homeFragment
                 R.id.jobListingFragment -> R.id.jobListingFragment
-                R.id.interviewListFragment -> R.id.interviewListFragment
-                R.id.onboardingListFragment -> R.id.onboardingListFragment
                 R.id.profileFragment -> R.id.profileFragment
                 else -> null
             }
@@ -115,19 +107,6 @@ class MainActivity : AppCompatActivity() {
                 .setLaunchSingleTop(true)
                 .setPopUpTo(navController.graph.startDestinationId, false)
                 .build()
-            
-            // Check if user is logged in but not verified
-            val userEmail = authViewModel.getCurrentUserEmail(this)
-            if (userEmail != null) {
-                // Check if already on verification fragment to avoid infinite loop
-                if (navController.currentDestination?.id != R.id.verificationFragment) {
-                    // Check email verification status
-                    // This would be replaced by a proper check in a real app
-                    val bundle = bundleOf("email" to userEmail)
-                    navController.navigate(R.id.verificationFragment, bundle)
-                    return@setOnItemSelectedListener false
-                }
-            }
                 
             when (item.itemId) {
                 R.id.homeFragment -> {
@@ -136,14 +115,6 @@ class MainActivity : AppCompatActivity() {
                 }
                 R.id.jobListingFragment -> {
                     navController.navigate(R.id.jobListingFragment, null, navOptions)
-                    true
-                }
-                R.id.interviewListFragment -> {
-                    navController.navigate(R.id.interviewListFragment, null, navOptions)
-                    true
-                }
-                R.id.onboardingListFragment -> {
-                    navController.navigate(R.id.onboardingListFragment, null, navOptions)
                     true
                 }
                 R.id.profileFragment -> {

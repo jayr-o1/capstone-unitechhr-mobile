@@ -37,7 +37,7 @@ class JobDetailFragment : Fragment() {
         val jobTypeValueTextView = view.findViewById<TextView>(R.id.jobTypeValue)
         val descriptionTextView = view.findViewById<TextView>(R.id.descriptionText)
         val requirementsTextView = view.findViewById<TextView>(R.id.requirementsText)
-        val applyButton = view.findViewById<MaterialButton>(R.id.applyButton)
+        val applicationStatusTextView = view.findViewById<TextView>(R.id.applicationStatusText)
         
         // Set up back button
         view.findViewById<View>(R.id.backButton).setOnClickListener {
@@ -68,12 +68,10 @@ class JobDetailFragment : Fragment() {
             jobTypeValueTextView.text = job.jobType
             descriptionTextView.text = job.description
             requirementsTextView.text = job.requirements
-        }
-        
-        // Set up apply button
-        applyButton.setOnClickListener {
-            // This would navigate to an application form in a real app
-            Toast.makeText(requireContext(), "Apply functionality coming soon", Toast.LENGTH_SHORT).show()
+            
+            // For now, show a placeholder for application status
+            // This would be replaced with real status check in a full implementation
+            applicationStatusTextView.text = "No application submitted yet"
         }
     }
 } 

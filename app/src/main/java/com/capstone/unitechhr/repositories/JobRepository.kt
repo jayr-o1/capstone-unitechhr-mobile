@@ -1,94 +1,186 @@
 package com.capstone.unitechhr.repositories
 
+import android.util.Log
 import com.capstone.unitechhr.models.Job
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import java.util.Date
 
 class JobRepository {
     private val firestore = FirebaseFirestore.getInstance()
-    private val jobsCollection = firestore.collection("jobs")
+    private val universitiesCollection = firestore.collection("universities")
     
     suspend fun getJobs(): List<Job> = withContext(Dispatchers.IO) {
         try {
-            val snapshot = jobsCollection
-                .orderBy("postedDate", Query.Direction.DESCENDING)
+            // Get all universities
+            val universitiesSnapshot = universitiesCollection.get().await()
+            val allJobs = mutableListOf<Job>()
+            
+            // For each university, get its jobs subcollection
+            for (universityDoc in universitiesSnapshot.documents) {
+                val universityId = universityDoc.id
+                val universityName = universityDoc.getString("name") ?: ""
+                
+                // Get jobs subcollection for this university
+                val jobsSnapshot = universitiesCollection.document(universityId)
+                    .collection("jobs")
+                    .whereEqualTo("isDeleted", false)
                 .get()
                 .await()
-            return@withContext snapshot.toObjects(Job::class.java)
+                
+                // Convert documents to Job objects and add university details
+                for (jobDoc in jobsSnapshot.documents) {
+                    try {
+                        val job = convertDocumentToJob(jobDoc, universityId, universityName)
+                        if (job != null) {
+                            allJobs.add(job)
+                        }
+                    } catch (e: Exception) {
+                        Log.e("JobRepository", "Error parsing job document: ${e.message}")
+                    }
+                }
+            }
+            
+            return@withContext allJobs.sortedByDescending { it.postedDate }
         } catch (e: Exception) {
-            // Handle errors
+            Log.e("JobRepository", "Error getting all jobs: ${e.message}")
             return@withContext emptyList()
         }
     }
     
     suspend fun getJobsByUniversity(universityId: String): List<Job> = withContext(Dispatchers.IO) {
         try {
-            val snapshot = jobsCollection
-                .whereEqualTo("universityId", universityId)
-                .orderBy("postedDate", Query.Direction.DESCENDING)
+            // Get university name
+            val universityDoc = universitiesCollection.document(universityId).get().await()
+            val universityName = universityDoc.getString("name") ?: ""
+            
+            // Get jobs subcollection for this university
+            val jobsSnapshot = universitiesCollection.document(universityId)
+                .collection("jobs")
+                .whereEqualTo("isDeleted", false)
                 .get()
                 .await()
-            return@withContext snapshot.toObjects(Job::class.java)
+            
+            // Convert documents to Job objects
+            val jobs = mutableListOf<Job>()
+            for (jobDoc in jobsSnapshot.documents) {
+                try {
+                    val job = convertDocumentToJob(jobDoc, universityId, universityName)
+                    if (job != null) {
+                        jobs.add(job)
+                    }
+                } catch (e: Exception) {
+                    Log.e("JobRepository", "Error parsing job document: ${e.message}")
+                }
+            }
+            
+            return@withContext jobs.sortedByDescending { it.postedDate }
         } catch (e: Exception) {
-            // Handle errors
+            Log.e("JobRepository", "Error getting jobs for university $universityId: ${e.message}")
             return@withContext emptyList()
         }
     }
     
-    suspend fun getJobById(id: String): Job? = withContext(Dispatchers.IO) {
+    suspend fun getJobById(universityId: String, jobId: String): Job? = withContext(Dispatchers.IO) {
         try {
-            val document = jobsCollection.document(id).get().await()
-            return@withContext document.toObject(Job::class.java)
+            // Get university name
+            val universityDoc = universitiesCollection.document(universityId).get().await()
+            val universityName = universityDoc.getString("name") ?: ""
+            
+            // Get job document
+            val jobDoc = universitiesCollection.document(universityId)
+                .collection("jobs")
+                .document(jobId)
+                .get()
+                .await()
+            
+            return@withContext convertDocumentToJob(jobDoc, universityId, universityName)
         } catch (e: Exception) {
-            // Handle errors
+            Log.e("JobRepository", "Error getting job $jobId: ${e.message}")
             return@withContext null
         }
     }
     
     suspend fun searchJobs(query: String): List<Job> = withContext(Dispatchers.IO) {
         try {
-            // Simple search implementation - in a real app, you might use Firestore's
-            // where clauses or a more sophisticated search strategy
+            // Get all jobs first
             val allJobs = getJobs()
+            
+            // Filter by search query
             return@withContext allJobs.filter { job ->
                 job.title.contains(query, ignoreCase = true) ||
-                job.company.contains(query, ignoreCase = true) ||
-                job.description.contains(query, ignoreCase = true) ||
+                job.department?.contains(query, ignoreCase = true) ?: false ||
+                job.summary?.contains(query, ignoreCase = true) ?: false ||
                 job.universityName.contains(query, ignoreCase = true)
             }
         } catch (e: Exception) {
+            Log.e("JobRepository", "Error searching jobs: ${e.message}")
             return@withContext emptyList()
         }
     }
     
     suspend fun searchJobsByUniversity(query: String, universityId: String): List<Job> = withContext(Dispatchers.IO) {
         try {
+            // Get jobs for the specified university
             val universityJobs = getJobsByUniversity(universityId)
+            
+            // Filter by search query
             return@withContext universityJobs.filter { job ->
                 job.title.contains(query, ignoreCase = true) ||
-                job.company.contains(query, ignoreCase = true) ||
-                job.description.contains(query, ignoreCase = true)
+                job.department?.contains(query, ignoreCase = true) ?: false ||
+                job.summary?.contains(query, ignoreCase = true) ?: false
             }
         } catch (e: Exception) {
+            Log.e("JobRepository", "Error searching jobs by university: ${e.message}")
             return@withContext emptyList()
         }
     }
     
-    suspend fun addJob(job: Job): Boolean = withContext(Dispatchers.IO) {
+    // Helper function to convert Firestore document to Job model
+    private fun convertDocumentToJob(document: com.google.firebase.firestore.DocumentSnapshot, universityId: String, universityName: String): Job? {
+        if (!document.exists()) return null
+        
         try {
-            val documentRef = if (job.id.isEmpty()) {
-                jobsCollection.document()
-            } else {
-                jobsCollection.document(job.id)
-            }
-            documentRef.set(job).await()
-            return@withContext true
+            // Extract job data from document
+            val id = document.id
+            val title = document.getString("title") ?: ""
+            val department = document.getString("department") ?: ""
+            val summary = document.getString("summary") ?: ""
+            val salary = document.getString("salary") ?: ""
+            val status = document.getString("status") ?: ""
+            val workSetup = document.getString("workSetup") ?: ""
+            val postedDate = document.getTimestamp("datePosted")?.toDate() ?: Date()
+            
+            // Get arrays
+            val essentialSkills = document.get("essentialSkills") as? List<String> ?: emptyList()
+            val keyDuties = document.get("keyDuties") as? List<String> ?: emptyList()
+            val qualifications = document.get("qualifications") as? List<String> ?: emptyList()
+            
+            // Format duties and qualifications for display
+            val dutiesText = keyDuties.joinToString("\n• ", "• ")
+            val qualificationsText = qualifications.joinToString("\n• ", "• ")
+            val skillsText = essentialSkills.joinToString(", ")
+            
+            // Create Job object
+            return Job(
+                id = id,
+                title = title,
+                company = department, // Using department as company
+                location = workSetup, // Using workSetup as location
+                salary = salary,
+                jobType = status, // Using status as jobType
+                description = "$summary\n\nKey Duties:\n$dutiesText\n\nRequired Skills:\n$skillsText",
+                requirements = qualificationsText,
+                postedDate = postedDate,
+                universityId = universityId,
+                universityName = universityName
+            )
         } catch (e: Exception) {
-            // Handle errors
-            return@withContext false
+            Log.e("JobRepository", "Error converting document to Job: ${e.message}")
+            return null
         }
     }
 } 

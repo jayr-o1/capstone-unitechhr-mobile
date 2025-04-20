@@ -79,8 +79,10 @@ dependencies {
     
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.firebase.firestore)
-    implementation("com.google.firebase:firebase-auth-ktx:22.3.1")
     implementation("com.google.firebase:firebase-functions-ktx:20.4.0")
+    
+    // Google Auth
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
 
     // Email sending libraries
     implementation("com.sun.mail:android-mail:1.6.7")

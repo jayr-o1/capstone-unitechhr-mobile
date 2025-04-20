@@ -11,16 +11,6 @@
         android:title="Jobs" />
     
     <item
-        android:id="@+id/interviewListFragment"
-        android:icon="@android:drawable/ic_menu_recent_history"
-        android:title="Interviews" />
-    
-    <item
-        android:id="@+id/onboardingListFragment"
-        android:icon="@android:drawable/ic_menu_slideshow"
-        android:title="Onboarding" />
-    
-    <item
         android:id="@+id/profileFragment"
         android:icon="@android:drawable/ic_menu_myplaces"
         android:title="Profile" />

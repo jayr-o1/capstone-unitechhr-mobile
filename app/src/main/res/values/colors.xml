@@ -13,6 +13,8 @@
     <color name="verify">#DBDBDB</color>
     <color name="gray">#333333</color>
     <color name="red">#F44336</color>
+    <color name="light_gray">#DDDDDD</color>
+    <color name="dark_gray">#555555</color>
 
     <!-- Default color for light mode -->
     <color name="vector_fill">#000000</color>
@@ -25,9 +27,9 @@
     <color name="button_background">#FF9800</color> <!-- Common button background -->
 
     <!-- Status Colors -->
-    <color name="status_pending">#FF9800</color>
-    <color name="status_reviewing">#2196F3</color>
-    <color name="status_interview">#673AB7</color>
-    <color name="status_hired">#4CAF50</color>
-    <color name="status_rejected">#F44336</color>
+    <color name="status_pending">#FFA000</color>
+    <color name="status_reviewing">#1976D2</color>
+    <color name="status_interview">#7B1FA2</color>
+    <color name="status_hired">#388E3C</color>
+    <color name="status_rejected">#D32F2F</color>
 </resources>

@@ -63,11 +63,11 @@ class JobViewModel : ViewModel() {
         loadJobs()
     }
     
-    fun getJobById(id: String) {
+    fun getJobById(universityId: String, jobId: String) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val job = repository.getJobById(id)
+                val job = repository.getJobById(universityId, jobId)
                 _selectedJob.value = job
                 _errorMessage.value = null
             } catch (e: Exception) {

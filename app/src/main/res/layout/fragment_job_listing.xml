@@ -102,17 +102,6 @@
         app:layout_constraintTop_toBottomOf="@id/searchCardView"
         tools:listitem="@layout/item_job" />
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/addJobFab"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:contentDescription="Add new job"
-        android:src="@android:drawable/ic_input_add"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:tint="@android:color/white" />
-
     <ProgressBar
         android:id="@+id/progressBar"
         android:layout_width="wrap_content"

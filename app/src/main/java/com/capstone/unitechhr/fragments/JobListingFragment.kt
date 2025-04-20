@@ -21,14 +21,12 @@ import com.capstone.unitechhr.adapters.UniversitySpinnerAdapter
 import com.capstone.unitechhr.models.University
 import com.capstone.unitechhr.viewmodels.JobViewModel
 import com.capstone.unitechhr.viewmodels.UniversityViewModel
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class JobListingFragment : Fragment() {
     
     private lateinit var jobsRecyclerView: RecyclerView
     private lateinit var searchEditText: EditText
     private lateinit var searchIcon: ImageView
-    private lateinit var addJobFab: FloatingActionButton
     private lateinit var universitySpinner: Spinner
     private lateinit var progressBar: ProgressBar
     
@@ -55,7 +53,6 @@ class JobListingFragment : Fragment() {
         jobsRecyclerView = view.findViewById(R.id.jobsRecyclerView)
         searchEditText = view.findViewById(R.id.searchEditText)
         searchIcon = view.findViewById(R.id.searchIcon)
-        addJobFab = view.findViewById(R.id.addJobFab)
         universitySpinner = view.findViewById(R.id.universitySpinner)
         progressBar = view.findViewById(R.id.progressBar)
         
@@ -156,12 +153,6 @@ class JobListingFragment : Fragment() {
             } else {
                 jobViewModel.loadJobs()
             }
-        }
-        
-        // Set up FAB for adding new jobs
-        addJobFab.setOnClickListener {
-            // TODO: Navigate to Add Job screen or show dialog
-            Toast.makeText(requireContext(), "Add Job functionality coming soon", Toast.LENGTH_SHORT).show()
         }
     }
     

@@ -1,33 +1,114 @@
 package com.capstone.unitechhr.fragments
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.NavOptions
 import com.capstone.unitechhr.R
 import com.capstone.unitechhr.viewmodels.AuthViewModel
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.material.progressindicator.CircularProgressIndicator
-import android.app.AlertDialog
-import androidx.core.os.bundleOf
+import android.util.Log
+import android.os.Handler
+import android.os.Looper
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import android.content.Context
 
 class LoginFragment : Fragment() {
     private val authViewModel: AuthViewModel by activityViewModels()
     
-    private lateinit var emailEditText: EditText
-    private lateinit var passwordEditText: EditText
-    private lateinit var loginButton: Button
-    private lateinit var registerLink: TextView
-    private lateinit var forgotPasswordLink: TextView
+    private lateinit var googleSignInButton: View
     private lateinit var progressIndicator: CircularProgressIndicator
-    private lateinit var verificationNotice: TextView
+    private lateinit var appTitle: TextView
+    private lateinit var appDescription: TextView
+    
+    private lateinit var googleSignInClient: GoogleSignInClient
+    private lateinit var signInLauncher: ActivityResultLauncher<Intent>
+    
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        
+        // Check if we arrived here from a logout action
+        val fromLogout = arguments?.getBoolean("from_logout", false) ?: false
+        
+        try {
+            // Get required configuration
+            val webClientId = getString(R.string.web_client_id)
+            val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(webClientId)
+                .requestEmail()
+                .build()
+            
+            // Get Google client
+            val googleSignInClient = GoogleSignIn.getClient(requireContext(), gso)
+            
+            if (fromLogout) {
+                // More aggressive approach to clear Google sign-in state
+                // 1. First revoke access (removes permissions)
+                googleSignInClient.revokeAccess().addOnCompleteListener {
+                    // 2. Then sign out (clears token)
+                    googleSignInClient.signOut().addOnCompleteListener {
+                        Log.d("LoginFragment", "Completed aggressive Google sign-out")
+                        
+                        // 3. Clear shared preferences for extra safety
+                        context?.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+                               ?.edit()
+                               ?.putBoolean("is_logged_out", true)
+                               ?.apply()
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("LoginFragment", "Error during Google sign-out", e)
+        }
+        
+        // Initialize Google Sign-In Launcher
+        signInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+                authViewModel.handleSignInResult(requireContext(), task)
+            } else {
+                progressIndicator.visibility = View.GONE
+                googleSignInButton.isEnabled = true
+                googleSignInButton.visibility = View.VISIBLE
+                
+                // Show the card view again
+                view?.findViewById<androidx.cardview.widget.CardView>(R.id.google_sign_in_card)?.visibility = View.VISIBLE
+                
+                // Provide more informative error message based on result code
+                when (result.resultCode) {
+                    Activity.RESULT_CANCELED -> {
+                        Toast.makeText(
+                            requireContext(),
+                            "Sign in was cancelled. Please try again.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        Log.d("LoginFragment", "Google sign-in was cancelled by user")
+                    }
+                    else -> {
+                        Toast.makeText(
+                            requireContext(),
+                            "Sign in failed with code: ${result.resultCode}. Please try again.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        Log.e("LoginFragment", "Google sign-in failed with result code: ${result.resultCode}")
+                    }
+                }
+            }
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -38,103 +119,138 @@ class LoginFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        // Initialize views with the correct IDs from layout
-        emailEditText = view.findViewById(R.id.email_input)
-        passwordEditText = view.findViewById(R.id.password)
-        loginButton = view.findViewById(R.id.login_button)
-        registerLink = view.findViewById(R.id.registerLink)
-        forgotPasswordLink = view.findViewById(R.id.forgotPasswordLink)
+        // Initialize views
+        googleSignInButton = view.findViewById(R.id.google_sign_in_button)
         progressIndicator = view.findViewById(R.id.progressIndicator)
+        appTitle = view.findViewById(R.id.app_title)
+        appDescription = view.findViewById(R.id.app_description)
         
-        // Get verification notice view (you'll need to add this to your layout)
-        verificationNotice = view.findViewById(R.id.verification_notice)
-        verificationNotice.visibility = View.GONE
+        // Set up Google Sign-In
+        val webClientId = getString(R.string.web_client_id)
+        googleSignInClient = authViewModel.getGoogleSignInClient(requireContext(), webClientId)
         
         // Set up click listeners
-        loginButton.setOnClickListener {
-            login()
+        googleSignInButton.setOnClickListener {
+            signInWithGoogle()
         }
         
-        registerLink.setOnClickListener {
-            findNavController().navigate(R.id.action_loginFragment_to_registrationFragment)
+        // Check if we arrived from logout
+        val fromLogout = arguments?.getBoolean("from_logout", false) ?: false
+        
+        if (fromLogout) {
+            Log.d("LoginFragment", "Coming from logout, preventing auto-login")
+            // Force reset state
+            context?.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+                   ?.edit()
+                   ?.putBoolean("is_logged_out", true)
+                   ?.apply()
+        } else {
+            // Only check sign-in status after a delay to ensure any logout has been processed
+            Handler(Looper.getMainLooper()).postDelayed({
+                if (isAdded() && !isDetached() && !fromLogout) {
+                    if (authViewModel.checkSignInStatus(requireContext())) {
+                        Log.d("LoginFragment", "User already signed in, navigating to home")
+                        navigateToHome()
+                    }
+                }
+            }, 1000) // 1 second delay
         }
         
-        forgotPasswordLink.setOnClickListener {
-            // You may want to implement this later
-            Toast.makeText(requireContext(), "Function not available", Toast.LENGTH_SHORT).show()
-        }
-        
-        // Add click listener to verification notice
-        verificationNotice.setOnClickListener {
-            val email = emailEditText.text.toString().trim()
-            if (email.isNotEmpty()) {
-                val bundle = bundleOf("email" to email)
-                findNavController().navigate(R.id.action_loginFragment_to_verificationFragment, bundle)
-            } else {
-                Toast.makeText(requireContext(), "Please enter your email first", Toast.LENGTH_SHORT).show()
-            }
-        }
-        
-        // Observe login result
-        authViewModel.loginResult.observe(viewLifecycleOwner) { result ->
+        // Observe sign-in result
+        authViewModel.signInResult.observe(viewLifecycleOwner) { result ->
             progressIndicator.visibility = View.GONE
-            loginButton.isEnabled = true
+            googleSignInButton.isEnabled = true
+            googleSignInButton.visibility = View.VISIBLE
+            
+            // Show the card view again
+            view?.findViewById<androidx.cardview.widget.CardView>(R.id.google_sign_in_card)?.visibility = View.VISIBLE
+            
+            val fromLogout = arguments?.getBoolean("from_logout", false) ?: false
             
             result.fold(
                 onSuccess = { email ->
-                    // Login successful, navigate to home
-                    findNavController().navigate(
-                        R.id.action_loginFragment_to_homeFragment,
-                        null,
-                        NavOptions.Builder()
-                            .setPopUpTo(R.id.loginFragment, true)
-                            .build()
-                    )
+                    // Only show success dialog if not coming from logout
+                    if (!fromLogout) {
+                        showSuccessDialog(email)
+                    } else {
+                        Log.d("LoginFragment", "Ignoring auto sign-in after logout")
+                    }
                 },
                 onFailure = { exception ->
-                    val errorMessage = exception.message ?: "Login failed"
-                    
-                    // If it's a verification error, show verification notice
-                    if (errorMessage.contains("not verified", ignoreCase = true)) {
-                        // Show verification notice above email field
-                        verificationNotice.text = "Please verify your account first. Verify Now"
-                        verificationNotice.visibility = View.VISIBLE
-                    } else {
-                        // Hide verification notice for other errors
-                        verificationNotice.visibility = View.GONE
-                        
-                        // Show toast with error message
-                        Toast.makeText(
-                            requireContext(),
-                            errorMessage,
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
+                    Toast.makeText(
+                        requireContext(),
+                        "Sign in failed: ${exception.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             )
         }
     }
     
-    private fun login() {
-        val email = emailEditText.text.toString().trim()
-        val password = passwordEditText.text.toString()
+    private fun signInWithGoogle() {
+        // Get web client ID and check if it's properly configured
+        val webClientId = getString(R.string.web_client_id)
         
-        // Basic validation
-        if (email.isEmpty()) {
-            emailEditText.error = "Email is required"
+        // Check if webClientId is still a placeholder
+        if (webClientId == "YOUR_WEB_CLIENT_ID_HERE") {
+            Toast.makeText(
+                requireContext(),
+                "Google Sign-In is not properly configured. Please update web_client_id in strings.xml",
+                Toast.LENGTH_LONG
+            ).show()
             return
         }
         
-        if (password.isEmpty()) {
-            passwordEditText.error = "Password is required"
-            return
-        }
+        // Find the parent CardView of the Google sign-in button to hide both
+        val signInCardView = view?.findViewById<androidx.cardview.widget.CardView>(R.id.google_sign_in_card)
         
-        // Show loading indicator and disable login button
+        // Show loading indicator and hide sign in button and its container
         progressIndicator.visibility = View.VISIBLE
-        loginButton.isEnabled = false
+        googleSignInButton.isEnabled = false
+        googleSignInButton.visibility = View.INVISIBLE
+        signInCardView?.visibility = View.INVISIBLE
         
-        // Attempt login
-        authViewModel.login(requireContext(), email, password)
+        // Launch Google Sign-In
+        val signInIntent = googleSignInClient.signInIntent
+        signInLauncher.launch(signInIntent)
+    }
+    
+    private fun navigateToHome() {
+        findNavController().navigate(
+            R.id.action_loginFragment_to_homeFragment,
+            null,
+            NavOptions.Builder()
+                .setPopUpTo(R.id.loginFragment, true)
+                .build()
+        )
+    }
+
+    /**
+     * Show a success dialog when login is successful
+     */
+    private fun showSuccessDialog(email: String) {
+        // Check again if we're coming from logout
+        val fromLogout = arguments?.getBoolean("from_logout", false) ?: false
+        if (fromLogout) {
+            Log.d("LoginFragment", "Blocking success dialog because we came from logout")
+            return
+        }
+        
+        // Get user's name if available
+        val displayName = authViewModel.currentUser.value?.displayName ?: "User"
+        
+        // Get first name only for more personal greeting
+        val firstName = displayName.split(" ")[0]
+        
+        MaterialAlertDialogBuilder(requireContext())
+            .setIcon(R.drawable.ic_check_circle)
+            .setTitle("Welcome, $firstName!")
+            .setMessage("You've successfully signed in")
+            .setPositiveButton("Continue") { dialog, _ ->
+                dialog.dismiss()
+                navigateToHome()
+            }
+            .setCancelable(false)
+            .show()
     }
 }
