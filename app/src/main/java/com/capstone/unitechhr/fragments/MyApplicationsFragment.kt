@@ -13,8 +13,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.capstone.unitechhr.R
 import com.capstone.unitechhr.adapters.ApplicationAdapter
 import com.capstone.unitechhr.models.Application
+import com.capstone.unitechhr.utils.NotificationUtils
 import com.capstone.unitechhr.viewmodels.ApplicationViewModel
 import com.capstone.unitechhr.viewmodels.AuthViewModel
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.progressindicator.CircularProgressIndicator
 
 class MyApplicationsFragment : Fragment() {
@@ -64,8 +66,16 @@ class MyApplicationsFragment : Fragment() {
         emptyTitle?.text = "No Applications Found"
         emptyDescription?.text = "You haven't applied to any jobs yet. Browse available jobs and apply to start tracking your applications here."
         
-        // Hide the FAB for adding applicants
-        view.findViewById<View>(R.id.fab_add_applicant)?.visibility = View.GONE
+        // Get the FAB or create a new one for testing notifications
+        val fab = view.findViewById<FloatingActionButton>(R.id.fab_add_applicant)
+        if (fab != null) {
+            // Repurpose the existing FAB for test notifications
+            fab.setImageResource(android.R.drawable.ic_popup_reminder)
+            fab.visibility = View.VISIBLE
+            fab.setOnClickListener {
+                sendTestNotification()
+            }
+        }
         
         // Setup RecyclerView
         setupRecyclerView()
@@ -118,6 +128,20 @@ class MyApplicationsFragment : Fragment() {
         } else {
             recyclerView.visibility = View.VISIBLE
             noDataView.visibility = View.GONE
+        }
+    }
+    
+    /**
+     * Send a test notification to demonstrate push notifications
+     */
+    private fun sendTestNotification() {
+        context?.let { ctx ->
+            NotificationUtils.sendTestNotification(
+                ctx,
+                "UniTech HR Update",
+                "This is a test notification. Your application status may have changed!"
+            )
+            Toast.makeText(ctx, "Test notification sent!", Toast.LENGTH_SHORT).show()
         }
     }
     

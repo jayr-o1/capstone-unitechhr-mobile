@@ -1,66 +1,63 @@
 package com.capstone.unitechhr
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
-import androidx.activity.enableEdgeToEdge
+import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
-import androidx.navigation.NavGraph
-import androidx.navigation.NavOptions
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
+import com.capstone.unitechhr.utils.NotificationUtils
 import com.capstone.unitechhr.viewmodels.AuthViewModel
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import android.view.View
-import android.view.WindowManager
-import androidx.core.content.ContextCompat
-import android.os.Build
-import android.widget.Toast
-import androidx.core.os.bundleOf
+import com.google.firebase.messaging.FirebaseMessaging
 
 class MainActivity : AppCompatActivity() {
-    
-    private lateinit var navController: NavController
+
     private lateinit var appBarConfiguration: AppBarConfiguration
+    private lateinit var navController: NavController
     private val authViewModel: AuthViewModel by viewModels()
-    
+    private val TAG = "MainActivity"
+
+    // Permission launcher for notification permission
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            // Notification permission granted
+            Toast.makeText(this, "Notification permission granted", Toast.LENGTH_SHORT).show()
+            // Get the FCM token after permission is granted
+            retrieveFcmToken()
+        } else {
+            // Notification permission denied
+            Toast.makeText(this, "Notification permission denied. You will not receive job updates.", 
+                Toast.LENGTH_LONG).show()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
-        // Make status bar transparent with visible icons
-        window.statusBarColor = android.graphics.Color.TRANSPARENT
-        
-        // Make status bar icons dark or light based on Android version
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            // For light backgrounds, use dark status bar icons
-            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-        } else {
-            // For older versions, just ensure system UI is visible
-            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
-        }
-        
         setContentView(R.layout.activity_main)
-        
-        // Set up the toolbar but hide it
-        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+
+        // Set up the toolbar
+        val toolbar: Toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
-        supportActionBar?.hide() // Hide the action bar completely for all fragments
-        
+
         // Setup Navigation
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.fragmentContainer) as NavHostFragment
         navController = navHostFragment.navController
-        
-        // Get the nav graph
-        val navGraph = navController.navInflater.inflate(R.navigation.nav_graph)
-        navGraph.setStartDestination(R.id.loginFragment)
-        navController.graph = navGraph
         
         // Define top level destinations
         appBarConfiguration = AppBarConfiguration(
@@ -71,62 +68,71 @@ class MainActivity : AppCompatActivity() {
             )
         )
         
-        // Setup ActionBar with NavController but it's hidden
+        // Setup ActionBar with NavController
         setupActionBarWithNavController(navController, appBarConfiguration)
         
         // Setup Bottom Navigation
         val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
-        
-        // Show/hide bottom navigation based on current destination
-        navController.addOnDestinationChangedListener { _, destination, _ ->
-            // Hide bottom navigation on auth screens
-            if (destination.id == R.id.loginFragment) {
-                bottomNavigationView.visibility = android.view.View.GONE
-            } else {
-                bottomNavigationView.visibility = android.view.View.VISIBLE
-            }
-            
-            // Find the appropriate menu item ID based on the destination
-            val menuItemId = when (destination.id) {
-                R.id.homeFragment -> R.id.homeFragment
-                R.id.jobListingFragment -> R.id.jobListingFragment
-                R.id.profileFragment -> R.id.profileFragment
-                else -> null
-            }
-            
-            // Update the selected menu item if we have a valid ID
-            if (menuItemId != null) {
-                bottomNavigationView.menu.findItem(menuItemId)?.isChecked = true
-            }
-        }
-        
-        // Instead of just using setupWithNavController, we'll handle navigation ourselves
-        bottomNavigationView.setOnItemSelectedListener { item ->
-            // Create navigation options that clear the back stack
-            val navOptions = NavOptions.Builder()
-                .setLaunchSingleTop(true)
-                .setPopUpTo(navController.graph.startDestinationId, false)
-                .build()
-                
-            when (item.itemId) {
-                R.id.homeFragment -> {
-                    navController.navigate(R.id.homeFragment, null, navOptions)
-                    true
+        bottomNavigationView.setupWithNavController(navController)
+
+        // Check and request notification permission
+        askNotificationPermission()
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        return navController.navigateUp() || super.onSupportNavigateUp()
+    }
+
+    // Check and request notification permissions for Android 13+
+    private fun askNotificationPermission() {
+        // Check if we're running on Android 13 or higher
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            when {
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED -> {
+                    // Permission is already granted, retrieve token
+                    retrieveFcmToken()
                 }
-                R.id.jobListingFragment -> {
-                    navController.navigate(R.id.jobListingFragment, null, navOptions)
-                    true
+                shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS) -> {
+                    // Explain to the user why notification permission is needed
+                    Toast.makeText(
+                        this,
+                        "Notification permission is needed to receive job updates",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    // Request permission
+                    requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
-                R.id.profileFragment -> {
-                    navController.navigate(R.id.profileFragment, null, navOptions)
-                    true
+                else -> {
+                    // Directly request permission
+                    requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
-                else -> false
             }
+        } else {
+            // For Android 12 and below, notification permissions are granted upon installation
+            retrieveFcmToken()
         }
     }
-    
-    override fun onSupportNavigateUp(): Boolean {
-        return navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
+
+    // Get FCM token and log it
+    private fun retrieveFcmToken() {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                Log.e(TAG, "Fetching FCM token failed", task.exception)
+                return@addOnCompleteListener
+            }
+            
+            // Get the token
+            val token = task.result
+            Log.d(TAG, "FCM Token: $token")
+            
+            // Subscribe to relevant topics
+            NotificationUtils.subscribeToTopic("all_users")
+            
+            // All users in this app are job seekers
+            NotificationUtils.subscribeToTopic("job_seekers")
+        }
     }
 }
