@@ -89,19 +89,19 @@ class AuthViewModel : ViewModel() {
     
     // Check if user is already signed in
     fun checkSignInStatus(context: Context): Boolean {
-        // First, check if the user was recently logged out
-        if (authRepository.wasRecentlyLoggedOut(context)) {
-            Log.d("AuthViewModel", "User was recently logged out, blocking auto-login for safety")
-            return false
-        }
-        
-        // Check shared preferences next
+        // First and foremost, check if the is_logged_out flag is set
         val sharedPreferences = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
         val isLoggedOut = sharedPreferences.getBoolean("is_logged_out", false)
         
-        // If we explicitly logged out, don't auto-login
+        // If logged out flag is set, always return false
         if (isLoggedOut) {
-            Log.d("AuthViewModel", "User was explicitly logged out, preventing auto-login")
+            Log.d("AuthViewModel", "User is explicitly logged out, preventing auto-login")
+            return false
+        }
+        
+        // Check if the user was recently logged out
+        if (authRepository.wasRecentlyLoggedOut(context)) {
+            Log.d("AuthViewModel", "User was recently logged out, blocking auto-login for safety")
             return false
         }
         
@@ -153,6 +153,16 @@ class AuthViewModel : ViewModel() {
     
     // Sign out
     fun logout(context: Context, googleSignInClient: GoogleSignInClient? = null) {
+        // Clear all shared preferences first
+        val sharedPreferences = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+        sharedPreferences.edit().clear().apply()
+        
+        // Then specifically set logged out flags
+        sharedPreferences.edit()
+            .putBoolean("is_logged_out", true)
+            .putLong("logout_timestamp", System.currentTimeMillis())
+            .apply()
+            
         // Sign out from Google with completion listener
         googleSignInClient?.signOut()?.addOnCompleteListener {
             // Clear local storage after Google sign-out completes

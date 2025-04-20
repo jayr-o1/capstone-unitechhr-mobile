@@ -32,7 +32,16 @@ class UnitechHRApplication : Application() {
         // Initialize Firebase Cloud Messaging
         FirebaseMessaging.getInstance().isAutoInitEnabled = true
         
-        // Get FCM token
+        // First, check if user is logged out
+        val sharedPreferences = getSharedPreferences("auth_prefs", MODE_PRIVATE)
+        val isLoggedOut = sharedPreferences.getBoolean("is_logged_out", false)
+        
+        if (isLoggedOut) {
+            Log.d(TAG, "User is logged out, skipping FCM token update")
+            return
+        }
+        
+        // Get FCM token only if user is not logged out
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
             if (task.isSuccessful) {
                 val token = task.result
@@ -44,8 +53,10 @@ class UnitechHRApplication : Application() {
                 // Subscribe to default topics
                 NotificationUtils.subscribeToDefaultTopics()
                 
-                // Send the token to server if user is already authenticated
-                sendFcmTokenToServer(token)
+                // Send the token to server only if user is not logged out
+                if (!isLoggedOut) {
+                    sendFcmTokenToServer(token)
+                }
             } else {
                 Log.e(TAG, "Failed to get FCM token", task.exception)
             }

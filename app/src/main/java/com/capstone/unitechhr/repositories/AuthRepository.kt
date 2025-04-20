@@ -91,17 +91,13 @@ class AuthRepository {
         // Get shared preferences
         val sharedPreferences = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
         
-        // Set the logged out flag and timestamp before clearing
+        // First clear all shared preferences 
+        sharedPreferences.edit().clear().apply()
+        
+        // Set the logged out flag and timestamp 
         sharedPreferences.edit()
             .putBoolean("is_logged_out", true)
             .putLong("logout_timestamp", System.currentTimeMillis())
-            .apply()
-        
-        // Then clear other user data
-        sharedPreferences.edit()
-            .remove("current_user_email")
-            .remove("current_user_name")
-            .remove("current_user_id")
             .apply()
         
         try {

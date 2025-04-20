@@ -134,11 +134,13 @@ class LoginFragment : Fragment() {
             signInWithGoogle()
         }
         
-        // Check if we arrived from logout
+        // Check if we arrived from logout or if logged out flag is set
         val fromLogout = arguments?.getBoolean("from_logout", false) ?: false
+        val isLoggedOut = context?.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+            ?.getBoolean("is_logged_out", false) ?: false
         
-        if (fromLogout) {
-            Log.d("LoginFragment", "Coming from logout, preventing auto-login")
+        if (fromLogout || isLoggedOut) {
+            Log.d("LoginFragment", "Coming from logout or is_logged_out flag is set, preventing auto-login")
             // Force reset state
             context?.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
                    ?.edit()
@@ -147,7 +149,7 @@ class LoginFragment : Fragment() {
         } else {
             // Only check sign-in status after a delay to ensure any logout has been processed
             Handler(Looper.getMainLooper()).postDelayed({
-                if (isAdded() && !isDetached() && !fromLogout) {
+                if (isAdded() && !isDetached() && !fromLogout && !isLoggedOut) {
                     if (authViewModel.checkSignInStatus(requireContext())) {
                         Log.d("LoginFragment", "User already signed in, navigating to home")
                         navigateToHome()
@@ -165,16 +167,15 @@ class LoginFragment : Fragment() {
             // Show the card view again
             view?.findViewById<androidx.cardview.widget.CardView>(R.id.google_sign_in_card)?.visibility = View.VISIBLE
             
-            val fromLogout = arguments?.getBoolean("from_logout", false) ?: false
-            
             result.fold(
                 onSuccess = { email ->
-                    // Only show success dialog if not coming from logout
-                    if (!fromLogout) {
-                        showSuccessDialog(email)
-                    } else {
-                        Log.d("LoginFragment", "Ignoring auto sign-in after logout")
-                    }
+                    // Clear the logged_out flag since we're signing in now
+                    context?.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+                           ?.edit()
+                           ?.putBoolean("is_logged_out", false)
+                           ?.apply()
+                    
+                    showSuccessDialog(email)
                 },
                 onFailure = { exception ->
                     Toast.makeText(
@@ -229,10 +230,13 @@ class LoginFragment : Fragment() {
      * Show a success dialog when login is successful
      */
     private fun showSuccessDialog(email: String) {
-        // Check again if we're coming from logout
+        // Check if we're coming from logout or if logged out flag is set
         val fromLogout = arguments?.getBoolean("from_logout", false) ?: false
-        if (fromLogout) {
-            Log.d("LoginFragment", "Blocking success dialog because we came from logout")
+        val isLoggedOut = context?.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+            ?.getBoolean("is_logged_out", false) ?: false
+            
+        if (fromLogout || isLoggedOut) {
+            Log.d("LoginFragment", "Blocking success dialog because we came from logout or logged out state")
             return
         }
         
