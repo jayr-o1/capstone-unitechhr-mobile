@@ -153,30 +153,43 @@ class AuthViewModel : ViewModel() {
     
     // Sign out
     fun logout(context: Context, googleSignInClient: GoogleSignInClient? = null) {
-        // Clear all shared preferences first
-        val sharedPreferences = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-        sharedPreferences.edit().clear().apply()
-        
-        // Then specifically set logged out flags
-        sharedPreferences.edit()
-            .putBoolean("is_logged_out", true)
-            .putLong("logout_timestamp", System.currentTimeMillis())
-            .apply()
+        try {
+            // Clear all shared preferences first
+            val sharedPreferences = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
             
-        // Sign out from Google with completion listener
-        googleSignInClient?.signOut()?.addOnCompleteListener {
-            // Clear local storage after Google sign-out completes
-            authRepository.signOut(context)
-            _currentUserEmail.postValue(null)
-            _currentUser.postValue(null)
+            // First remove any user-related data
+            sharedPreferences.edit().clear().apply()
             
-            // Log the sign-out for debugging
-            Log.d("AuthViewModel", "User signed out successfully")
-        } ?: run {
-            // If no googleSignInClient provided, just clear local storage
-            authRepository.signOut(context)
-            _currentUserEmail.postValue(null)
-            _currentUser.postValue(null)
+            // Then specifically set logged out flags - do this in a separate edit for reliability
+            sharedPreferences.edit()
+                .putBoolean("is_logged_out", true)
+                .putLong("logout_timestamp", System.currentTimeMillis())
+                .apply()
+                
+            // Set a system property to force logout across app restarts
+            System.setProperty("com.capstone.unitechhr.user.logged_out", "true")
+                
+            // Sign out from Google with completion listener
+            googleSignInClient?.signOut()?.addOnCompleteListener {
+                // Clear local storage after Google sign-out completes
+                authRepository.signOut(context)
+                _currentUserEmail.postValue(null)
+                _currentUser.postValue(null)
+                
+                // Log the sign-out for debugging
+                Log.d("AuthViewModel", "User signed out successfully via Google client")
+            } ?: run {
+                // If no googleSignInClient provided, just clear local storage
+                authRepository.signOut(context)
+                _currentUserEmail.postValue(null)
+                _currentUser.postValue(null)
+                
+                Log.d("AuthViewModel", "User signed out successfully without Google client")
+            }
+            
+            Log.d("AuthViewModel", "Logout process completed, is_logged_out flag is set to true")
+        } catch (e: Exception) {
+            Log.e("AuthViewModel", "Error during logout", e)
         }
     }
 } 

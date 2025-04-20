@@ -119,25 +119,37 @@ class LoginFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        // Initialize views
-        googleSignInButton = view.findViewById(R.id.google_sign_in_button)
-        progressIndicator = view.findViewById(R.id.progressIndicator)
-        appTitle = view.findViewById(R.id.app_title)
-        appDescription = view.findViewById(R.id.app_description)
-        
-        // Set up Google Sign-In
-        val webClientId = getString(R.string.web_client_id)
-        googleSignInClient = authViewModel.getGoogleSignInClient(requireContext(), webClientId)
-        
-        // Set up click listeners
-        googleSignInButton.setOnClickListener {
-            signInWithGoogle()
+        // IMMEDIATE CHECK: If we have the system property set, ensure we stay on login
+        if (System.getProperty("com.capstone.unitechhr.user.logged_out") == "true") {
+            Log.d("LoginFragment", "Found system property for logout, staying on login")
+            
+            // Clear the property now that we're handling it
+            System.clearProperty("com.capstone.unitechhr.user.logged_out")
+            
+            // Ensure SharedPreferences is consistent
+            context?.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+                   ?.edit()
+                   ?.putBoolean("is_logged_out", true)
+                   ?.apply()
+                   
+            // Ensure bottom navigation is hidden
+            activity?.findViewById<View>(R.id.bottom_navigation)?.visibility = View.GONE
+            
+            // Exit early - no auto login checks
+            setupViews(view)
+            return
         }
+        
+        // Initialize views
+        setupViews(view)
         
         // Check if we arrived from logout or if logged out flag is set
         val fromLogout = arguments?.getBoolean("from_logout", false) ?: false
         val isLoggedOut = context?.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
             ?.getBoolean("is_logged_out", false) ?: false
+        
+        // Ensure bottom navigation is hidden if we're on login
+        activity?.findViewById<View>(R.id.bottom_navigation)?.visibility = View.GONE
         
         if (fromLogout || isLoggedOut) {
             Log.d("LoginFragment", "Coming from logout or is_logged_out flag is set, preventing auto-login")
@@ -175,6 +187,9 @@ class LoginFragment : Fragment() {
                            ?.putBoolean("is_logged_out", false)
                            ?.apply()
                     
+                    // Clear any system property that might be set
+                    System.clearProperty("com.capstone.unitechhr.user.logged_out")
+                    
                     showSuccessDialog(email)
                 },
                 onFailure = { exception ->
@@ -185,6 +200,23 @@ class LoginFragment : Fragment() {
                     ).show()
                 }
             )
+        }
+    }
+    
+    private fun setupViews(view: View) {
+        // Initialize views
+        googleSignInButton = view.findViewById(R.id.google_sign_in_button)
+        progressIndicator = view.findViewById(R.id.progressIndicator)
+        appTitle = view.findViewById(R.id.app_title)
+        appDescription = view.findViewById(R.id.app_description)
+        
+        // Set up Google Sign-In
+        val webClientId = getString(R.string.web_client_id)
+        googleSignInClient = authViewModel.getGoogleSignInClient(requireContext(), webClientId)
+        
+        // Set up click listeners
+        googleSignInButton.setOnClickListener {
+            signInWithGoogle()
         }
     }
     

@@ -59,6 +59,10 @@ class ProfileFragment : Fragment() {
             // Show a toast that logout is in progress
             Toast.makeText(requireContext(), "Signing out...", Toast.LENGTH_SHORT).show()
             
+            // Immediate UI updates to prevent showing bottom nav on login screen
+            val bottomNav = requireActivity().findViewById<View>(R.id.bottom_navigation)
+            bottomNav?.visibility = View.GONE
+            
             // Get Google Sign In client for sign out
             val webClientId = getString(R.string.web_client_id)
             val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -75,26 +79,30 @@ class ProfileFragment : Fragment() {
                 ?.putLong("logout_timestamp", System.currentTimeMillis())
                 ?.apply()
             
+            // Set system property to ensure logout persists across app restarts
+            System.setProperty("com.capstone.unitechhr.user.logged_out", "true")
+            
+            // Create bundle with from_logout flag
+            val bundle = Bundle().apply {
+                putBoolean("from_logout", true)
+            }
+            
+            // Navigate to login immediately to prevent any UI glitches
+            findNavController().navigate(
+                R.id.loginFragment,
+                bundle,
+                androidx.navigation.NavOptions.Builder()
+                    .setPopUpTo(R.id.nav_graph, true)
+                    .build()
+            )
+            
+            // Continue with logout process in background
             // Revoke access before sign out (more thorough than just sign out)
             googleSignInClient.revokeAccess().addOnCompleteListener {
                 // Then sign out
                 googleSignInClient.signOut().addOnCompleteListener {
                     // Perform app sign out
                     authViewModel.logout(requireContext(), null) // Pass null since we already signed out
-                    
-                    // Create bundle with from_logout flag
-                    val bundle = Bundle().apply {
-                        putBoolean("from_logout", true)
-                    }
-                    
-                    // Navigate to login screen with the flag
-                    findNavController().navigate(
-                        R.id.loginFragment,
-                        bundle,
-                        androidx.navigation.NavOptions.Builder()
-                            .setPopUpTo(R.id.nav_graph, true)
-                            .build()
-                    )
                 }
             }
         }
