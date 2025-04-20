@@ -48,11 +48,19 @@ class AuthViewModel : ViewModel() {
             try {
                 val account = completedTask.getResult(ApiException::class.java)
                 val result = authRepository.handleGoogleSignInResult(context, account)
-                _signInResult.postValue(result)
                 
                 if (result.isSuccess) {
+                    // Immediately load current user after successful sign-in
                     loadCurrentUser(context)
+                    
+                    // For debugging: Log the currently loaded user data
+                    val email = result.getOrNull()
+                    val userName = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+                        .getString("current_user_name", "User")
+                    Log.d("AuthViewModel", "Successfully signed in user: $userName ($email)")
                 }
+                
+                _signInResult.postValue(result)
             } catch (e: ApiException) {
                 // Provide more detailed error message based on status code
                 val errorMessage = when (e.statusCode) {
@@ -75,15 +83,37 @@ class AuthViewModel : ViewModel() {
     
     // Load current user data from shared preferences
     fun loadCurrentUser(context: Context) {
-        val email = authRepository.getCurrentUserEmail(context)
-        if (email != null) {
+        try {
             val sharedPreferences = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-            val displayName = sharedPreferences.getString("current_user_name", "User") ?: "User"
-            _currentUser.value = UserData(email, displayName)
-            _currentUserEmail.value = email
-        } else {
-            _currentUser.value = null
-            _currentUserEmail.value = null
+            val email = authRepository.getCurrentUserEmail(context)
+            
+            if (email != null) {
+                // Try to get displayName from SharedPreferences
+                val displayName = sharedPreferences.getString("current_user_name", null)
+                    ?: email.substringBefore("@") // Fallback to email username if no name stored
+                
+                // Update the current user value and email
+                val userData = UserData(email, displayName)
+                _currentUser.value = userData
+                _currentUserEmail.value = email
+                
+                Log.d("AuthViewModel", "Successfully loaded user: $displayName ($email)")
+                
+                // If we somehow didn't have the name stored properly, update it
+                if (!sharedPreferences.contains("current_user_name")) {
+                    sharedPreferences.edit()
+                        .putString("current_user_name", displayName)
+                        .apply()
+                    Log.d("AuthViewModel", "Updated missing user name in preferences: $displayName")
+                }
+            } else {
+                _currentUser.value = null
+                _currentUserEmail.value = null
+                Log.d("AuthViewModel", "No user email found, user data set to null")
+            }
+        } catch (e: Exception) {
+            Log.e("AuthViewModel", "Error loading current user data", e)
+            // Don't reset the user data on error to avoid potential data loss
         }
     }
     

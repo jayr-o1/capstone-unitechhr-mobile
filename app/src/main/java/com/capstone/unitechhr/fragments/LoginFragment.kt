@@ -190,7 +190,15 @@ class LoginFragment : Fragment() {
                     // Clear any system property that might be set
                     System.clearProperty("com.capstone.unitechhr.user.logged_out")
                     
-                    showSuccessDialog(email)
+                    // Ensure user profile is fully loaded before showing welcome dialog
+                    authViewModel.loadCurrentUser(requireContext())
+                    
+                    // Add a short delay to ensure data is loaded
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        if (isAdded() && !isDetached()) {
+                            showSuccessDialog(email)
+                        }
+                    }, 500)
                 },
                 onFailure = { exception ->
                     Toast.makeText(
@@ -272,11 +280,17 @@ class LoginFragment : Fragment() {
             return
         }
         
-        // Get user's name if available
-        val displayName = authViewModel.currentUser.value?.displayName ?: "User"
+        // Get user's name from SharedPreferences directly to ensure we have the latest data
+        val prefs = context?.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+        val displayName = prefs?.getString("current_user_name", null) 
+            ?: authViewModel.currentUser.value?.displayName 
+            ?: email.substringBefore("@")
+            ?: "User"
         
         // Get first name only for more personal greeting
         val firstName = displayName.split(" ")[0]
+        
+        Log.d("LoginFragment", "Showing welcome dialog for user: $firstName (full name: $displayName)")
         
         MaterialAlertDialogBuilder(requireContext())
             .setIcon(R.drawable.ic_check_circle)

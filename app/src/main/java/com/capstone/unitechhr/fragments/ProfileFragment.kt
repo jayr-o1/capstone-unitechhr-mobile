@@ -2,6 +2,7 @@ package com.capstone.unitechhr.fragments
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,6 +17,7 @@ import com.capstone.unitechhr.viewmodels.AuthViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.material.button.MaterialButton
+import java.lang.ref.WeakReference
 
 class ProfileFragment : Fragment() {
     private val authViewModel: AuthViewModel by activityViewModels()
@@ -23,6 +25,9 @@ class ProfileFragment : Fragment() {
     private lateinit var logoutButton: MaterialButton
     private lateinit var emailTextView: TextView
     private lateinit var nameTextView: TextView
+    
+    // Store a weak reference to context to avoid memory leaks
+    private var weakContext: WeakReference<Context>? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -30,6 +35,12 @@ class ProfileFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         return inflater.inflate(R.layout.fragment_profile, container, false)
+    }
+    
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        // Store weak reference to context when fragment attaches
+        weakContext = WeakReference(context)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -45,6 +56,9 @@ class ProfileFragment : Fragment() {
             findNavController().navigateUp()
         }
         
+        // Store context in weak reference for safety
+        weakContext = WeakReference(requireContext())
+        
         // Load current user data
         authViewModel.loadCurrentUser(requireContext())
         
@@ -56,12 +70,32 @@ class ProfileFragment : Fragment() {
         
         // Set up logout button
         logoutButton.setOnClickListener {
+            logout()
+        }
+    }
+    
+    private fun logout() {
+        try {
+            // Get current context safely
+            val currentContext = weakContext?.get() ?: return
+            
             // Show a toast that logout is in progress
-            Toast.makeText(requireContext(), "Signing out...", Toast.LENGTH_SHORT).show()
+            Toast.makeText(currentContext, "Signing out...", Toast.LENGTH_SHORT).show()
             
             // Immediate UI updates to prevent showing bottom nav on login screen
-            val bottomNav = requireActivity().findViewById<View>(R.id.bottom_navigation)
+            val bottomNav = activity?.findViewById<View>(R.id.bottom_navigation)
             bottomNav?.visibility = View.GONE
+            
+            // Set system property to ensure logout persists across app restarts
+            System.setProperty("com.capstone.unitechhr.user.logged_out", "true")
+            
+            // First, clear all shared preferences
+            currentContext.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+                .edit()
+                .clear()
+                .putBoolean("is_logged_out", true)
+                .putLong("logout_timestamp", System.currentTimeMillis())
+                .apply()
             
             // Get Google Sign In client for sign out
             val webClientId = getString(R.string.web_client_id)
@@ -69,18 +103,7 @@ class ProfileFragment : Fragment() {
                 .requestIdToken(webClientId)
                 .requestEmail()
                 .build()
-            val googleSignInClient = GoogleSignIn.getClient(requireContext(), gso)
-            
-            // First, clear all shared preferences
-            context?.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-                ?.edit()
-                ?.clear()
-                ?.putBoolean("is_logged_out", true)
-                ?.putLong("logout_timestamp", System.currentTimeMillis())
-                ?.apply()
-            
-            // Set system property to ensure logout persists across app restarts
-            System.setProperty("com.capstone.unitechhr.user.logged_out", "true")
+            val googleSignInClient = GoogleSignIn.getClient(currentContext, gso)
             
             // Create bundle with from_logout flag
             val bundle = Bundle().apply {
@@ -96,15 +119,28 @@ class ProfileFragment : Fragment() {
                     .build()
             )
             
-            // Continue with logout process in background
+            // Continue with logout process in background but with safety checks
+            // Store application context to avoid fragment context issues
+            val appContext = currentContext.applicationContext
+            
             // Revoke access before sign out (more thorough than just sign out)
             googleSignInClient.revokeAccess().addOnCompleteListener {
-                // Then sign out
+                // Then sign out (using application context for safety)
                 googleSignInClient.signOut().addOnCompleteListener {
-                    // Perform app sign out
-                    authViewModel.logout(requireContext(), null) // Pass null since we already signed out
+                    // Perform app sign out using application context
+                    // This prevents the fragment context error
+                    authViewModel.logout(appContext, null)
+                    Log.d("ProfileFragment", "Completed Google Sign-Out")
                 }
             }
+        } catch (e: Exception) {
+            Log.e("ProfileFragment", "Error during logout", e)
         }
+    }
+    
+    override fun onDetach() {
+        super.onDetach()
+        // Clear the weak reference when fragment detaches
+        weakContext = null
     }
 } 

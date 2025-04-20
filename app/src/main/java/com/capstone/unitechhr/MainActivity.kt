@@ -53,6 +53,12 @@ class MainActivity : AppCompatActivity() {
         // Check login status first before setting up UI
         val isLoggedOut = checkInitialLoginState()
         Log.d(TAG, "Is logged out on startup: $isLoggedOut")
+        
+        // If the user is logged in, load their profile data
+        if (!isLoggedOut) {
+            authViewModel.loadCurrentUser(this)
+            Log.d(TAG, "Loading user profile on startup")
+        }
 
         // Set up the toolbar
         val toolbar: Toolbar = findViewById(R.id.toolbar)
