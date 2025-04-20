@@ -41,10 +41,6 @@ class JobDetailFragment : Fragment() {
         
         // Initialize views
         val jobTitleTextView = view.findViewById<TextView>(R.id.jobTitle)
-        val postedDateTextView = view.findViewById<TextView>(R.id.postedDate)
-        val universityNameTextView = view.findViewById<TextView>(R.id.universityName)
-        val companyNameTextView = view.findViewById<TextView>(R.id.companyName)
-        val locationTextView = view.findViewById<TextView>(R.id.location)
         
         // Job details views
         val summaryTextView = view.findViewById<TextView>(R.id.summaryText)
@@ -103,25 +99,6 @@ class JobDetailFragment : Fragment() {
                 // Populate views with job data
                 jobTitleTextView.text = job.title
                 
-                // Format and display posted date
-                postedDateTextView.text = "Posted on: ${dateFormatter.format(job.postedDate)}"
-                
-                // Show university name if available
-                if (job.universityName.isNotEmpty()) {
-                    universityNameTextView.text = job.universityName
-                    universityNameTextView.visibility = View.VISIBLE
-                } else {
-                    universityNameTextView.visibility = View.GONE
-                }
-                
-                // Set department as company name with fallback
-                companyNameTextView.text = job.department?.takeIf { it.isNotEmpty() } 
-                    ?: job.company.takeIf { it.isNotEmpty() }
-                    ?: "University Department"
-                
-                // Set location with work setup info if applicable
-                locationTextView.text = job.location.takeIf { it.isNotEmpty() } ?: job.workSetup
-                
                 // Set summary
                 summaryTextView.text = job.summary ?: job.description.takeIf { it.isNotEmpty() } ?: "No summary provided"
                 
@@ -173,11 +150,19 @@ class JobDetailFragment : Fragment() {
                     requestWindowFeature(Window.FEATURE_NO_TITLE)
                     setContentView(R.layout.dialog_job_info)
                     
-                    // Set dialog size
-                    window?.setLayout(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.WRAP_CONTENT
-                    )
+                    // Set dialog size and style
+                    window?.apply {
+                        setLayout(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT
+                        )
+                        
+                        // Add rounded corners to the dialog window
+                        setBackgroundDrawableResource(android.R.color.transparent)
+                        decorView.background = resources.getDrawable(
+                            R.drawable.dialog_rounded_background, context.theme
+                        )
+                    }
                     
                     // Set up close button
                     findViewById<ImageView>(R.id.closeButton)?.setOnClickListener {
@@ -185,17 +170,35 @@ class JobDetailFragment : Fragment() {
                     }
                     
                     // Populate dialog with job information
+                    // Posted date
+                    findViewById<TextView>(R.id.postedDateValueText)?.text = 
+                        dateFormatter.format(job.postedDate)
+                    
+                    // University
+                    findViewById<TextView>(R.id.universityValueText)?.text = 
+                        job.universityName.takeIf { it.isNotEmpty() } ?: "Not specified"
+                    
+                    // Department
+                    findViewById<TextView>(R.id.departmentValueText)?.text = 
+                        job.department?.takeIf { it.isNotEmpty() } 
+                        ?: job.company.takeIf { it.isNotEmpty() }
+                        ?: "Not specified"
+                    
+                    // Salary
                     findViewById<TextView>(R.id.salaryValueText)?.text = 
                         job.salary?.takeIf { it.isNotEmpty() } ?: "Not specified"
                     
+                    // Status
                     findViewById<TextView>(R.id.statusValueText)?.text = 
                         job.status?.takeIf { it.isNotEmpty() } 
                         ?: job.jobType?.takeIf { it.isNotEmpty() } 
                         ?: "Not specified"
                     
+                    // Work Setup
                     findViewById<TextView>(R.id.workSetupValueText)?.text = 
                         job.workSetup?.takeIf { it.isNotEmpty() } ?: "Not specified"
                     
+                    // Available Slots
                     findViewById<TextView>(R.id.availableSlotsValueText)?.text = 
                         job.availableSlots?.toString() ?: "Not specified"
                     
