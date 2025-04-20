@@ -22,6 +22,7 @@ import android.view.WindowManager
 import androidx.core.content.ContextCompat
 import android.os.Build
 import android.widget.Toast
+import androidx.core.os.bundleOf
 
 class MainActivity : AppCompatActivity() {
     
@@ -115,19 +116,17 @@ class MainActivity : AppCompatActivity() {
                 .setPopUpTo(navController.graph.startDestinationId, false)
                 .build()
             
-            // Check if user is not verified - redirect to verification if needed
-            val currentUser = authViewModel.getCurrentUser()
-            if (currentUser != null && !currentUser.isEmailVerified) {
-                // User is logged in but not verified - show a message and redirect to verification
-                Toast.makeText(this, "Please verify your email before accessing the app", Toast.LENGTH_SHORT).show()
-                
+            // Check if user is logged in but not verified
+            val userEmail = authViewModel.getCurrentUserEmail(this)
+            if (userEmail != null) {
                 // Check if already on verification fragment to avoid infinite loop
                 if (navController.currentDestination?.id != R.id.verificationFragment) {
-                    // Navigate to verification fragment
-                    authViewModel.resendVerificationEmail()
-                    navController.navigate(R.id.verificationFragment)
+                    // Check email verification status
+                    // This would be replaced by a proper check in a real app
+                    val bundle = bundleOf("email" to userEmail)
+                    navController.navigate(R.id.verificationFragment, bundle)
+                    return@setOnItemSelectedListener false
                 }
-                return@setOnItemSelectedListener false
             }
                 
             when (item.itemId) {

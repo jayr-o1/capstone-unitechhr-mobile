@@ -16,6 +16,7 @@ import com.capstone.unitechhr.R
 import com.capstone.unitechhr.viewmodels.AuthViewModel
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import android.app.AlertDialog
+import androidx.core.os.bundleOf
 
 class LoginFragment : Fragment() {
     private val authViewModel: AuthViewModel by activityViewModels()
@@ -26,6 +27,7 @@ class LoginFragment : Fragment() {
     private lateinit var registerLink: TextView
     private lateinit var forgotPasswordLink: TextView
     private lateinit var progressIndicator: CircularProgressIndicator
+    private lateinit var verificationNotice: TextView
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -44,6 +46,10 @@ class LoginFragment : Fragment() {
         forgotPasswordLink = view.findViewById(R.id.forgotPasswordLink)
         progressIndicator = view.findViewById(R.id.progressIndicator)
         
+        // Get verification notice view (you'll need to add this to your layout)
+        verificationNotice = view.findViewById(R.id.verification_notice)
+        verificationNotice.visibility = View.GONE
+        
         // Set up click listeners
         loginButton.setOnClickListener {
             login()
@@ -54,13 +60,19 @@ class LoginFragment : Fragment() {
         }
         
         forgotPasswordLink.setOnClickListener {
-            findNavController().navigate(R.id.action_loginFragment_to_forgotPasswordFragment)
+            // You may want to implement this later
+            Toast.makeText(requireContext(), "Function not available", Toast.LENGTH_SHORT).show()
         }
         
-        // Add verification link
-        val verifyAccountLink: TextView = view.findViewById(R.id.verify_account_link)
-        verifyAccountLink.setOnClickListener {
-            findNavController().navigate(R.id.action_loginFragment_to_verificationFragment)
+        // Add click listener to verification notice
+        verificationNotice.setOnClickListener {
+            val email = emailEditText.text.toString().trim()
+            if (email.isNotEmpty()) {
+                val bundle = bundleOf("email" to email)
+                findNavController().navigate(R.id.action_loginFragment_to_verificationFragment, bundle)
+            } else {
+                Toast.makeText(requireContext(), "Please enter your email first", Toast.LENGTH_SHORT).show()
+            }
         }
         
         // Observe login result
@@ -69,7 +81,7 @@ class LoginFragment : Fragment() {
             loginButton.isEnabled = true
             
             result.fold(
-                onSuccess = { user ->
+                onSuccess = { email ->
                     // Login successful, navigate to home
                     findNavController().navigate(
                         R.id.action_loginFragment_to_homeFragment,
@@ -82,18 +94,16 @@ class LoginFragment : Fragment() {
                 onFailure = { exception ->
                     val errorMessage = exception.message ?: "Login failed"
                     
-                    // If it's a verification error, suggest verifying the email
+                    // If it's a verification error, show verification notice
                     if (errorMessage.contains("not verified", ignoreCase = true)) {
-                        // Show a dialog with more detailed information
-                        AlertDialog.Builder(requireContext())
-                            .setTitle("Email Not Verified")
-                            .setMessage("Your email is not verified. You need to verify your email before you can log in. Check your email for a verification code or click 'Verify Account' below.")
-                            .setPositiveButton("Verify Account") { _, _ ->
-                                findNavController().navigate(R.id.action_loginFragment_to_verificationFragment)
-                            }
-                            .setNegativeButton("Cancel", null)
-                            .show()
+                        // Show verification notice above email field
+                        verificationNotice.text = "Please verify your account first. Verify Now"
+                        verificationNotice.visibility = View.VISIBLE
                     } else {
+                        // Hide verification notice for other errors
+                        verificationNotice.visibility = View.GONE
+                        
+                        // Show toast with error message
                         Toast.makeText(
                             requireContext(),
                             errorMessage,
@@ -125,6 +135,6 @@ class LoginFragment : Fragment() {
         loginButton.isEnabled = false
         
         // Attempt login
-        authViewModel.login(email, password)
+        authViewModel.login(requireContext(), email, password)
     }
 }

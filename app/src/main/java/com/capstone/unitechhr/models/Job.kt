@@ -12,5 +12,7 @@ data class Job(
     val description: String = "",
     val requirements: String = "",
     val postedDate: Date = Date(),
-    val isFavorite: Boolean = false
+    val isFavorite: Boolean = false,
+    val universityId: String = "",
+    val universityName: String = ""
 ) 

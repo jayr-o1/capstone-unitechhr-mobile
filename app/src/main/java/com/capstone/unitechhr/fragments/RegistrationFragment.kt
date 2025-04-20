@@ -16,7 +16,7 @@ import com.capstone.unitechhr.R
 import com.capstone.unitechhr.viewmodels.AuthViewModel
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import java.util.regex.Pattern
-import android.app.AlertDialog
+import androidx.core.os.bundleOf
 
 class RegistrationFragment : Fragment() {
     private val authViewModel: AuthViewModel by activityViewModels()
@@ -64,20 +64,20 @@ class RegistrationFragment : Fragment() {
             registerButton.isEnabled = true
             
             result.fold(
-                onSuccess = {
-                    // Show detailed success message
-                    val message = "Registration successful!\n\nWe've sent a verification link to your email. Please check your inbox (including spam folder) and click the link to verify your account."
+                onSuccess = { email ->
+                    // Show success message
+                    Toast.makeText(
+                        requireContext(),
+                        "Registration successful! Please verify your account.",
+                        Toast.LENGTH_LONG
+                    ).show()
                     
-                    // Create a dialog for better visibility
-                    AlertDialog.Builder(requireContext())
-                        .setTitle("Registration Complete")
-                        .setMessage(message)
-                        .setPositiveButton("Go to Verification") { _, _ ->
-                            // Navigate to verification screen instead of login
-                            findNavController().navigate(R.id.action_registrationFragment_to_verificationFragment)
-                        }
-                        .setCancelable(false)
-                        .show()
+                    // Navigate to verification screen with the email
+                    val bundle = bundleOf("email" to email)
+                    findNavController().navigate(
+                        R.id.action_registrationFragment_to_verificationFragment, 
+                        bundle
+                    )
                 },
                 onFailure = { exception ->
                     // Show error message

@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.capstone.unitechhr.models.Job
+import com.capstone.unitechhr.models.University
 import com.capstone.unitechhr.repositories.JobRepository
 import kotlinx.coroutines.launch
 
@@ -16,6 +17,9 @@ class JobViewModel : ViewModel() {
     
     private val _selectedJob = MutableLiveData<Job?>()
     val selectedJob: LiveData<Job?> = _selectedJob
+    
+    private val _selectedUniversityId = MutableLiveData<String>()
+    val selectedUniversityId: LiveData<String> = _selectedUniversityId
     
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
@@ -31,7 +35,12 @@ class JobViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val jobsList = repository.getJobs()
+                val selectedUniId = _selectedUniversityId.value
+                val jobsList = if (selectedUniId.isNullOrEmpty()) {
+                    repository.getJobs()
+                } else {
+                    repository.getJobsByUniversity(selectedUniId)
+                }
                 _jobs.value = jobsList
                 _errorMessage.value = null
             } catch (e: Exception) {
@@ -40,6 +49,18 @@ class JobViewModel : ViewModel() {
                 _isLoading.value = false
             }
         }
+    }
+    
+    fun setSelectedUniversity(universityId: String) {
+        if (_selectedUniversityId.value != universityId) {
+            _selectedUniversityId.value = universityId
+            loadJobs()
+        }
+    }
+    
+    fun clearUniversityFilter() {
+        _selectedUniversityId.value = ""
+        loadJobs()
     }
     
     fun getJobById(id: String) {
@@ -61,7 +82,12 @@ class JobViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val searchResults = repository.searchJobs(query)
+                val selectedUniId = _selectedUniversityId.value
+                val searchResults = if (selectedUniId.isNullOrEmpty()) {
+                    repository.searchJobs(query)
+                } else {
+                    repository.searchJobsByUniversity(query, selectedUniId)
+                }
                 _jobs.value = searchResults
                 _errorMessage.value = null
             } catch (e: Exception) {
