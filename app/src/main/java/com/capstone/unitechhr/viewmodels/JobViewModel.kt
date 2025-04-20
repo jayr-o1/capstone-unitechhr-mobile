@@ -43,8 +43,14 @@ class JobViewModel : ViewModel() {
                 } else {
                     repository.getJobsByUniversity(selectedUniId)
                 }
-                _jobs.value = jobsList
-                Log.d(TAG, "Loaded ${jobsList.size} jobs")
+                
+                // Filter out jobs with "Closed" status
+                val openJobs = jobsList.filter { job ->
+                    job.status?.equals("Closed", ignoreCase = true) != true
+                }
+                
+                _jobs.value = openJobs
+                Log.d(TAG, "Loaded ${openJobs.size} open jobs out of ${jobsList.size} total jobs")
                 _errorMessage.value = null
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load jobs: ${e.message}", e)
@@ -93,18 +99,19 @@ class JobViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val selectedUniId = _selectedUniversityId.value
-                val searchResults = if (selectedUniId.isNullOrEmpty()) {
-                    repository.searchJobs(query)
-                } else {
-                    repository.searchJobsByUniversity(query, selectedUniId)
+                val searchResults = repository.searchJobs(query)
+                
+                // Filter out jobs with "Closed" status
+                val openJobs = searchResults.filter { job ->
+                    job.status?.equals("Closed", ignoreCase = true) != true
                 }
-                _jobs.value = searchResults
-                Log.d(TAG, "Search found ${searchResults.size} results for query: $query")
+                
+                _jobs.value = openJobs
+                Log.d(TAG, "Search found ${openJobs.size} open jobs out of ${searchResults.size} total jobs matching '$query'")
                 _errorMessage.value = null
             } catch (e: Exception) {
-                Log.e(TAG, "Search failed: ${e.message}", e)
-                _errorMessage.value = "Search failed: ${e.message}"
+                Log.e(TAG, "Failed to search jobs: ${e.message}", e)
+                _errorMessage.value = "Failed to search jobs: ${e.message}"
             } finally {
                 _isLoading.value = false
             }

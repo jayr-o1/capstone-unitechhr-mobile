@@ -49,6 +49,14 @@ class MyApplicationsFragment : Fragment() {
         // Change the title
         titleText.text = "My Applications"
         
+        // Hide the search view
+        view.findViewById<View>(R.id.search_view)?.visibility = View.GONE
+        
+        // Update RecyclerView constraints to attach to title instead of search view
+        recyclerView.layoutParams = (recyclerView.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams).apply {
+            topToBottom = R.id.title
+        }
+        
         // Find and update empty state texts
         val emptyTitle = noDataView.findViewById<TextView>(R.id.empty_title)
         val emptyDescription = noDataView.findViewById<TextView>(R.id.empty_description)
