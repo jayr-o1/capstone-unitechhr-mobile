@@ -16,7 +16,9 @@ import kotlinx.coroutines.launch
 
 data class UserData(
     val email: String,
-    val displayName: String
+    val displayName: String,
+    val resumeUrl: String? = null,
+    val hasResume: Boolean = false
 )
 
 class AuthViewModel : ViewModel() {
@@ -92,12 +94,16 @@ class AuthViewModel : ViewModel() {
                 val displayName = sharedPreferences.getString("current_user_name", null)
                     ?: email.substringBefore("@") // Fallback to email username if no name stored
                 
+                // Try to get resumeUrl from SharedPreferences
+                val resumeUrl = sharedPreferences.getString("resume_url", null)
+                val hasResume = !resumeUrl.isNullOrEmpty()
+                
                 // Update the current user value and email
-                val userData = UserData(email, displayName)
+                val userData = UserData(email, displayName, resumeUrl, hasResume)
                 _currentUser.value = userData
                 _currentUserEmail.value = email
                 
-                Log.d("AuthViewModel", "Successfully loaded user: $displayName ($email)")
+                Log.d("AuthViewModel", "Successfully loaded user: $displayName ($email), resume: ${if (hasResume) "Yes" else "No"}")
                 
                 // If we somehow didn't have the name stored properly, update it
                 if (!sharedPreferences.contains("current_user_name")) {
@@ -220,6 +226,42 @@ class AuthViewModel : ViewModel() {
             Log.d("AuthViewModel", "Logout process completed, is_logged_out flag is set to true")
         } catch (e: Exception) {
             Log.e("AuthViewModel", "Error during logout", e)
+        }
+    }
+    
+    /**
+     * Update the current user's resume information in SharedPreferences and Firestore
+     */
+    fun updateUserResume(context: Context, resumeUrl: String?) {
+        viewModelScope.launch {
+            try {
+                // Update SharedPreferences
+                val sharedPreferences = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+                sharedPreferences.edit()
+                    .putString("resume_url", resumeUrl)
+                    .apply()
+                
+                // Get current user email
+                val email = getCurrentUserEmail(context)
+                
+                // Update Firestore document if we have an email
+                if (email != null) {
+                    authRepository.updateUserResumeInFirestore(email, resumeUrl)
+                    
+                    // Update current user data in view model
+                    val currentUserData = _currentUser.value
+                    if (currentUserData != null) {
+                        _currentUser.value = currentUserData.copy(
+                            resumeUrl = resumeUrl,
+                            hasResume = !resumeUrl.isNullOrEmpty()
+                        )
+                    }
+                    
+                    Log.d("AuthViewModel", "Updated user resume: $resumeUrl")
+                }
+            } catch (e: Exception) {
+                Log.e("AuthViewModel", "Error updating user resume", e)
+            }
         }
     }
 } 

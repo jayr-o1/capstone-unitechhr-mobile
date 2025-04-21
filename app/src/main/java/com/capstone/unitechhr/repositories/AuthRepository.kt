@@ -137,4 +137,24 @@ class AuthRepository {
         // Replace invalid characters with dash
         return email.replace("@", "-").replace(".", "-")
     }
+    
+    /**
+     * Update user's resume URL in Firestore
+     */
+    suspend fun updateUserResumeInFirestore(email: String, resumeUrl: String?): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val emailSlug = emailToCollectionId(email)
+            
+            // Update the Firestore document
+            applicantsCollection.document(emailSlug)
+                .update("resumeUrl", resumeUrl)
+                .await()
+            
+            Log.d("AuthRepository", "Resume URL updated for user: $email")
+            return@withContext true
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Error updating resume URL", e)
+            return@withContext false
+        }
+    }
 } 

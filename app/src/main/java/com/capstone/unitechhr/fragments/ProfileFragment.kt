@@ -68,6 +68,11 @@ class ProfileFragment : Fragment() {
             nameTextView.text = userData?.displayName ?: "User"
         }
         
+        // Set up resume section click listener
+        view.findViewById<View>(R.id.resumeSection).setOnClickListener {
+            findNavController().navigate(R.id.action_profileFragment_to_resumeUploadFragment)
+        }
+        
         // Set up logout button
         logoutButton.setOnClickListener {
             logout()

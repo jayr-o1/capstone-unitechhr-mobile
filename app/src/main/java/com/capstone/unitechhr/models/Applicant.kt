@@ -13,11 +13,11 @@ data class Applicant(
     val applicationDate: Date = Date(),
     val status: ApplicationStatus = ApplicationStatus.PENDING,
     val skills: List<String> = emptyList(),
-    val education: List<Education> = emptyList(),
+    val education: List<ApplicantEducation> = emptyList(),
     val experience: List<WorkExperience> = emptyList()
 )
 
-data class Education(
+data class ApplicantEducation(
     val institution: String = "",
     val degree: String = "",
     val fieldOfStudy: String = "",

@@ -63,6 +63,9 @@
         <action
             android:id="@+id/action_jobDetailFragment_to_applicationFormFragment"
             app:destination="@id/applicationFormFragment" />
+        <action
+            android:id="@+id/action_jobDetailFragment_to_resumeUploadFragment"
+            app:destination="@id/resumeUploadFragment" />
     </fragment>
     
     <!-- Applicant Tracking -->
@@ -176,7 +179,17 @@
         android:id="@+id/profileFragment"
         android:name="com.capstone.unitechhr.fragments.ProfileFragment"
         android:label="Profile"
-        tools:layout="@layout/fragment_profile" />
+        tools:layout="@layout/fragment_profile">
+        <action
+            android:id="@+id/action_profileFragment_to_resumeUploadFragment"
+            app:destination="@id/resumeUploadFragment" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/resumeUploadFragment"
+        android:name="com.capstone.unitechhr.fragments.ResumeUploadFragment"
+        android:label="Upload Resume"
+        tools:layout="@layout/fragment_resume_upload" />
     
     <fragment
         android:id="@+id/applicationFormFragment"
