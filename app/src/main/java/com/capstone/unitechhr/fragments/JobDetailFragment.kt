@@ -85,6 +85,12 @@ class JobDetailFragment : Fragment() {
             applyForJob()
         }
         
+        // Add long press listener for API connection testing (debug feature)
+        applyButton.setOnLongClickListener {
+            testApiConnection()
+            true
+        }
+        
         // Observe selected job
         viewModel.selectedJob.observe(viewLifecycleOwner) { job ->
             Log.d(TAG, "Job observer triggered: ${job != null}")
@@ -402,6 +408,12 @@ class JobDetailFragment : Fragment() {
     
     private fun showApplicationResultDialog(analysis: ApplicationAnalysis) {
         try {
+            // Log the raw analysis data for debugging
+            Log.d(TAG, "Raw analysis data - Match %: ${analysis.matchPercentage}, Recommendation: ${analysis.recommendation}")
+            Log.d(TAG, "Skills match - matched: ${analysis.skillsMatch.matchedSkills}, missing: ${analysis.skillsMatch.missingSkills}")
+            Log.d(TAG, "Experience - applicant: ${analysis.experience.applicantYears}, required: ${analysis.experience.requiredYears}")
+            Log.d(TAG, "Education - applicant: ${analysis.education.applicantEducation}, required: ${analysis.education.requirement}")
+            
             context?.let { ctx ->
                 applicationResultDialog = Dialog(ctx).apply {
                     requestWindowFeature(Window.FEATURE_NO_TITLE)
@@ -428,64 +440,97 @@ class JobDetailFragment : Fragment() {
                         dismiss()
                     }
                     
-                    // Populate dialog with analysis results
-                    findViewById<TextView>(R.id.matchPercentageText)?.text = "${analysis.matchPercentage}% Match"
-                    findViewById<TextView>(R.id.recommendationText)?.text = analysis.recommendation
+                    // Format and populate the match percentage
+                    val matchPercentage = analysis.matchPercentage.trim()
+                    Log.d(TAG, "Formatting match percentage: '$matchPercentage'")
+                    
+                    val formattedMatchText = when {
+                        matchPercentage.isEmpty() -> "0% Match"
+                        matchPercentage.endsWith("%") -> "$matchPercentage Match" 
+                        else -> "${matchPercentage}% Match"
+                    }
+                    Log.d(TAG, "Final formatted match text: '$formattedMatchText'")
+                    findViewById<TextView>(R.id.matchPercentageText)?.text = formattedMatchText
+                    
+                    // Set recommendation with proper capitalization
+                    val recommendation = try {
+                        if (analysis.recommendation.isNullOrEmpty()) {
+                            "Reject" // Default to reject if empty
+                        } else {
+                            analysis.recommendation.replaceFirstChar { 
+                                if (it.isLowerCase()) it.titlecase(Locale.getDefault()) 
+                                else it.toString() 
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error formatting recommendation: ${e.message}", e)
+                        "Reject" 
+                    }
+                    findViewById<TextView>(R.id.recommendationText)?.text = recommendation
                     
                     // Skills match
                     findViewById<TextView>(R.id.skillsMatchText)?.text = try {
-                        val skillsMatch = analysis.skillsMatch ?: SkillsMatch()
-                        val matchRatio = try {
-                            val ratioValue = skillsMatch.matchRatio
-                            if (ratioValue != null && ratioValue.isNotEmpty()) ratioValue else "0"
-                        } catch (e: Exception) {
-                            "0"
+                        val matchedSkills = analysis.skillsMatch.matchedSkills ?: emptyList()
+                        val missingSkills = analysis.skillsMatch.missingSkills ?: emptyList()
+                        
+                        if (matchedSkills.isEmpty() && missingSkills.isEmpty()) {
+                            "Skills information not available"
+                        } else {
+                            val matchedCount = matchedSkills.size
+                            val totalSkills = matchedCount + missingSkills.size
+                            if (totalSkills > 0) {
+                                "$matchedCount/$totalSkills skills matched"
+                            } else {
+                                "Skills information not available"
+                            }
                         }
-                        "$matchRatio skills matched"
                     } catch (e: Exception) {
                         Log.e(TAG, "Error setting skills match text: ${e.message}", e)
-                        "Skills requirement met"
+                        "Skills information not available"
                     }
                     
                     // Experience
                     findViewById<TextView>(R.id.experienceText)?.text = try {
-                        val experience = analysis.experience ?: Experience()
-                        val applicantYears = try { 
-                            val yearsValue = experience.applicantYears
-                            if (yearsValue != null && yearsValue.isNotEmpty()) yearsValue else "0" 
-                        } catch (e: Exception) { 
-                            "0" 
+                        val experience = analysis.experience
+                        
+                        val applicantYears = experience.applicantYears.takeIf { 
+                            !it.isNullOrEmpty() && it != "Not specified" 
+                        } ?: "Unknown"
+                        
+                        val requiredYears = experience.requiredYears.takeIf { 
+                            !it.isNullOrEmpty() && it != "Not specified" 
+                        } ?: "Not specified"
+                        
+                        if (applicantYears == "Unknown" && requiredYears == "Not specified") {
+                            "Experience information not available"
+                        } else {
+                            "$applicantYears years experience ($requiredYears required)"
                         }
-                        val requiredYears = try { 
-                            val reqYearsValue = experience.requiredYears
-                            if (reqYearsValue != null && reqYearsValue.isNotEmpty()) reqYearsValue else "0" 
-                        } catch (e: Exception) { 
-                            "0" 
-                        }
-                        "$applicantYears years experience ($requiredYears required)"
                     } catch (e: Exception) {
                         Log.e(TAG, "Error setting experience text: ${e.message}", e)
-                        // Fallback if property access causes problems
-                        "Experience requirement met"
+                        "Experience information not available"
                     }
                     
                     // Education
                     findViewById<TextView>(R.id.educationText)?.text = try {
-                        val educationData = analysis.education ?: AnalysisEducation()
-                        if (educationData != null) {
-                            val applicantEdu = try { educationData.applicantEducation } catch (e: Exception) { null }
-                            val requirement = try { educationData.requirement } catch (e: Exception) { null }
-                            
-                            val applicantEduDisplay = if (!applicantEdu.isNullOrEmpty()) applicantEdu else "Not specified"
-                            val requirementDisplay = if (!requirement.isNullOrEmpty()) requirement else "Not specified"
-                            
-                            "$applicantEduDisplay ($requirementDisplay required)"
+                        val educationData = analysis.education
+                        
+                        val applicantEdu = educationData.applicantEducation.takeIf { 
+                            !it.isNullOrEmpty() 
+                        } ?: "Not specified"
+                        
+                        val requirement = educationData.requirement.takeIf { 
+                            !it.isNullOrEmpty() 
+                        } ?: "Not specified"
+                        
+                        if (applicantEdu == "Not specified" && requirement == "Not specified") {
+                            "Not specified (Not specified required)"
                         } else {
-                            "Education details not available"
+                            "$applicantEdu ($requirement required)"
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Error setting education text: ${e.message}", e)
-                        "Education requirement met"
+                        "Education information not available"
                     }
                     
                     // Improvement suggestions
@@ -494,24 +539,23 @@ class JobDetailFragment : Fragment() {
                     
                     // Salary estimate
                     findViewById<TextView>(R.id.salaryEstimateText)?.text = try {
-                        val salaryEstimate = analysis.salaryEstimate ?: SalaryEstimate()
-                        val min = try {
-                            salaryEstimate.min
-                        } catch (e: Exception) {
-                            0
+                        val salaryEstimate = analysis.salaryEstimate
+                        
+                        if (salaryEstimate != null) {
+                            val min = salaryEstimate.min.takeIf { it > 0 } ?: 0
+                            val max = salaryEstimate.max.takeIf { it > 0 } ?: 0
+                            val currency = salaryEstimate.currency.takeIf { 
+                                !it.isNullOrEmpty() 
+                            } ?: "USD"
+                            
+                            if (min > 0 || max > 0) {
+                                "$${min.toFormattedString()} - $${max.toFormattedString()} $currency"
+                            } else {
+                                "Salary information not available"
+                            }
+                        } else {
+                            "Salary information not available"
                         }
-                        val max = try {
-                            salaryEstimate.max
-                        } catch (e: Exception) {
-                            0
-                        }
-                        val currency = try {
-                            val currencyValue = salaryEstimate.currency
-                            if (currencyValue != null && currencyValue.isNotEmpty()) currencyValue else "USD"
-                        } catch (e: Exception) {
-                            "USD"
-                        }
-                        "$${min.toFormattedString()} - $${max.toFormattedString()} $currency"
                     } catch (e: Exception) {
                         Log.e(TAG, "Error setting salary estimate text: ${e.message}", e)
                         "Salary information not available"
@@ -527,38 +571,86 @@ class JobDetailFragment : Fragment() {
             // Fallback to simple toast
             Toast.makeText(
                 context,
-                "Application Result: ${analysis.recommendation} (${analysis.matchPercentage}% match)",
+                "Application Result: ${analysis.recommendation} (${analysis.matchPercentage} match)",
                 Toast.LENGTH_LONG
             ).show()
         }
     }
     
     private fun buildSuggestionsList(analysis: ApplicationAnalysis): String {
-        val suggestionsList = mutableListOf<String>()
-        
-        // Add skills suggestions
-        suggestionsList.addAll(analysis.improvementSuggestions.skills)
-        
-        // Add experience suggestions
-        suggestionsList.addAll(analysis.improvementSuggestions.experience)
-        
-        // Add education suggestions
-        suggestionsList.addAll(analysis.improvementSuggestions.education)
-        
-        // Add general suggestions
-        suggestionsList.addAll(analysis.improvementSuggestions.general)
-        
-        // Format the list with bullet points
-        return if (suggestionsList.isNotEmpty()) {
-            suggestionsList.joinToString("\n") { "• $it" }
-        } else {
-            "No specific improvements needed"
+        try {
+            val suggestionsList = mutableListOf<String>()
+            
+            // Get improvementSuggestions safely
+            val suggestions = analysis.improvementSuggestions
+            if (suggestions != null) {
+                // Add skills suggestions
+                suggestions.skills?.let { suggestionsList.addAll(it) }
+                
+                // Add experience suggestions
+                suggestions.experience?.let { suggestionsList.addAll(it) }
+                
+                // Add education suggestions
+                suggestions.education?.let { suggestionsList.addAll(it) }
+                
+                // Add general suggestions
+                suggestions.general?.let { suggestionsList.addAll(it) }
+            }
+            
+            // Format the list with bullet points
+            return if (suggestionsList.isNotEmpty()) {
+                suggestionsList.joinToString("\n") { "• $it" }
+            } else {
+                "No specific improvements needed"
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error building suggestions list: ${e.message}", e)
+            return "No specific improvements needed"
         }
     }
     
     // Extension function to format numbers with commas
     private fun Int.toFormattedString(): String {
         return String.format(Locale.US, "%,d", this)
+    }
+    
+    private fun testApiConnection() {
+        lifecycleScope.launch {
+            try {
+                // Show loading indicator
+                val loadingDialog = AlertDialog.Builder(requireContext())
+                    .setTitle("Testing API Connection")
+                    .setMessage("Please wait while we check the connection to the API server...")
+                    .setCancelable(false)
+                    .create()
+                loadingDialog.show()
+                
+                // Test the connection
+                val result = withContext(Dispatchers.IO) {
+                    applicationRepository.testApiConnection()
+                }
+                
+                // Dismiss loading dialog
+                loadingDialog.dismiss()
+                
+                // Show result dialog
+                AlertDialog.Builder(requireContext())
+                    .setTitle("API Connection Test")
+                    .setMessage(result)
+                    .setPositiveButton("OK", null)
+                    .show()
+                
+            } catch (e: Exception) {
+                Log.e(TAG, "Error testing API connection: ${e.message}", e)
+                
+                // Show error dialog
+                AlertDialog.Builder(requireContext())
+                    .setTitle("Connection Test Error")
+                    .setMessage("Failed to run connection test: ${e.message}")
+                    .setPositiveButton("OK", null)
+                    .show()
+            }
+        }
     }
     
     override fun onResume() {

@@ -34,31 +34,31 @@ data class ApplicationAnalysis(
     
     @get:PropertyName("certifications")
     @set:PropertyName("certifications")
-    var certifications: Certifications = Certifications(),
+    var certifications: Certifications? = Certifications(),
     
     @get:PropertyName("keywords")
     @set:PropertyName("keywords")
-    var keywords: Keywords = Keywords(),
+    var keywords: Keywords? = Keywords(),
     
     @get:PropertyName("industry")
     @set:PropertyName("industry")
-    var industry: Industry = Industry(),
+    var industry: Industry? = Industry(),
     
     @get:PropertyName("benchmark")
     @set:PropertyName("benchmark")
-    var benchmark: Benchmark = Benchmark(),
+    var benchmark: Benchmark? = Benchmark(),
     
     @get:PropertyName("improvement_suggestions")
     @set:PropertyName("improvement_suggestions")
-    var improvementSuggestions: ImprovementSuggestions = ImprovementSuggestions(),
+    var improvementSuggestions: ImprovementSuggestions? = ImprovementSuggestions(),
     
     @get:PropertyName("confidence_scores")
     @set:PropertyName("confidence_scores")
-    var confidenceScores: ConfidenceScores = ConfidenceScores(),
+    var confidenceScores: ConfidenceScores? = ConfidenceScores(),
     
     @get:PropertyName("salary_estimate")
     @set:PropertyName("salary_estimate")
-    var salaryEstimate: SalaryEstimate = SalaryEstimate()
+    var salaryEstimate: SalaryEstimate? = SalaryEstimate()
 )
 
 data class SkillsMatch(
