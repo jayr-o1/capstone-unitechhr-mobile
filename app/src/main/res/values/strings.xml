@@ -10,4 +10,5 @@
     6. Paste it below replacing the placeholder text
     -->
     <string name="web_client_id">1087281687437-vtms620hg66vtd88bko6gn7530kg7n06.apps.googleusercontent.com</string>
+    <string name="back">Back</string>
 </resources>

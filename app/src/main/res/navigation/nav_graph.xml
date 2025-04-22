@@ -66,6 +66,13 @@
         <action
             android:id="@+id/action_jobDetailFragment_to_resumeUploadFragment"
             app:destination="@id/resumeUploadFragment" />
+        <action
+            android:id="@+id/action_jobDetailFragment_to_scheduleInterviewFragment"
+            app:destination="@id/scheduleInterviewFragment"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
     </fragment>
     
     <!-- Applicant Tracking -->
@@ -109,7 +116,11 @@
             app:destination="@id/interviewDetailFragment" />
         <action
             android:id="@+id/action_interviewListFragment_to_scheduleInterviewFragment"
-            app:destination="@id/scheduleInterviewFragment" />
+            app:destination="@id/scheduleInterviewFragment"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
     </fragment>
     
     <fragment
@@ -126,7 +137,20 @@
         android:id="@+id/scheduleInterviewFragment"
         android:name="com.capstone.unitechhr.fragments.ScheduleInterviewFragment"
         android:label="Schedule Interview"
-        tools:layout="@layout/fragment_schedule_interview" />
+        tools:layout="@layout/fragment_schedule_interview">
+        <argument
+            android:name="applicantId"
+            android:defaultValue=""
+            app:argType="string" />
+        <argument
+            android:name="jobId"
+            android:defaultValue=""
+            app:argType="string" />
+        <argument
+            android:name="universityId"
+            android:defaultValue=""
+            app:argType="string" />
+    </fragment>
     
     <!-- Onboarding -->
     <fragment

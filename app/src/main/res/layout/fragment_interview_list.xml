@@ -138,7 +138,7 @@
                     android:layout_marginTop="8dp"
                     android:fontFamily="@font/urbanist"
                     android:gravity="center"
-                    android:text="You don't have any interviews scheduled.\nUse the + button to add a new interview."
+                    android:text="You don't have any interviews scheduled."
                     android:textColor="@android:color/darker_gray"
                     android:textSize="16sp" />
             </LinearLayout>
@@ -147,11 +147,11 @@
                 android:id="@+id/scheduleInterviewFab"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
                 android:layout_margin="16dp"
                 android:contentDescription="Schedule new interview"
-                android:src="@android:drawable/ic_input_add"
-                android:layout_gravity="bottom|end"
-                app:tint="@android:color/white" />
+                android:visibility="gone"
+                app:srcCompat="@drawable/ic_add" />
         </FrameLayout>
     </LinearLayout>
 </androidx.core.widget.NestedScrollView> 

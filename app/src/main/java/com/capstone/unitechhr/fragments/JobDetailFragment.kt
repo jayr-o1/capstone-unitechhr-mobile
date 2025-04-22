@@ -156,7 +156,9 @@ class JobDetailFragment : Fragment() {
                 
                 if (currentUser != null) {
                     // Check if there's an existing application for this job
-                    checkForExistingApplication(job.universityId, job.id, currentUser.email, applicationStatusTextView)
+                    lifecycleScope.launch {
+                        checkForExistingApplication(job.universityId, job.id, currentUser.email, applicationStatusTextView)
+                    }
                 } else {
                     // Show a placeholder for application status
                     applicationStatusTextView.text = "No application submitted yet"
@@ -765,10 +767,35 @@ class JobDetailFragment : Fragment() {
                 
                 // Update the UI
                 statusTextView.text = statusMessage.toString()
+                
+                // Add Schedule Interview button
+                val applyButton = view?.findViewById<MaterialButton>(R.id.applyButton)
+                applyButton?.let {
+                    it.text = "Schedule Interview"
+                    it.setOnClickListener {
+                        // Navigate to schedule interview fragment with applicant data
+                        val effectiveApplicantId = applicantDoc.id
+                        val bundle = Bundle().apply {
+                            putString("applicantId", effectiveApplicantId)
+                            putString("jobId", jobId)
+                            putString("universityId", universityId)
+                        }
+                        findNavController().navigate(R.id.action_jobDetailFragment_to_scheduleInterviewFragment, bundle)
+                    }
+                }
             } else {
                 // No application found with any of the attempted formats
                 Log.d(TAG, "No application found for user with any ID format")
                 statusTextView.text = "No application submitted yet"
+                
+                // Reset apply button to original state
+                val applyButton = view?.findViewById<MaterialButton>(R.id.applyButton)
+                applyButton?.let {
+                    it.text = "Apply Now"
+                    it.setOnClickListener {
+                        applyForJob()
+                    }
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error checking for existing application: ${e.message}", e)
