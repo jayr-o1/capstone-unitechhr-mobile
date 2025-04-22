@@ -28,6 +28,9 @@
         <action
             android:id="@+id/action_homeFragment_to_myApplicationsFragment"
             app:destination="@id/myApplicationsFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_employeeOnboardingFragment"
+            app:destination="@id/employeeOnboardingFragment" />
     </fragment>
 
     <!-- My Applications -->
@@ -164,6 +167,9 @@
         <action
             android:id="@+id/action_onboardingListFragment_to_createOnboardingFragment"
             app:destination="@id/createOnboardingFragment" />
+        <action
+            android:id="@+id/action_onboardingListFragment_to_employeeOnboardingFragment"
+            app:destination="@id/employeeOnboardingFragment" />
     </fragment>
     
     <fragment
@@ -174,6 +180,36 @@
         <action
             android:id="@+id/action_onboardingDetailFragment_to_addTaskFragment"
             app:destination="@id/addTaskFragment" />
+        <action
+            android:id="@+id/action_onboardingDetailFragment_to_employeeOnboardingFragment"
+            app:destination="@id/employeeOnboardingFragment" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/employeeOnboardingFragment"
+        android:name="com.capstone.unitechhr.fragments.EmployeeOnboardingFragment"
+        android:label="Employee Onboarding"
+        tools:layout="@layout/fragment_employee_onboarding">
+        <argument
+            android:name="employeeId"
+            app:argType="string"
+            android:defaultValue="" />
+        <argument
+            android:name="employeeName"
+            app:argType="string"
+            android:defaultValue="" />
+        <argument
+            android:name="employeePosition"
+            app:argType="string"
+            android:defaultValue="" />
+        <argument
+            android:name="collectionPath"
+            app:argType="string"
+            android:defaultValue="" />
+        <argument
+            android:name="startDate"
+            app:argType="string"
+            android:defaultValue="" />
     </fragment>
     
     <fragment

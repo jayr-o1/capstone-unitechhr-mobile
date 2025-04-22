@@ -16,6 +16,10 @@
     <color name="red">#F44336</color>
     <color name="light_gray">#DDDDDD</color>
     <color name="dark_gray">#555555</color>
+    
+    <!-- Text Colors -->
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
 
     <!-- Default color for light mode -->
     <color name="vector_fill">#000000</color>

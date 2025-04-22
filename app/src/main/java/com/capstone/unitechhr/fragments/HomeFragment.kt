@@ -18,7 +18,9 @@ import com.capstone.unitechhr.models.Notification
 import com.capstone.unitechhr.models.NotificationType
 import com.capstone.unitechhr.viewmodels.AuthViewModel
 import com.capstone.unitechhr.viewmodels.NotificationViewModel
+import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 
 class HomeFragment : Fragment() {
     
@@ -73,11 +75,41 @@ class HomeFragment : Fragment() {
             R.id.action_homeFragment_to_interviewListFragment
         )
         
-        setupOnboardingCard(
-            view.findViewById(R.id.onboardingCard),
-            "Complete your onboarding checklist",
-            R.id.action_homeFragment_to_onboardingListFragment
-        )
+        // Setup the onboarding card to navigate to the employee onboarding screen directly
+        val onboardingCard = view.findViewById<CardView>(R.id.onboardingCard)
+        onboardingCard.findViewById<TextView>(R.id.onboardingCardDescription).text = 
+            "Complete your onboarding checklist"
+        
+        onboardingCard.setOnClickListener {
+            // For employees, go directly to the onboarding checklist
+            val email = authViewModel.currentUser.value?.email ?: ""
+            // Sample user info
+            val employeeName = authViewModel.currentUser.value?.displayName ?: "Employee"
+            val position = "Marketing Manager"
+            
+            // Format the Firestore collection path correctly
+            // This path should point to the document containing the onboardingChecklist array
+            // The path must have an even number of segments (collection/document/collection/document)
+            val collectionPath = "universities/university_322305/jobs/bSpb3DxJCw6FbRKj58KT/applicants/jaycelosero-gmail-com"
+            
+            // Get current date
+            val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+            val currentDate = dateFormat.format(Date())
+            
+            // Log navigation information
+            Log.d("HomeFragment", "Navigating to onboarding screen with path: $collectionPath")
+            
+            // Navigate to the employee onboarding fragment
+            val bundle = Bundle().apply {
+                putString("employeeId", email)
+                putString("employeeName", employeeName)
+                putString("employeePosition", position)
+                putString("collectionPath", collectionPath)
+                putString("startDate", currentDate)
+            }
+            
+            findNavController().navigate(R.id.action_homeFragment_to_employeeOnboardingFragment, bundle)
+        }
         
         setupApplicationCard(
             view.findViewById(R.id.applicationsCard),
@@ -109,16 +141,6 @@ class HomeFragment : Fragment() {
     private fun setupInterviewCard(card: CardView, description: String, actionId: Int) {
         // Set description text
         card.findViewById<TextView>(R.id.interviewCardDescription).text = description
-        
-        // Set click listener
-        card.setOnClickListener {
-            safeNavigate(actionId)
-        }
-    }
-    
-    private fun setupOnboardingCard(card: CardView, description: String, actionId: Int) {
-        // Set description text
-        card.findViewById<TextView>(R.id.onboardingCardDescription).text = description
         
         // Set click listener
         card.setOnClickListener {
