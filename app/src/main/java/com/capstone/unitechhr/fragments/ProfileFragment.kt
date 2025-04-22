@@ -51,11 +51,6 @@ class ProfileFragment : Fragment() {
         emailTextView = view.findViewById(R.id.emailTextView)
         nameTextView = view.findViewById(R.id.nameTextView)
         
-        // Set up back button
-        view.findViewById<View>(R.id.backButton).setOnClickListener {
-            findNavController().navigateUp()
-        }
-        
         // Store context in weak reference for safety
         weakContext = WeakReference(requireContext())
         
