@@ -29,10 +29,39 @@ import com.capstone.unitechhr.models.SkillsMatch
 import com.google.gson.Gson
 import java.util.Date
 import java.util.UUID
+import com.capstone.unitechhr.models.Job
+import com.capstone.unitechhr.repositories.JobRepository
+import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.DocumentSnapshot
+import java.util.Locale
 
 class ApplicationRepository {
-    private val firestore = FirebaseFirestore.getInstance()
-    private val applicationRef = firestore.collection("applications")
+    private val TAG = "ApplicationRepository"
+    private val firestore: FirebaseFirestore
+    private val applicationRef: CollectionReference
+    private var jobRepositoryForTesting: JobRepository? = null
+    
+    // Primary constructor
+    constructor() {
+        firestore = FirebaseFirestore.getInstance()
+        applicationRef = firestore.collection("applications")
+    }
+    
+    // Secondary constructor for testing
+    constructor(firestoreInstance: FirebaseFirestore) {
+        firestore = firestoreInstance
+        applicationRef = firestore.collection("applications")
+    }
+    
+    // Method to set a mock JobRepository for testing
+    fun setJobRepositoryForTesting(repository: JobRepository) {
+        jobRepositoryForTesting = repository
+    }
+    
+    // Helper method for testing the saveAnalysisToFirestore method
+    internal suspend fun testSaveAnalysisToFirestore(analysis: ApplicationAnalysis): Boolean {
+        return saveAnalysisToFirestore(analysis)
+    }
     
     companion object {
         // API configuration options - modify these as needed
@@ -482,22 +511,334 @@ class ApplicationRepository {
      */
     private suspend fun saveAnalysisToFirestore(analysis: ApplicationAnalysis): Boolean = withContext(Dispatchers.IO) {
         try {
-            // Convert email to consistent collection ID format
-            val applicantId = analysis.userId.replace("@", "-").replace(".", "-")
-            
-            // Save analysis as a subcollection under the applicant's document
-            firestore.collection("applicants")
-                .document(applicantId)
-                .collection("analysis")
+            // Save to analyses collection
+            firestore.collection("analyses")
                 .document(analysis.id)
                 .set(analysis)
                 .await()
             
-            Log.d("ApplicationRepository", "Analysis saved to Firestore: ${analysis.id}")
+            // Check the match percentage and recommendation to determine appropriate status
+            val matchPercentageValue = analysis.matchPercentage.replace("%", "").toDoubleOrNull() ?: 0.0
+            val hasInterviewRecommendation = analysis.recommendation.contains("interview", ignoreCase = true) ||
+                                            analysis.recommendation.contains("hire", ignoreCase = true)
+            val hasHighMatchPercentage = matchPercentageValue >= 80.0
+            
+            Log.d(TAG, "Analysis check - recommendation: ${analysis.recommendation}, match: ${analysis.matchPercentage}")
+            Log.d(TAG, "Interview recommendation: $hasInterviewRecommendation, high match: $hasHighMatchPercentage, match percentage: $matchPercentageValue")
+            
+            // Determine the appropriate application status based on the analysis
+            val newStatus = when {
+                hasInterviewRecommendation || hasHighMatchPercentage -> ApplicationStatus.INTERVIEW
+                matchPercentageValue >= 60.0 -> ApplicationStatus.REVIEWING
+                else -> ApplicationStatus.PENDING
+            }
+            
+            // Update the application status in Firestore
+            updateApplicationStatus(analysis.userId, analysis.jobId, newStatus)
+            
+            // Copy applicant data to university's job applicants collection regardless of status
+            // For the copy to university jobs collection, always use PENDING initially
+            updateApplicationStatusAndCopyToUniversity(analysis, ApplicationStatus.PENDING)
+            
+            Log.d(TAG, "Successfully saved analysis: ${analysis.id} with status: $newStatus")
             return@withContext true
         } catch (e: Exception) {
-            Log.e("ApplicationRepository", "Error saving analysis to Firestore: ${e.message}")
+            Log.e(TAG, "Error saving analysis: ${e.message}")
             return@withContext false
+        }
+    }
+    
+    /**
+     * Updates application status to INTERVIEW and copies the applicant data to university's job subcollection
+     */
+    private suspend fun updateApplicationStatusAndCopyToUniversity(analysis: ApplicationAnalysis, newStatus: ApplicationStatus) = withContext(Dispatchers.IO) {
+        try {
+            // Format the user ID properly - handle both normal IDs and email IDs
+            val sanitizedUserId = analysis.userId.replace("@", "-").replace(".", "-")
+            
+            // First get the applicant data from the user id
+            val userSnapshot = firestore.collection("users")
+                .document(sanitizedUserId)
+                .get()
+                .await()
+            
+            if (!userSnapshot.exists()) {
+                Log.e(TAG, "User not found: ${analysis.userId} (sanitized: $sanitizedUserId)")
+                
+                // Try alternative lookup methods if direct ID fails
+                val altUserSnapshot = findUserByEmail(analysis.userId)
+                if (altUserSnapshot == null) {
+                    Log.d(TAG, "Creating minimal profile since user document not found")
+                    
+                    // Create a minimal profile from the analysis info
+                    createMinimalProfile(analysis, newStatus)
+                } else {
+                    // Continue with the alternative user snapshot
+                    processUserAndCopyToUniversity(analysis, altUserSnapshot, newStatus)
+                }
+            } else {
+                // Continue with the found user
+                processUserAndCopyToUniversity(analysis, userSnapshot, newStatus)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating application status and copying to university: ${e.message}")
+        }
+    }
+    
+    /**
+     * Create a minimal applicant profile when user document is not found
+     */
+    private suspend fun createMinimalProfile(analysis: ApplicationAnalysis, newStatus: ApplicationStatus = ApplicationStatus.PENDING) = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "Creating minimal profile from analysis data")
+            
+            // Get the job details to find the university ID
+            val jobId = analysis.jobId
+            val allJobs = getJobsAcrossAllUniversities()
+            Log.d(TAG, "Retrieved ${allJobs.size} jobs for minimal profile creation")
+            
+            val job = allJobs.find { it.id == jobId }
+            
+            if (job == null) {
+                Log.e(TAG, "Job not found: $jobId - cannot create minimal profile")
+                return@withContext
+            }
+            
+            val universityId = job.universityId
+            Log.d(TAG, "Found job ${job.title} (ID: $jobId) at university: $universityId")
+            
+            // Try to extract name from email if it's an email address
+            val userId = analysis.userId
+            val name = if (userId.contains("@")) {
+                val localPart = userId.split("@").firstOrNull() ?: ""
+                val parts = localPart.replace(".", " ").split(" ")
+                val capitalizedParts = parts.map { word -> 
+                    if (word.isNotEmpty()) {
+                        word.first().uppercase() + word.substring(1)
+                    } else {
+                        ""
+                    }
+                }
+                capitalizedParts.joinToString(" ")
+            } else {
+                "Applicant"  // Default name if we can't extract from email
+            }
+            
+            // Always use "Pending" for the status regardless of the newStatus parameter
+            val statusText = "Pending"
+            
+            // Create an applicant profile to copy with minimal information
+            val applicantProfile = mapOf(
+                "name" to name,
+                "email" to analysis.userId,
+                "dateApplied" to Date(),
+                "resumeUrl" to analysis.resumeUrl,
+                "status" to statusText,
+                "matchPercentage" to analysis.matchPercentage,
+                "userId" to analysis.userId,
+                "isMinimalProfile" to true,
+                "skillsMatch" to (analysis.skillsMatch.matchedSkills.take(3).joinToString(", ") + " (${analysis.skillsMatch.matchedSkills.size}/${analysis.skillsMatch.matchedSkills.size + analysis.skillsMatch.missingSkills.size})"),
+                "experience" to "Required: ${analysis.experience.requiredYears} | Applicant: ${analysis.experience.applicantYears}",
+                "education" to "${analysis.education.applicantEducation} (${analysis.education.assessment ?: "Meets Requirement"})",
+                "recommendation" to analysis.recommendation
+            )
+            
+            // Determine document ID to use
+            val documentId = analysis.userId.replace("@", "-").replace(".", "-")
+            
+            // Log the path where we're saving
+            val applicantPath = "universities/$universityId/jobs/$jobId/applicants/$documentId"
+            Log.d(TAG, "Saving minimal applicant profile to: $applicantPath")
+            
+            // Add to the university's job applicants subcollection
+            firestore.collection("universities")
+                .document(universityId)
+                .collection("jobs")
+                .document(jobId)
+                .collection("applicants")
+                .document(documentId)
+                .set(applicantProfile)
+                .await()
+            
+            Log.d(TAG, "Successfully saved minimal applicant profile with status: $statusText")
+            
+            // Update the application status in the applications collection as well
+            updateApplicationStatus(analysis.userId, jobId, ApplicationStatus.PENDING)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error creating minimal profile: ${e.message}")
+            Log.e(TAG, "Stack trace:", e)
+        }
+    }
+    
+    /**
+     * Find a user by their email address
+     */
+    private suspend fun findUserByEmail(email: String): DocumentSnapshot? = withContext(Dispatchers.IO) {
+        try {
+            // Try to find the user document by querying the email field
+            val querySnapshot = firestore.collection("users")
+                .whereEqualTo("email", email)
+                .get()
+                .await()
+            
+            if (!querySnapshot.isEmpty) {
+                return@withContext querySnapshot.documents.first()
+            }
+            
+            // If that fails, log the error and return null
+            Log.e(TAG, "Could not find user with email: $email")
+            return@withContext null
+        } catch (e: Exception) {
+            Log.e(TAG, "Error finding user by email: ${e.message}")
+            return@withContext null
+        }
+    }
+    
+    /**
+     * Process a found user and copy their data to the university's job applicants collection
+     */
+    private suspend fun processUserAndCopyToUniversity(analysis: ApplicationAnalysis, userSnapshot: DocumentSnapshot, newStatus: ApplicationStatus) = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "Processing user for university copy - userID: ${userSnapshot.id}")
+            
+            // Get the job details to find the university ID
+            val jobId = analysis.jobId
+            val allJobs = getJobsAcrossAllUniversities()
+            Log.d(TAG, "Retrieved ${allJobs.size} jobs for applicant copy process")
+            
+            val job = allJobs.find { it.id == jobId }
+            
+            if (job == null) {
+                Log.e(TAG, "Job not found: $jobId")
+                return@withContext
+            }
+            
+            val universityId = job.universityId
+            Log.d(TAG, "Found job ${job.title} (ID: $jobId) at university: $universityId")
+            
+            // Extract relevant applicant information
+            val firstName = userSnapshot.getString("firstName") ?: ""
+            val lastName = userSnapshot.getString("lastName") ?: ""
+            val email = userSnapshot.getString("email") ?: analysis.userId  // Fallback to the ID if email not found
+            val resumeUrl = analysis.resumeUrl
+            
+            Log.d(TAG, "Creating applicant profile for: $firstName $lastName, email: $email")
+            
+            // Always use "Pending" status regardless of newStatus parameter
+            val statusText = "Pending"
+            
+            // Create an applicant profile to copy
+            val applicantProfile = mapOf(
+                "name" to "$firstName $lastName",
+                "email" to email,
+                "dateApplied" to Date(),
+                "resumeUrl" to resumeUrl,
+                "status" to statusText,
+                "matchPercentage" to analysis.matchPercentage,
+                "userId" to userSnapshot.id,  // Use the document ID from the snapshot
+                "skillsMatch" to (analysis.skillsMatch.matchedSkills.take(3).joinToString(", ") + " (${analysis.skillsMatch.matchedSkills.size}/${analysis.skillsMatch.matchedSkills.size + analysis.skillsMatch.missingSkills.size})"),
+                "experience" to "Required: ${analysis.experience.requiredYears} | Applicant: ${analysis.experience.applicantYears}",
+                "education" to "${analysis.education.applicantEducation} (${analysis.education.assessment ?: "Meets Requirement"})",
+                "recommendation" to analysis.recommendation
+            )
+            
+            // Log the path where we're saving
+            val applicantPath = "universities/$universityId/jobs/$jobId/applicants/${userSnapshot.id}"
+            Log.d(TAG, "Saving applicant profile to: $applicantPath")
+            
+            // Add to the university's job applicants subcollection
+            firestore.collection("universities")
+                .document(universityId)
+                .collection("jobs")
+                .document(jobId)
+                .collection("applicants")
+                .document(userSnapshot.id)  // Use the document ID from the snapshot
+                .set(applicantProfile)
+                .await()
+            
+            Log.d(TAG, "Successfully copied applicant profile to university: $universityId, job: $jobId with status: $statusText")
+            
+            // Update the application status in the applications collection as well
+            // For the main applications collection, use the passed newStatus
+            updateApplicationStatus(userSnapshot.id, jobId, newStatus)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error processing user and copying to university: ${e.message}")
+            Log.e(TAG, "Stack trace:", e)
+        }
+    }
+    
+    /**
+     * Update the status of an application
+     */
+    private suspend fun updateApplicationStatus(userId: String, jobId: String, newStatus: ApplicationStatus): Unit = withContext(Dispatchers.IO) {
+        try {
+            // Try with the provided user ID first
+            var applicationFound = false
+            
+            // Find the application by user ID and job ID
+            val snapshot = firestore.collection("applications")
+                .whereEqualTo("userId", userId)
+                .whereEqualTo("jobId", jobId)
+                .get()
+                .await()
+            
+            if (!snapshot.isEmpty) {
+                applicationFound = true
+                // Update the status of all matching applications (should be only one)
+                for (doc in snapshot.documents) {
+                    firestore.collection("applications")
+                        .document(doc.id)
+                        .update("status", newStatus.toString())
+                        .await()
+                    Log.d(TAG, "Updated application ${doc.id} status to $newStatus")
+                }
+            }
+            
+            // If not found and the ID might be an email, try with the email directly
+            if (!applicationFound && userId.contains("-") && !userId.contains("@")) {
+                // Convert sanitized email back to regular format for query
+                val originalEmail = userId.replace("-", ".").replaceFirst(".", "@")
+                
+                val emailSnapshot = firestore.collection("applications")
+                    .whereEqualTo("userId", originalEmail)
+                    .whereEqualTo("jobId", jobId)
+                    .get()
+                    .await()
+                
+                if (!emailSnapshot.isEmpty) {
+                    // Update the status of all matching applications (should be only one)
+                    for (doc in emailSnapshot.documents) {
+                        firestore.collection("applications")
+                            .document(doc.id)
+                            .update("status", newStatus.toString())
+                            .await()
+                        Log.d(TAG, "Updated application ${doc.id} status to $newStatus using email format")
+                    }
+                } else {
+                    Log.d(TAG, "No application found for user $userId/$originalEmail and job $jobId to update status")
+                }
+            }
+            
+            // Log if no application was found
+            if (!applicationFound) {
+                Log.d(TAG, "No application found for user $userId and job $jobId to update status")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating application status: ${e.message}")
+        }
+    }
+    
+    /**
+     * Get all jobs across all universities
+     */
+    private suspend fun getJobsAcrossAllUniversities(): List<Job> = withContext(Dispatchers.IO) {
+        try {
+            // If a test repository is set, use it instead of creating a new one
+            val jobRepository = jobRepositoryForTesting ?: JobRepository()
+            return@withContext jobRepository.getJobs()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting jobs: ${e.message}")
+            return@withContext emptyList()
         }
     }
     

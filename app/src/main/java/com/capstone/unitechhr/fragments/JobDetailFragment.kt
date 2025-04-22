@@ -30,6 +30,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.lifecycle.lifecycleScope
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
 
 class JobDetailFragment : Fragment() {
 
@@ -148,8 +150,17 @@ class JobDetailFragment : Fragment() {
                     qualificationsTextView.text = "• No specific qualifications listed"
                 }
                 
-                // For now, show a placeholder for application status
-                applicationStatusTextView.text = "No application submitted yet"
+                // Format and set Application Status
+                // Check if user is logged in and has an application
+                val currentUser = authViewModel.currentUser.value
+                
+                if (currentUser != null) {
+                    // Check if there's an existing application for this job
+                    checkForExistingApplication(job.universityId, job.id, currentUser.email, applicationStatusTextView)
+                } else {
+                    // Show a placeholder for application status
+                    applicationStatusTextView.text = "No application submitted yet"
+                }
                 
                 Log.d(TAG, "All data binding completed successfully")
             } catch (e: Exception) {
@@ -650,6 +661,118 @@ class JobDetailFragment : Fragment() {
                     .setPositiveButton("OK", null)
                     .show()
             }
+        }
+    }
+    
+    /**
+     * Checks if there's an existing application for the current user and job,
+     * and updates the status view accordingly
+     */
+    private suspend fun checkForExistingApplication(universityId: String, jobId: String, userId: String, statusTextView: TextView) {
+        try {
+            Log.d(TAG, "Checking for existing application for job $jobId with userId $userId")
+            statusTextView.text = "Checking application status..."
+            
+            val db = FirebaseFirestore.getInstance()
+            
+            // Try the original userId format first (which might be an email)
+            var applicantDoc = withContext(Dispatchers.IO) {
+                db.collection("universities")
+                    .document(universityId)
+                    .collection("jobs")
+                    .document(jobId)
+                    .collection("applicants")
+                    .document(userId)
+                    .get()
+                    .await()
+            }
+            
+            // If userId contains @ (is an email), and the document doesn't exist,
+            // try with the sanitized version of the email
+            if (!applicantDoc.exists() && userId.contains("@")) {
+                val sanitizedUserId = userId.replace("@", "-").replace(".", "-")
+                Log.d(TAG, "No application found with email, trying sanitized userId: $sanitizedUserId")
+                
+                applicantDoc = withContext(Dispatchers.IO) {
+                    db.collection("universities")
+                        .document(universityId)
+                        .collection("jobs")
+                        .document(jobId)
+                        .collection("applicants")
+                        .document(sanitizedUserId)
+                        .get()
+                        .await()
+                }
+            }
+            
+            // If the email is already in sanitized format (contains - but not @),
+            // try with the original email format
+            if (!applicantDoc.exists() && !userId.contains("@") && userId.contains("-")) {
+                // This is a more complex case - try to convert from sanitized back to original
+                // This is an approximation and might not always work correctly
+                Log.d(TAG, "Trying to un-sanitize the email format: $userId")
+                
+                // Find the position of the first - and replace it with @
+                val parts = userId.split("-")
+                if (parts.size >= 2) {
+                    // Basic attempt to reconstruct the email
+                    val possibleEmail = parts[0] + "@" + parts.subList(1, parts.size).joinToString(".")
+                    Log.d(TAG, "Trying possible original email format: $possibleEmail")
+                    
+                    applicantDoc = withContext(Dispatchers.IO) {
+                        db.collection("universities")
+                            .document(universityId)
+                            .collection("jobs")
+                            .document(jobId)
+                            .collection("applicants")
+                            .document(possibleEmail)
+                            .get()
+                            .await()
+                    }
+                }
+            }
+            
+            if (applicantDoc.exists()) {
+                // Found existing application
+                Log.d(TAG, "Found existing application with ID: ${applicantDoc.id}")
+                
+                // Build detailed status message
+                val statusMessage = StringBuilder()
+                
+                // Get application status
+                val status = applicantDoc.getString("status") ?: "Pending"
+                statusMessage.append("Application Status: $status\n\n")
+                
+                // Get match percentage
+                val matchPercentage = applicantDoc.getString("matchPercentage") ?: "N/A"
+                statusMessage.append("Match Percentage: $matchPercentage\n\n")
+                
+                // Get skills match
+                val skillsMatch = applicantDoc.getString("skillsMatch") ?: "N/A"
+                statusMessage.append("Skills Match:\n$skillsMatch\n\n")
+                
+                // Get experience
+                val experience = applicantDoc.getString("experience") ?: "N/A"
+                statusMessage.append("Experience:\n$experience\n\n")
+                
+                // Get education
+                val education = applicantDoc.getString("education") ?: "N/A"
+                statusMessage.append("Education:\n$education\n\n")
+                
+                // Get recommendation
+                val recommendation = applicantDoc.getString("recommendation") ?: "N/A"
+                statusMessage.append("Recommendation:\n$recommendation")
+                
+                // Update the UI
+                statusTextView.text = statusMessage.toString()
+            } else {
+                // No application found with any of the attempted formats
+                Log.d(TAG, "No application found for user with any ID format")
+                statusTextView.text = "No application submitted yet"
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error checking for existing application: ${e.message}", e)
+            statusTextView.text = "Error loading application status"
         }
     }
     
