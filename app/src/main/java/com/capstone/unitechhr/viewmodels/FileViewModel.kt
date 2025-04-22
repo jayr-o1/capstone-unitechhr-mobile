@@ -95,4 +95,18 @@ class FileViewModel : ViewModel() {
         _uploadResult.value = null
         _uploadError.value = null
     }
+    
+    /**
+     * Clear only the upload result to prevent duplicate notifications
+     */
+    fun clearUploadResult() {
+        _uploadResult.value = null
+    }
+    
+    /**
+     * Clear only the upload error to prevent duplicate notifications
+     */
+    fun clearUploadError() {
+        _uploadError.value = null
+    }
 } 

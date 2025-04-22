@@ -93,6 +93,9 @@
         <action
             android:id="@+id/action_applicantDetailFragment_to_applicantFormFragment"
             app:destination="@id/applicantFormFragment" />
+        <action
+            android:id="@+id/action_applicantDetailFragment_to_pdfViewerFragment"
+            app:destination="@id/pdfViewerFragment" />
     </fragment>
     
     <!-- Interview Scheduling -->
@@ -189,7 +192,11 @@
         android:id="@+id/resumeUploadFragment"
         android:name="com.capstone.unitechhr.fragments.ResumeUploadFragment"
         android:label="Upload Resume"
-        tools:layout="@layout/fragment_resume_upload" />
+        tools:layout="@layout/fragment_resume_upload">
+        <action
+            android:id="@+id/action_resumeUploadFragment_to_pdfViewerFragment"
+            app:destination="@id/pdfViewerFragment" />
+    </fragment>
     
     <fragment
         android:id="@+id/applicationFormFragment"
@@ -202,5 +209,22 @@
         android:name="com.capstone.unitechhr.fragments.ApplicantFormFragment"
         android:label="Edit Applicant"
         tools:layout="@layout/fragment_applicant_form" />
+        
+    <!-- PDF Viewer -->
+    <fragment
+        android:id="@+id/pdfViewerFragment"
+        android:name="com.capstone.unitechhr.fragments.PdfViewerFragment"
+        android:label="View Resume"
+        tools:layout="@layout/fragment_pdf_viewer">
+        <argument
+            android:name="pdfUrl"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="pdfTitle"
+            app:argType="string"
+            app:nullable="true"
+            android:defaultValue="Resume" />
+    </fragment>
 
 </navigation> 

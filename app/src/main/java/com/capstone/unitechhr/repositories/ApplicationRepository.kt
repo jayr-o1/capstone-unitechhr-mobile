@@ -504,7 +504,7 @@ class ApplicationRepository {
      * @param fileUrl The URL of the file to download
      * @return The temporary file containing the downloaded content, or null if download failed
      */
-    private suspend fun downloadFileFromUrl(context: Context, fileUrl: String): File? = withContext(Dispatchers.IO) {
+    suspend fun downloadFileFromUrl(context: Context, fileUrl: String): File? = withContext(Dispatchers.IO) {
         try {
             if (DEBUG) {
                 Log.d("ApplicationRepository", "Downloading file from URL: $fileUrl")

@@ -53,109 +53,309 @@
                         android:layout_weight="1"
                         android:fontFamily="@font/urbanist_semibold"
                         android:textColor="@color/white"
-                        android:text="Upload Resume"
+                        android:text="My Resume"
                         android:textSize="24sp"
                         android:textStyle="bold" />
                 </LinearLayout>
             </LinearLayout>
         </FrameLayout>
 
-        <!-- About Resume Section with background spanning width -->
-        <FrameLayout
+        <!-- Current Resume Card - Enhanced design -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/currentResumeCard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp">
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_gravity="fill"
-                android:background="@drawable/about_job_background" />
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="8dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="3dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
-                
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/urbanist_semibold"
-                    android:text="Resume Upload"
-                    android:textColor="@color/blue"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
+                android:padding="0dp">
 
-                <TextView
+                <!-- Resume Preview Container - Enhanced for better click feedback -->
+                <FrameLayout
+                    android:id="@+id/resumePreviewContainer"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:fontFamily="@font/urbanist"
-                    android:text="Upload your resume in PDF format. Your resume will be used when applying for jobs and will be analyzed to match you with suitable positions."
-                    android:textColor="@color/black"
-                    android:textSize="16sp" />
+                    android:layout_height="400dp"
+                    android:background="#F5F9FF"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
+                    
+                    <!-- Resume Icon When No Resume -->
+                    <LinearLayout
+                        android:id="@+id/noResumeLayout"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:visibility="gone">
 
-                <!-- Current Resume Section -->
-                <LinearLayout
-                    android:id="@+id/currentResumeLayout"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
-                    android:orientation="vertical"
-                    android:visibility="gone">
+                        <ImageView
+                            android:layout_width="80dp"
+                            android:layout_height="80dp"
+                            android:src="@android:drawable/ic_menu_upload"
+                            android:tint="@color/blue"
+                            android:alpha="0.5" />
 
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:text="No Resume Uploaded"
+                            android:textColor="@color/blue"
+                            android:alpha="0.7"
+                            android:fontFamily="@font/urbanist"
+                            android:textSize="16sp" />
+                    </LinearLayout>
+
+                    <!-- Resume Preview When Resume Exists -->
+                    <LinearLayout
+                        android:id="@+id/currentResumeLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:visibility="visible">
+
+                        <!-- PDF Preview Image - Clean version -->
+                        <FrameLayout
+                            android:layout_width="180dp"
+                            android:layout_height="250dp"
+                            android:background="@color/white"
+                            android:layout_gravity="center"
+                            android:layout_marginBottom="30dp"
+                            android:elevation="3dp">
+                            
+                            <!-- PDF border -->
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="@drawable/rectangle_border" />
+                                
+                            <!-- Horizontal lines to simulate text -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:orientation="vertical"
+                                android:padding="18dp"
+                                android:gravity="center_horizontal">
+                                
+                                <View
+                                    android:layout_width="match_parent"
+                                    android:layout_height="12dp"
+                                    android:layout_marginTop="20dp"
+                                    android:background="@color/blue"
+                                    android:alpha="0.3" />
+                                
+                                <View
+                                    android:layout_width="match_parent"
+                                    android:layout_height="10dp"
+                                    android:layout_marginTop="16dp"
+                                    android:background="@color/blue"
+                                    android:alpha="0.2" />
+                                    
+                                <View
+                                    android:layout_width="match_parent"
+                                    android:layout_height="10dp"
+                                    android:layout_marginTop="12dp"
+                                    android:background="@color/blue"
+                                    android:alpha="0.2" />
+                                    
+                                <View
+                                    android:layout_width="100dp"
+                                    android:layout_height="10dp"
+                                    android:layout_marginTop="12dp"
+                                    android:background="@color/blue"
+                                    android:alpha="0.2" />
+                            </LinearLayout>
+                        </FrameLayout>
+
+                        <!-- Hidden filename text for reference only -->
+                        <TextView
+                            android:id="@+id/currentResumeNameText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:visibility="gone"
+                            tools:text="resume.pdf" />
+
+                        <!-- Tap to View Text - Now just visual indicator -->
+                        <TextView
+                            android:id="@+id/tapToViewText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="TAP TO VIEW"
+                            android:textColor="#1565C0"
+                            android:fontFamily="@font/urbanist_semibold"
+                            android:textSize="20sp"
+                            android:letterSpacing="0.05"
+                            android:gravity="center"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="16dp"
+                            android:paddingTop="16dp"
+                            android:paddingBottom="16dp"
+                            android:clickable="false"
+                            android:focusable="false"/>
+                    </LinearLayout>
+
+                    <!-- Add a clear tap instruction at the bottom -->
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_gravity="bottom"
+                        android:background="#E6F5F9FF"
+                        android:paddingVertical="8dp"
+                        android:text="TAP ANYWHERE TO VIEW RESUME"
+                        android:textColor="#1565C0"
                         android:fontFamily="@font/urbanist_semibold"
-                        android:text="Current Resume"
-                        android:textColor="@color/black"
-                        android:textSize="18sp" />
+                        android:textSize="16sp"
+                        android:gravity="center"
+                        android:visibility="gone"/>
+                </FrameLayout>
 
-                    <TextView
-                        android:id="@+id/currentResumeNameText"
+                <!-- Action buttons - Without VIEW button -->
+                <LinearLayout
+                    android:id="@+id/resumeActionsLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="#FFFFFF"
+                    android:padding="16dp"
+                    android:gravity="center"
+                    android:visibility="visible">
+
+                    <!-- Progress indicator for resume change -->
+                    <LinearLayout
+                        android:id="@+id/changeProgressLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:drawableStart="@android:drawable/ic_menu_agenda"
-                        android:drawablePadding="8dp"
-                        android:fontFamily="@font/urbanist"
-                        android:textColor="@color/blue"
-                        android:textSize="16sp"
-                        tools:text="resume.pdf" />
-                </LinearLayout>
+                        android:orientation="vertical"
+                        android:visibility="gone"
+                        android:layout_marginBottom="12dp">
+                        
+                        <ProgressBar
+                            android:id="@+id/changeProgressBar"
+                            style="?android:attr/progressBarStyleHorizontal"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:progressTint="@color/blue"
+                            android:max="100" />
+                            
+                        <TextView
+                            android:id="@+id/changeStatusText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:textSize="12sp"
+                            android:textAlignment="center"
+                            android:fontFamily="@font/urbanist"
+                            android:textColor="#666666"
+                            android:text="Uploading resume..." />
+                    </LinearLayout>
 
-                <!-- File Selection Section -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/changeResumeButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="CHANGE"
+                            android:textSize="14sp"
+                            app:icon="@android:drawable/ic_menu_edit"
+                            app:iconSize="18dp"
+                            app:cornerRadius="8dp"
+                            android:paddingVertical="10dp"
+                            app:backgroundTint="@color/blue" />
+
+                        <Space
+                            android:layout_width="16dp"
+                            android:layout_height="wrap_content" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/deleteResumeButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="DELETE"
+                            android:textSize="14sp"
+                            app:icon="@android:drawable/ic_menu_delete"
+                            app:iconSize="18dp"
+                            app:cornerRadius="8dp"
+                            android:paddingVertical="10dp"
+                            app:backgroundTint="#D32F2F" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Upload Resume Section - Improved layout -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/uploadResumeCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="3dp">
+
+            <LinearLayout
+                android:id="@+id/uploadResumeLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
                     android:fontFamily="@font/urbanist_semibold"
-                    android:text="Select File"
+                    android:text="Upload New Resume"
                     android:textColor="@color/black"
                     android:textSize="18sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:fontFamily="@font/urbanist"
+                    android:text="Upload your resume in PDF format. Your resume will be used when applying for jobs and will be analyzed to match you with suitable positions."
+                    android:textColor="#666666"
+                    android:textSize="14sp" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/selectFileButton"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Browse PDF Files"
+                    android:layout_marginTop="16dp"
+                    android:text="SELECT PDF FILE"
                     app:icon="@android:drawable/ic_menu_upload"
                     app:cornerRadius="8dp"
                     android:padding="12dp"
-                    app:backgroundTint="@color/blue" />
+                    app:backgroundTint="#2A3990" />
 
                 <TextView
                     android:id="@+id/selectedFileText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="12dp"
                     android:fontFamily="@font/urbanist"
-                    android:textColor="#666666"
+                    android:textColor="#333333"
                     android:textSize="16sp"
                     android:visibility="gone"
+                    android:drawableStart="@android:drawable/ic_menu_agenda"
+                    android:drawablePadding="8dp"
+                    android:gravity="center_vertical"
                     tools:text="resume.pdf"
                     tools:visibility="visible" />
 
@@ -166,6 +366,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
                     android:visibility="gone"
+                    android:progressTint="@color/blue"
                     android:max="100"
                     tools:progress="75"
                     tools:visibility="visible" />
@@ -177,28 +378,24 @@
                     android:layout_marginTop="8dp"
                     android:fontFamily="@font/urbanist"
                     android:textColor="#666666"
-                    android:textSize="16sp"
+                    android:textSize="14sp"
                     android:visibility="gone"
                     tools:text="Uploading file..."
                     tools:visibility="visible" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/uploadButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:padding="12dp"
+                    android:text="UPLOAD RESUME"
+                    android:textSize="16sp"
+                    android:textColor="#FFFFFF"
+                    app:cornerRadius="8dp"
+                    app:backgroundTint="@color/blue"
+                    android:enabled="false" />
             </LinearLayout>
-        </FrameLayout>
-
-        <!-- Upload Button Section -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/uploadButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="12dp"
-                android:text="Upload Resume"
-                android:textSize="16sp"
-                app:cornerRadius="8dp" />
-        </LinearLayout>
+        </androidx.cardview.widget.CardView>
     </LinearLayout>
 </androidx.core.widget.NestedScrollView> 
