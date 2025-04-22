@@ -6,20 +6,13 @@
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="8dp"
     android:layout_marginVertical="8dp"
-    app:cardCornerRadius="8dp"
+    app:cardCornerRadius="16dp"
     app:cardElevation="3dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
-
-        <!-- Color coding strip for university -->
-        <View
-            android:id="@+id/universityColorStrip"
-            android:layout_width="match_parent"
-            android:layout_height="6dp"
-            android:background="#2A3990" />
 
         <!-- Top section with gradient background -->
         <FrameLayout
@@ -34,43 +27,58 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <!-- Title with background -->
-                <TextView
-                    android:id="@+id/jobTitleTextView"
+                <!-- Title and favorite row -->
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/job_title_background"
-                    android:fontFamily="@font/urbanist_semibold"
-                    android:textColor="@color/white"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    tools:text="Software Engineer" />
+                    android:orientation="horizontal">
 
-                <!-- Department and university info (swapped) -->
+                    <TextView
+                        android:id="@+id/jobTitleTextView"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/urbanist_semibold"
+                        android:textColor="@color/white"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        tools:text="Software Engineer" />
+
+                    <ImageView
+                        android:id="@+id/favoriteIcon"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_gravity="top"
+                        android:src="@android:drawable/btn_star_big_off"
+                        android:tint="@color/white"
+                        android:layout_marginStart="8dp" />
+                </LinearLayout>
+
+                <!-- Company and university info -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:layout_marginTop="12dp">
-                    
-                    <TextView
-                        android:id="@+id/companyTextView"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/urbanist_semibold"
-                        android:textColor="#E6FFFFFF"
-                        android:textSize="16sp"
-                        tools:text="IT Department" />
-                        
+                    android:layout_marginTop="8dp">
+
                     <TextView
                         android:id="@+id/universityTextView"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:fontFamily="@font/urbanist_semibold"
+                        android:textColor="#FFEEF4"
+                        android:textSize="16sp"
+                        tools:text="Example University" />
+                        
+                    <TextView
+                        android:id="@+id/companyTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
                         android:fontFamily="@font/urbanist"
-                        android:textColor="#FFEEF4"
+                        android:textColor="#E6FFFFFF"
                         android:textSize="15sp"
-                        tools:text="Example University" />
+                        tools:text="Example Company" />
                 </LinearLayout>
 
                 <!-- Location row with icon -->
@@ -89,21 +97,13 @@
 
                     <TextView
                         android:id="@+id/locationTextView"
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
                         android:layout_marginStart="6dp"
                         android:fontFamily="@font/urbanist"
                         android:textColor="#E0FFFFFF"
                         android:textSize="14sp"
                         tools:text="San Francisco, CA" />
-                        
-                    <ImageView
-                        android:id="@+id/favoriteIcon"
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:src="@android:drawable/btn_star_big_off"
-                        android:tint="@color/white" />
                 </LinearLayout>
             </LinearLayout>
         </FrameLayout>
