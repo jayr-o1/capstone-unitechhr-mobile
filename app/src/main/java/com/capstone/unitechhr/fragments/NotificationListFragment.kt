@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -50,14 +51,25 @@ class NotificationListFragment : Fragment() {
         }
         
         // Setup adapter
-        adapter = NotificationAdapter { notification ->
-            // Mark notification as read when clicked
-            authViewModel.currentUser.value?.let { user ->
-                val applicantId = user.email.replace("@", "-").replace(".", "-")
-                notificationViewModel.markAsRead(applicantId, notification.id)
-                Toast.makeText(context, notification.title, Toast.LENGTH_SHORT).show()
+        adapter = NotificationAdapter(
+            // Handle notification click (mark as read)
+            onItemClick = { notification ->
+                // Mark notification as read when clicked
+                authViewModel.currentUser.value?.let { user ->
+                    val applicantId = user.email.replace("@", "-").replace(".", "-")
+                    notificationViewModel.markAsRead(applicantId, notification.id)
+                    Toast.makeText(context, notification.title, Toast.LENGTH_SHORT).show()
+                }
+            },
+            // Handle dismiss button click
+            onDismissClick = { notification ->
+                // Dismiss notification when the dismiss button is clicked
+                authViewModel.currentUser.value?.let { user ->
+                    val applicantId = user.email.replace("@", "-").replace(".", "-")
+                    notificationViewModel.dismissNotification(applicantId, notification.id)
+                }
             }
-        }
+        )
         
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter

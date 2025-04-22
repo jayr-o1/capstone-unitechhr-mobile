@@ -63,6 +63,16 @@
         <action
             android:id="@+id/action_jobDetailFragment_to_applicationFormFragment"
             app:destination="@id/applicationFormFragment" />
+        <action
+            android:id="@+id/action_jobDetailFragment_to_resumeUploadFragment"
+            app:destination="@id/resumeUploadFragment" />
+        <action
+            android:id="@+id/action_jobDetailFragment_to_scheduleInterviewFragment"
+            app:destination="@id/scheduleInterviewFragment"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
     </fragment>
     
     <!-- Applicant Tracking -->
@@ -90,6 +100,9 @@
         <action
             android:id="@+id/action_applicantDetailFragment_to_applicantFormFragment"
             app:destination="@id/applicantFormFragment" />
+        <action
+            android:id="@+id/action_applicantDetailFragment_to_pdfViewerFragment"
+            app:destination="@id/pdfViewerFragment" />
     </fragment>
     
     <!-- Interview Scheduling -->
@@ -103,7 +116,11 @@
             app:destination="@id/interviewDetailFragment" />
         <action
             android:id="@+id/action_interviewListFragment_to_scheduleInterviewFragment"
-            app:destination="@id/scheduleInterviewFragment" />
+            app:destination="@id/scheduleInterviewFragment"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
     </fragment>
     
     <fragment
@@ -120,7 +137,20 @@
         android:id="@+id/scheduleInterviewFragment"
         android:name="com.capstone.unitechhr.fragments.ScheduleInterviewFragment"
         android:label="Schedule Interview"
-        tools:layout="@layout/fragment_schedule_interview" />
+        tools:layout="@layout/fragment_schedule_interview">
+        <argument
+            android:name="applicantId"
+            android:defaultValue=""
+            app:argType="string" />
+        <argument
+            android:name="jobId"
+            android:defaultValue=""
+            app:argType="string" />
+        <argument
+            android:name="universityId"
+            android:defaultValue=""
+            app:argType="string" />
+    </fragment>
     
     <!-- Onboarding -->
     <fragment
@@ -176,7 +206,21 @@
         android:id="@+id/profileFragment"
         android:name="com.capstone.unitechhr.fragments.ProfileFragment"
         android:label="Profile"
-        tools:layout="@layout/fragment_profile" />
+        tools:layout="@layout/fragment_profile">
+        <action
+            android:id="@+id/action_profileFragment_to_resumeUploadFragment"
+            app:destination="@id/resumeUploadFragment" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/resumeUploadFragment"
+        android:name="com.capstone.unitechhr.fragments.ResumeUploadFragment"
+        android:label="Upload Resume"
+        tools:layout="@layout/fragment_resume_upload">
+        <action
+            android:id="@+id/action_resumeUploadFragment_to_pdfViewerFragment"
+            app:destination="@id/pdfViewerFragment" />
+    </fragment>
     
     <fragment
         android:id="@+id/applicationFormFragment"
@@ -189,5 +233,22 @@
         android:name="com.capstone.unitechhr.fragments.ApplicantFormFragment"
         android:label="Edit Applicant"
         tools:layout="@layout/fragment_applicant_form" />
+        
+    <!-- PDF Viewer -->
+    <fragment
+        android:id="@+id/pdfViewerFragment"
+        android:name="com.capstone.unitechhr.fragments.PdfViewerFragment"
+        android:label="View Resume"
+        tools:layout="@layout/fragment_pdf_viewer">
+        <argument
+            android:name="pdfUrl"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="pdfTitle"
+            app:argType="string"
+            app:nullable="true"
+            android:defaultValue="Resume" />
+    </fragment>
 
 </navigation> 

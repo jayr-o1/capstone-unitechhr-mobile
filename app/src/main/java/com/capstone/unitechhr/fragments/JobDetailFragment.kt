@@ -10,21 +10,38 @@ import android.view.Window
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import com.capstone.unitechhr.R
+import com.capstone.unitechhr.models.ApplicationAnalysis
+import com.capstone.unitechhr.models.Education as AnalysisEducation
+import com.capstone.unitechhr.models.Experience
+import com.capstone.unitechhr.models.SalaryEstimate
+import com.capstone.unitechhr.models.SkillsMatch
+import com.capstone.unitechhr.viewmodels.AuthViewModel
 import com.capstone.unitechhr.viewmodels.JobViewModel
 import com.google.android.material.button.MaterialButton
 import java.text.SimpleDateFormat
 import java.util.Locale
+import com.capstone.unitechhr.repositories.ApplicationRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import androidx.lifecycle.lifecycleScope
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
 
 class JobDetailFragment : Fragment() {
 
     private val TAG = "JobDetailFragment"
     private val viewModel: JobViewModel by activityViewModels()
-    private val dateFormatter = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+    private val authViewModel: AuthViewModel by activityViewModels()
+    private val applicationRepository = ApplicationRepository()
+    private val dateFormatter = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault())
     private var jobInfoDialog: Dialog? = null
+    private var applicationResultDialog: Dialog? = null
     
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -67,9 +84,13 @@ class JobDetailFragment : Fragment() {
         
         // Set up apply button
         applyButton.setOnClickListener {
-            // In a complete implementation, this would navigate to an application form
-            // For now, just show a toast
-            Toast.makeText(context, "Application functionality coming soon!", Toast.LENGTH_SHORT).show()
+            applyForJob()
+        }
+        
+        // Add long press listener for API connection testing (debug feature)
+        applyButton.setOnLongClickListener {
+            testApiConnection()
+            true
         }
         
         // Observe selected job
@@ -129,8 +150,19 @@ class JobDetailFragment : Fragment() {
                     qualificationsTextView.text = "• No specific qualifications listed"
                 }
                 
-                // For now, show a placeholder for application status
-                applicationStatusTextView.text = "No application submitted yet"
+                // Format and set Application Status
+                // Check if user is logged in and has an application
+                val currentUser = authViewModel.currentUser.value
+                
+                if (currentUser != null) {
+                    // Check if there's an existing application for this job
+                    lifecycleScope.launch {
+                        checkForExistingApplication(job.universityId, job.id, currentUser.email, applicationStatusTextView)
+                    }
+                } else {
+                    // Show a placeholder for application status
+                    applicationStatusTextView.text = "No application submitted yet"
+                }
                 
                 Log.d(TAG, "All data binding completed successfully")
             } catch (e: Exception) {
@@ -211,6 +243,566 @@ class JobDetailFragment : Fragment() {
         }
     }
     
+    private fun applyForJob() {
+        // Check if user is logged in
+        if (!authViewModel.isUserLoggedIn(requireContext())) {
+            showLoginRequiredDialog()
+            return
+        }
+        
+        // Check if user has uploaded a resume
+        val currentUser = authViewModel.currentUser.value
+        if (currentUser == null || !currentUser.hasResume) {
+            showResumeRequiredDialog()
+            return
+        }
+        
+        // Get the selected job details
+        val selectedJob = viewModel.selectedJob.value ?: return
+        
+        // Extract job details for the API request
+        val jobSummary = selectedJob.summary ?: selectedJob.description
+        val keyDuties = selectedJob.keyDuties?.joinToString(", ") ?: ""
+        val essentialSkills = selectedJob.essentialSkills?.joinToString(", ") ?: ""
+        val qualifications = selectedJob.qualifications?.joinToString(", ") ?: ""
+        
+        // Show application confirmation dialog
+        showApplicationConfirmationDialog(jobSummary, keyDuties, essentialSkills, qualifications, currentUser.resumeUrl, currentUser.email, selectedJob.id, selectedJob.title)
+    }
+    
+    private fun showLoginRequiredDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Login Required")
+            .setMessage("You need to be logged in to apply for this job. Would you like to sign in now?")
+            .setPositiveButton("Sign In") { _, _ ->
+                // Navigate to login screen
+                findNavController().navigate(R.id.loginFragment)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+    
+    private fun showResumeRequiredDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Resume Required")
+            .setMessage("You need to upload your resume before applying for this job. Would you like to upload your resume now?")
+            .setPositiveButton("Upload Resume") { _, _ ->
+                // Navigate to the resume upload screen
+                findNavController().navigate(R.id.action_jobDetailFragment_to_resumeUploadFragment)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+    
+    private fun showApplicationConfirmationDialog(
+        jobSummary: String,
+        keyDuties: String,
+        essentialSkills: String,
+        qualifications: String,
+        resumeUrl: String?,
+        userId: String,
+        jobId: String,
+        jobTitle: String
+    ) {
+        if (resumeUrl == null) {
+            Toast.makeText(
+                context,
+                "No resume found. Please upload your resume first.",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+        
+        AlertDialog.Builder(requireContext())
+            .setTitle("Submit Application")
+            .setMessage("Your application will be analyzed using your resume and the job details. Continue?")
+            .setPositiveButton("Submit") { _, _ ->
+                // Show processing toast
+                Toast.makeText(
+                    context,
+                    "Please wait while our system is checking your eligibility for this position...",
+                    Toast.LENGTH_LONG
+                ).show()
+                
+                // Submit application to analysis API
+                submitApplication(jobSummary, keyDuties, essentialSkills, qualifications, resumeUrl, userId, jobId, jobTitle)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+    
+    private fun submitApplication(
+        jobSummary: String,
+        keyDuties: String,
+        essentialSkills: String,
+        qualifications: String,
+        resumeUrl: String,
+        userId: String,
+        jobId: String,
+        jobTitle: String
+    ) {
+        // Use lifecycleScope to launch a coroutine
+        lifecycleScope.launch {
+            try {
+                // Show loading indicator
+                val loadingDialog = AlertDialog.Builder(requireContext())
+                    .setTitle("Processing")
+                    .setMessage("Please wait while our system is checking your eligibility for this position...")
+                    .setCancelable(false)
+                    .create()
+                loadingDialog.show()
+                
+                // Log application submission details
+                Log.d(TAG, "Submitting application for job: $jobTitle (ID: $jobId)")
+                Log.d(TAG, "Using resume URL: $resumeUrl")
+                
+                // Call the API in the background
+                try {
+                    val analysisResult = withContext(Dispatchers.IO) {
+                        applicationRepository.submitApplicationForAnalysis(
+                            requireContext(),
+                            resumeUrl,
+                            jobSummary,
+                            keyDuties,
+                            essentialSkills,
+                            qualifications,
+                            userId,
+                            jobId,
+                            jobTitle
+                        )
+                    }
+                    
+                    // Dismiss loading dialog
+                    loadingDialog.dismiss()
+                    
+                    // Show result dialog
+                    showApplicationResultDialog(analysisResult)
+                } catch (e: Exception) {
+                    // Dismiss loading dialog
+                    loadingDialog.dismiss()
+                    
+                    Log.e(TAG, "API call error: ${e.message}", e)
+                    
+                    // Show a more user-friendly error message
+                    val errorMessage = when {
+                        e.message?.contains("Failed to connect") == true || 
+                        e.message?.contains("Connection refused") == true -> 
+                            "Could not connect to our analysis service. Please check your internet connection and try again."
+                        
+                        e.message?.contains("timeout") == true -> 
+                            "The application analysis is taking longer than expected. Please try again later."
+                            
+                        e.message?.contains("parse") == true ->
+                            "There was a problem processing your application. Our team has been notified."
+                            
+                        else -> "Error submitting application: ${e.message}"
+                    }
+                    
+                    // Show error dialog
+                    AlertDialog.Builder(requireContext())
+                        .setTitle("Application Error")
+                        .setMessage(errorMessage)
+                        .setPositiveButton("OK", null)
+                        .show()
+                }
+                
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in application process: ${e.message}", e)
+                
+                // Show error message
+                Toast.makeText(
+                    context,
+                    "Error submitting application: ${e.message}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+    
+    private fun showApplicationResultDialog(analysis: ApplicationAnalysis) {
+        try {
+            // Log the raw analysis data for debugging
+            Log.d(TAG, "Raw analysis data - Match %: ${analysis.matchPercentage}, Recommendation: ${analysis.recommendation}")
+            Log.d(TAG, "Skills match - matched: ${analysis.skillsMatch.matchedSkills}, missing: ${analysis.skillsMatch.missingSkills}")
+            Log.d(TAG, "Experience - applicant: ${analysis.experience.applicantYears}, required: ${analysis.experience.requiredYears}")
+            Log.d(TAG, "Education - applicant: ${analysis.education.applicantEducation}, required: ${analysis.education.requirement}")
+            
+            context?.let { ctx ->
+                applicationResultDialog = Dialog(ctx).apply {
+                    requestWindowFeature(Window.FEATURE_NO_TITLE)
+                    setContentView(R.layout.dialog_application_result)
+                    
+                    // Set dialog size and style
+                    window?.apply {
+                        setLayout(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT
+                        )
+                        
+                        // Add rounded corners to the dialog window
+                        setBackgroundDrawableResource(android.R.color.transparent)
+                    }
+                    
+                    // Set up close button
+                    findViewById<ImageView>(R.id.closeButton)?.setOnClickListener {
+                        dismiss()
+                    }
+                    
+                    // Set up OK button
+                    findViewById<MaterialButton>(R.id.okButton)?.setOnClickListener {
+                        dismiss()
+                    }
+                    
+                    // Format and populate the match percentage
+                    val matchPercentage = analysis.matchPercentage.trim()
+                    Log.d(TAG, "Formatting match percentage: '$matchPercentage'")
+                    
+                    val formattedMatchText = when {
+                        matchPercentage.isEmpty() -> "0% Match"
+                        matchPercentage.endsWith("%") -> "$matchPercentage Match" 
+                        else -> "${matchPercentage}% Match"
+                    }
+                    Log.d(TAG, "Final formatted match text: '$formattedMatchText'")
+                    findViewById<TextView>(R.id.matchPercentageText)?.text = formattedMatchText
+                    
+                    // Set recommendation with proper capitalization
+                    val recommendation = try {
+                        if (analysis.recommendation.isNullOrEmpty()) {
+                            "Reject" // Default to reject if empty
+                        } else {
+                            analysis.recommendation.replaceFirstChar { 
+                                if (it.isLowerCase()) it.titlecase(Locale.getDefault()) 
+                                else it.toString() 
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error formatting recommendation: ${e.message}", e)
+                        "Reject" 
+                    }
+                    findViewById<TextView>(R.id.recommendationText)?.text = recommendation
+                    
+                    // Skills match
+                    findViewById<TextView>(R.id.skillsMatchText)?.text = try {
+                        val matchedSkills = analysis.skillsMatch.matchedSkills ?: emptyList()
+                        val missingSkills = analysis.skillsMatch.missingSkills ?: emptyList()
+                        
+                        if (matchedSkills.isEmpty() && missingSkills.isEmpty()) {
+                            "Skills information not available"
+                        } else {
+                            val matchedCount = matchedSkills.size
+                            val totalSkills = matchedCount + missingSkills.size
+                            if (totalSkills > 0) {
+                                "$matchedCount/$totalSkills skills matched"
+                            } else {
+                                "Skills information not available"
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error setting skills match text: ${e.message}", e)
+                        "Skills information not available"
+                    }
+                    
+                    // Experience
+                    findViewById<TextView>(R.id.experienceText)?.text = try {
+                        val experience = analysis.experience
+                        
+                        val applicantYears = experience.applicantYears.takeIf { 
+                            !it.isNullOrEmpty() && it != "Not specified" 
+                        } ?: "Unknown"
+                        
+                        val requiredYears = experience.requiredYears.takeIf { 
+                            !it.isNullOrEmpty() && it != "Not specified" 
+                        } ?: "Not specified"
+                        
+                        if (applicantYears == "Unknown" && requiredYears == "Not specified") {
+                            "Experience information not available"
+                        } else {
+                            "$applicantYears years experience ($requiredYears required)"
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error setting experience text: ${e.message}", e)
+                        "Experience information not available"
+                    }
+                    
+                    // Education
+                    findViewById<TextView>(R.id.educationText)?.text = try {
+                        val educationData = analysis.education
+                        
+                        val applicantEdu = educationData.applicantEducation.takeIf { 
+                            !it.isNullOrEmpty() 
+                        } ?: "Not specified"
+                        
+                        val requirement = educationData.requirement.takeIf { 
+                            !it.isNullOrEmpty() 
+                        } ?: "Not specified"
+                        
+                        if (applicantEdu == "Not specified" && requirement == "Not specified") {
+                            "Not specified (Not specified required)"
+                        } else {
+                            "$applicantEdu ($requirement required)"
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error setting education text: ${e.message}", e)
+                        "Education information not available"
+                    }
+                    
+                    // Improvement suggestions
+                    val suggestions = buildSuggestionsList(analysis)
+                    findViewById<TextView>(R.id.improvementSuggestionsText)?.text = suggestions
+                    
+                    // Salary estimate
+                    findViewById<TextView>(R.id.salaryEstimateText)?.text = try {
+                        val salaryEstimate = analysis.salaryEstimate
+                        
+                        if (salaryEstimate != null) {
+                            val min = salaryEstimate.min.takeIf { it > 0 } ?: 0
+                            val max = salaryEstimate.max.takeIf { it > 0 } ?: 0
+                            val currency = salaryEstimate.currency.takeIf { 
+                                !it.isNullOrEmpty() 
+                            } ?: "USD"
+                            
+                            if (min > 0 || max > 0) {
+                                "$${min.toFormattedString()} - $${max.toFormattedString()} $currency"
+                            } else {
+                                "Salary information not available"
+                            }
+                        } else {
+                            "Salary information not available"
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error setting salary estimate text: ${e.message}", e)
+                        "Salary information not available"
+                    }
+                    
+                    // Show the dialog
+                    show()
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error showing application result dialog: ${e.message}", e)
+            
+            // Fallback to simple toast
+            Toast.makeText(
+                context,
+                "Application Result: ${analysis.recommendation} (${analysis.matchPercentage} match)",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+    
+    private fun buildSuggestionsList(analysis: ApplicationAnalysis): String {
+        try {
+            val suggestionsList = mutableListOf<String>()
+            
+            // Get improvementSuggestions safely
+            val suggestions = analysis.improvementSuggestions
+            if (suggestions != null) {
+                // Add skills suggestions
+                suggestions.skills?.let { suggestionsList.addAll(it) }
+                
+                // Add experience suggestions
+                suggestions.experience?.let { suggestionsList.addAll(it) }
+                
+                // Add education suggestions
+                suggestions.education?.let { suggestionsList.addAll(it) }
+                
+                // Add general suggestions
+                suggestions.general?.let { suggestionsList.addAll(it) }
+            }
+            
+            // Format the list with bullet points
+            return if (suggestionsList.isNotEmpty()) {
+                suggestionsList.joinToString("\n") { "• $it" }
+            } else {
+                "No specific improvements needed"
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error building suggestions list: ${e.message}", e)
+            return "No specific improvements needed"
+        }
+    }
+    
+    // Extension function to format numbers with commas
+    private fun Int.toFormattedString(): String {
+        return String.format(Locale.US, "%,d", this)
+    }
+    
+    private fun testApiConnection() {
+        lifecycleScope.launch {
+            try {
+                // Show loading indicator
+                val loadingDialog = AlertDialog.Builder(requireContext())
+                    .setTitle("Testing API Connection")
+                    .setMessage("Please wait while we check the connection to the API server...")
+                    .setCancelable(false)
+                    .create()
+                loadingDialog.show()
+                
+                // Test the connection
+                val result = withContext(Dispatchers.IO) {
+                    applicationRepository.testApiConnection()
+                }
+                
+                // Dismiss loading dialog
+                loadingDialog.dismiss()
+                
+                // Show result dialog
+                AlertDialog.Builder(requireContext())
+                    .setTitle("API Connection Test")
+                    .setMessage(result)
+                    .setPositiveButton("OK", null)
+                    .show()
+                
+            } catch (e: Exception) {
+                Log.e(TAG, "Error testing API connection: ${e.message}", e)
+                
+                // Show error dialog
+                AlertDialog.Builder(requireContext())
+                    .setTitle("Connection Test Error")
+                    .setMessage("Failed to run connection test: ${e.message}")
+                    .setPositiveButton("OK", null)
+                    .show()
+            }
+        }
+    }
+    
+    /**
+     * Checks if there's an existing application for the current user and job,
+     * and updates the status view accordingly
+     */
+    private suspend fun checkForExistingApplication(universityId: String, jobId: String, userId: String, statusTextView: TextView) {
+        try {
+            Log.d(TAG, "Checking for existing application for job $jobId with userId $userId")
+            statusTextView.text = "Checking application status..."
+            
+            val db = FirebaseFirestore.getInstance()
+            
+            // Try the original userId format first (which might be an email)
+            var applicantDoc = withContext(Dispatchers.IO) {
+                db.collection("universities")
+                    .document(universityId)
+                    .collection("jobs")
+                    .document(jobId)
+                    .collection("applicants")
+                    .document(userId)
+                    .get()
+                    .await()
+            }
+            
+            // If userId contains @ (is an email), and the document doesn't exist,
+            // try with the sanitized version of the email
+            if (!applicantDoc.exists() && userId.contains("@")) {
+                val sanitizedUserId = userId.replace("@", "-").replace(".", "-")
+                Log.d(TAG, "No application found with email, trying sanitized userId: $sanitizedUserId")
+                
+                applicantDoc = withContext(Dispatchers.IO) {
+                    db.collection("universities")
+                        .document(universityId)
+                        .collection("jobs")
+                        .document(jobId)
+                        .collection("applicants")
+                        .document(sanitizedUserId)
+                        .get()
+                        .await()
+                }
+            }
+            
+            // If the email is already in sanitized format (contains - but not @),
+            // try with the original email format
+            if (!applicantDoc.exists() && !userId.contains("@") && userId.contains("-")) {
+                // This is a more complex case - try to convert from sanitized back to original
+                // This is an approximation and might not always work correctly
+                Log.d(TAG, "Trying to un-sanitize the email format: $userId")
+                
+                // Find the position of the first - and replace it with @
+                val parts = userId.split("-")
+                if (parts.size >= 2) {
+                    // Basic attempt to reconstruct the email
+                    val possibleEmail = parts[0] + "@" + parts.subList(1, parts.size).joinToString(".")
+                    Log.d(TAG, "Trying possible original email format: $possibleEmail")
+                    
+                    applicantDoc = withContext(Dispatchers.IO) {
+                        db.collection("universities")
+                            .document(universityId)
+                            .collection("jobs")
+                            .document(jobId)
+                            .collection("applicants")
+                            .document(possibleEmail)
+                            .get()
+                            .await()
+                    }
+                }
+            }
+            
+            if (applicantDoc.exists()) {
+                // Found existing application
+                Log.d(TAG, "Found existing application with ID: ${applicantDoc.id}")
+                
+                // Build detailed status message
+                val statusMessage = StringBuilder()
+                
+                // Get application status
+                val status = applicantDoc.getString("status") ?: "Pending"
+                statusMessage.append("Application Status: $status\n\n")
+                
+                // Get match percentage
+                val matchPercentage = applicantDoc.getString("matchPercentage") ?: "N/A"
+                statusMessage.append("Match Percentage: $matchPercentage\n\n")
+                
+                // Get skills match
+                val skillsMatch = applicantDoc.getString("skillsMatch") ?: "N/A"
+                statusMessage.append("Skills Match:\n$skillsMatch\n\n")
+                
+                // Get experience
+                val experience = applicantDoc.getString("experience") ?: "N/A"
+                statusMessage.append("Experience:\n$experience\n\n")
+                
+                // Get education
+                val education = applicantDoc.getString("education") ?: "N/A"
+                statusMessage.append("Education:\n$education\n\n")
+                
+                // Get recommendation
+                val recommendation = applicantDoc.getString("recommendation") ?: "N/A"
+                statusMessage.append("Recommendation:\n$recommendation")
+                
+                // Update the UI
+                statusTextView.text = statusMessage.toString()
+                
+                // Add Schedule Interview button
+                val applyButton = view?.findViewById<MaterialButton>(R.id.applyButton)
+                applyButton?.let {
+                    it.text = "Schedule Interview"
+                    it.setOnClickListener {
+                        // Navigate to schedule interview fragment with applicant data
+                        val effectiveApplicantId = applicantDoc.id
+                        val bundle = Bundle().apply {
+                            putString("applicantId", effectiveApplicantId)
+                            putString("jobId", jobId)
+                            putString("universityId", universityId)
+                        }
+                        findNavController().navigate(R.id.action_jobDetailFragment_to_scheduleInterviewFragment, bundle)
+                    }
+                }
+            } else {
+                // No application found with any of the attempted formats
+                Log.d(TAG, "No application found for user with any ID format")
+                statusTextView.text = "No application submitted yet"
+                
+                // Reset apply button to original state
+                val applyButton = view?.findViewById<MaterialButton>(R.id.applyButton)
+                applyButton?.let {
+                    it.text = "Apply Now"
+                    it.setOnClickListener {
+                        applyForJob()
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error checking for existing application: ${e.message}", e)
+            statusTextView.text = "Error loading application status"
+        }
+    }
+    
     override fun onResume() {
         super.onResume()
         Log.d(TAG, "onResume called")
@@ -218,8 +810,10 @@ class JobDetailFragment : Fragment() {
     
     override fun onDestroy() {
         super.onDestroy()
-        // Dismiss dialog if it's showing to prevent memory leaks
+        // Dismiss dialogs if they're showing to prevent memory leaks
         jobInfoDialog?.dismiss()
         jobInfoDialog = null
+        applicationResultDialog?.dismiss()
+        applicationResultDialog = null
     }
 } 

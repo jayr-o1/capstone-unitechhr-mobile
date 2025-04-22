@@ -1,5 +1,6 @@
 package com.capstone.unitechhr.repositories
 
+import android.util.Log
 import com.capstone.unitechhr.models.Applicant
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -8,6 +9,7 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
 class ApplicantRepository {
+    private val TAG = "ApplicantRepository"
     private val firestore = FirebaseFirestore.getInstance()
     private val applicantsCollection = firestore.collection("applicants")
 
@@ -20,6 +22,7 @@ class ApplicantRepository {
             return@withContext snapshot.toObjects(Applicant::class.java)
         } catch (e: Exception) {
             // Handle errors
+            Log.e(TAG, "Error fetching applicants: ${e.message}")
             return@withContext emptyList()
         }
     }
@@ -30,6 +33,7 @@ class ApplicantRepository {
             return@withContext document.toObject(Applicant::class.java)
         } catch (e: Exception) {
             // Handle errors
+            Log.e(TAG, "Error fetching applicant by ID: ${e.message}")
             return@withContext null
         }
     }
@@ -45,6 +49,7 @@ class ApplicantRepository {
             return@withContext true
         } catch (e: Exception) {
             // Handle errors
+            Log.e(TAG, "Error adding applicant: ${e.message}")
             return@withContext false
         }
     }
@@ -55,6 +60,7 @@ class ApplicantRepository {
             return@withContext true
         } catch (e: Exception) {
             // Handle errors
+            Log.e(TAG, "Error updating applicant: ${e.message}")
             return@withContext false
         }
     }
@@ -65,6 +71,7 @@ class ApplicantRepository {
             return@withContext true
         } catch (e: Exception) {
             // Handle errors
+            Log.e(TAG, "Error deleting applicant: ${e.message}")
             return@withContext false
         }
     }
@@ -83,7 +90,53 @@ class ApplicantRepository {
             }
         } catch (e: Exception) {
             // Handle errors
+            Log.e(TAG, "Error searching applicants: ${e.message}")
             return@withContext emptyList()
+        }
+    }
+    
+    /**
+     * Update FCM token for an applicant
+     */
+    suspend fun updateFcmToken(applicantId: String, fcmToken: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            applicantsCollection.document(applicantId)
+                .update("fcmToken", fcmToken)
+                .await()
+            Log.d(TAG, "FCM token updated for applicant: $applicantId")
+            return@withContext true
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating FCM token for applicant: ${e.message}")
+            return@withContext false
+        }
+    }
+    
+    /**
+     * Check if notifications are enabled for an applicant
+     */
+    suspend fun isNotificationsEnabled(applicantId: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val doc = applicantsCollection.document(applicantId).get().await()
+            return@withContext doc.getBoolean("notificationsEnabled") ?: true
+        } catch (e: Exception) {
+            Log.e(TAG, "Error checking notification settings: ${e.message}")
+            return@withContext true  // Default to enabled if error
+        }
+    }
+    
+    /**
+     * Enable or disable notifications for an applicant
+     */
+    suspend fun setNotificationsEnabled(applicantId: String, enabled: Boolean): Boolean = withContext(Dispatchers.IO) {
+        try {
+            applicantsCollection.document(applicantId)
+                .update("notificationsEnabled", enabled)
+                .await()
+            Log.d(TAG, "Notification settings updated for applicant: $applicantId to $enabled")
+            return@withContext true
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating notification settings: ${e.message}")
+            return@withContext false
         }
     }
 } 

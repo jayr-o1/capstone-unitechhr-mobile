@@ -1,5 +1,8 @@
 package com.capstone.unitechhr.fragments
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
@@ -8,14 +11,19 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.Switch
 import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import com.capstone.unitechhr.R
 import com.capstone.unitechhr.models.ApplicationStatus
+import com.capstone.unitechhr.utils.ApplicantNotificationManager
 import com.capstone.unitechhr.viewmodels.ApplicantViewModel
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
@@ -26,6 +34,21 @@ class ApplicantDetailFragment : Fragment() {
     
     private lateinit var viewModel: ApplicantViewModel
     private val dateFormatter = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+    
+    // Permission request launcher
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            Toast.makeText(context, "Notification permission granted", Toast.LENGTH_SHORT).show()
+            // Re-initialize FCM with permission granted
+            viewModel.selectedApplicant.value?.let { 
+                ApplicantNotificationManager.initializeApplicantFcm(requireContext(), it)
+            }
+        } else {
+            Toast.makeText(context, "Notification permission denied", Toast.LENGTH_SHORT).show()
+        }
+    }
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,11 +74,17 @@ class ApplicantDetailFragment : Fragment() {
             setDisplayHomeAsUpEnabled(true)
         }
         
+        // Request notification permission if needed
+        requestNotificationPermissionIfNeeded()
+        
         viewModel.selectedApplicant.observe(viewLifecycleOwner) { applicant ->
             if (applicant == null) {
                 findNavController().navigateUp()
                 return@observe
             }
+            
+            // Initialize FCM for this applicant
+            ApplicantNotificationManager.initializeApplicantFcm(requireContext(), applicant)
             
             // Populate views with applicant data
             view.findViewById<TextView>(R.id.applicant_name).text = 
@@ -103,6 +132,9 @@ class ApplicantDetailFragment : Fragment() {
             setupEducationSection(view, applicant.education.isEmpty())
             setupExperienceSection(view, applicant.experience.isEmpty())
             
+            // Setup notification switch
+            setupNotificationSwitch(view, applicant.id, applicant.notificationsEnabled)
+            
             // Setup buttons
             setupActionButtons(view, applicant.status)
         }
@@ -110,6 +142,53 @@ class ApplicantDetailFragment : Fragment() {
         // Handle edit button click
         view.findViewById<Button>(R.id.edit_button).setOnClickListener {
             findNavController().navigate(R.id.action_applicantDetailFragment_to_applicantFormFragment)
+        }
+    }
+    
+    private fun setupNotificationSwitch(view: View, applicantId: String, notificationsEnabled: Boolean) {
+        // Find or create the notification switch
+        val notificationSwitch = view.findViewById<Switch>(R.id.notification_switch)
+        notificationSwitch?.let {
+            // Set initial state
+            it.isChecked = notificationsEnabled
+            
+            // Add change listener
+            it.setOnCheckedChangeListener { _, isChecked ->
+                // Update notification preferences
+                ApplicantNotificationManager.setApplicantNotificationsEnabled(applicantId, isChecked)
+                
+                // Show toast feedback
+                val message = if (isChecked) "Notifications enabled" else "Notifications disabled"
+                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            when {
+                ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED -> {
+                    // Permission already granted
+                }
+                shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS) -> {
+                    // Show explanation before requesting permission
+                    AlertDialog.Builder(requireContext())
+                        .setTitle("Notification Permission")
+                        .setMessage("To receive updates about your application status, please allow notifications.")
+                        .setPositiveButton("OK") { _, _ ->
+                            requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                }
+                else -> {
+                    // Request permission directly
+                    requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
         }
     }
     
@@ -215,6 +294,8 @@ class ApplicantDetailFragment : Fragment() {
             .setMessage("Are you sure you want to delete this applicant? This action cannot be undone.")
             .setPositiveButton("Delete") { _, _ ->
                 viewModel.selectedApplicant.value?.let { applicant ->
+                    // Unsubscribe from topics before deleting
+                    ApplicantNotificationManager.unsubscribeApplicantFromTopics(applicant)
                     viewModel.deleteApplicant(applicant.id)
                     findNavController().navigateUp()
                 }

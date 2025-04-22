@@ -18,15 +18,13 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 class InterviewAdapter(
-    private val onViewDetailsClick: (Interview) -> Unit,
-    private val onRescheduleClick: (Interview) -> Unit,
-    private val onCompleteClick: (Interview) -> Unit
+    private val onViewDetailsClick: (Interview) -> Unit
 ) : ListAdapter<InterviewWithDetails, InterviewAdapter.InterviewViewHolder>(InterviewDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): InterviewViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_interview, parent, false)
-        return InterviewViewHolder(view, onViewDetailsClick, onRescheduleClick, onCompleteClick)
+        return InterviewViewHolder(view, onViewDetailsClick)
     }
 
     override fun onBindViewHolder(holder: InterviewViewHolder, position: Int) {
@@ -35,9 +33,7 @@ class InterviewAdapter(
 
     class InterviewViewHolder(
         itemView: View,
-        private val onViewDetailsClick: (Interview) -> Unit,
-        private val onRescheduleClick: (Interview) -> Unit,
-        private val onCompleteClick: (Interview) -> Unit
+        private val onViewDetailsClick: (Interview) -> Unit
     ) : RecyclerView.ViewHolder(itemView) {
         
         private val interviewDateTextView: TextView = itemView.findViewById(R.id.interviewDateTextView)
@@ -47,8 +43,6 @@ class InterviewAdapter(
         private val jobTitleTextView: TextView = itemView.findViewById(R.id.jobTitleTextView)
         private val locationTextView: TextView = itemView.findViewById(R.id.locationTextView)
         private val viewDetailsButton: MaterialButton = itemView.findViewById(R.id.viewDetailsButton)
-        private val rescheduleButton: MaterialButton = itemView.findViewById(R.id.rescheduleButton)
-        private val completeButton: MaterialButton = itemView.findViewById(R.id.completeButton)
         
         private val dateTimeFormatter = SimpleDateFormat("MMM dd, yyyy - h:mm a", Locale.getDefault())
         
@@ -86,26 +80,8 @@ class InterviewAdapter(
             // Set location
             locationTextView.text = "Location: ${interview.location}"
             
-            // Configure buttons based on status
-            when (interview.status) {
-                InterviewStatus.SCHEDULED -> {
-                    rescheduleButton.visibility = View.VISIBLE
-                    completeButton.visibility = View.VISIBLE
-                }
-                InterviewStatus.COMPLETED, InterviewStatus.CANCELLED -> {
-                    rescheduleButton.visibility = View.GONE
-                    completeButton.visibility = View.GONE
-                }
-                InterviewStatus.RESCHEDULED -> {
-                    rescheduleButton.visibility = View.VISIBLE
-                    completeButton.visibility = View.VISIBLE
-                }
-            }
-            
             // Set click listeners
             viewDetailsButton.setOnClickListener { onViewDetailsClick(interview) }
-            rescheduleButton.setOnClickListener { onRescheduleClick(interview) }
-            completeButton.setOnClickListener { onCompleteClick(interview) }
         }
     }
     

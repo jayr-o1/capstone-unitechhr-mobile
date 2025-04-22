@@ -5,5 +5,6 @@
         <item>@font/urbanist_light</item>
         <item>@font/urbanist_medium</item>
         <item>@font/urbanist_semibold</item>
+        <item>@font/urbanist_bold</item>
     </array>
 </resources>

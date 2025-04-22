@@ -191,8 +191,17 @@ class InterviewViewModel : ViewModel() {
         meetingLink: String,
         notes: String
     ) {
+        // Ensure applicantId is in sanitized format for consistency
+        val sanitizedApplicantId = if (applicantId.contains("@")) {
+            // Convert email to sanitized format
+            applicantId.replace("@", "-").replace(".", "-")
+        } else {
+            // Already sanitized or in another format, keep as is
+            applicantId
+        }
+        
         val newInterview = Interview(
-            applicantId = applicantId,
+            applicantId = sanitizedApplicantId,
             jobId = jobId,
             interviewerIds = interviewerIds,
             scheduledDate = scheduledDate,
@@ -276,5 +285,47 @@ class InterviewViewModel : ViewModel() {
     
     fun clearOperationStatus() {
         _operationStatus.value = null
+    }
+    
+    fun loadInterviewsByUserEmail(email: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val interviewsList = interviewRepository.getAllInterviewsForUser(email)
+                _interviews.value = interviewsList
+                
+                // Load related data if we have interviews
+                if (interviewsList.isNotEmpty()) {
+                    loadRelatedData(interviewsList)
+                }
+                
+                _errorMessage.value = null
+            } catch (e: Exception) {
+                _errorMessage.value = "Failed to load interviews: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+    
+    fun loadInterviewsFromApplicantSubcollection(email: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val interviewsList = interviewRepository.getInterviewsFromApplicantSubcollection(email)
+                _interviews.value = interviewsList
+                
+                // Load related data if we have interviews
+                if (interviewsList.isNotEmpty()) {
+                    loadRelatedData(interviewsList)
+                }
+                
+                _errorMessage.value = null
+            } catch (e: Exception) {
+                _errorMessage.value = "Failed to load interviews: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
     }
 } 

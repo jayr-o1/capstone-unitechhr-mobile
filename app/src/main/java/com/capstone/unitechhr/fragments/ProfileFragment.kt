@@ -51,11 +51,6 @@ class ProfileFragment : Fragment() {
         emailTextView = view.findViewById(R.id.emailTextView)
         nameTextView = view.findViewById(R.id.nameTextView)
         
-        // Set up back button
-        view.findViewById<View>(R.id.backButton).setOnClickListener {
-            findNavController().navigateUp()
-        }
-        
         // Store context in weak reference for safety
         weakContext = WeakReference(requireContext())
         
@@ -66,6 +61,11 @@ class ProfileFragment : Fragment() {
         authViewModel.currentUser.observe(viewLifecycleOwner) { userData ->
             emailTextView.text = userData?.email ?: "Not logged in"
             nameTextView.text = userData?.displayName ?: "User"
+        }
+        
+        // Set up resume section click listener
+        view.findViewById<View>(R.id.resumeSection).setOnClickListener {
+            findNavController().navigate(R.id.action_profileFragment_to_resumeUploadFragment)
         }
         
         // Set up logout button

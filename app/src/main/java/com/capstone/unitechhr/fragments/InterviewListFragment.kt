@@ -9,6 +9,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -16,13 +17,16 @@ import com.capstone.unitechhr.R
 import com.capstone.unitechhr.adapters.InterviewAdapter
 import com.capstone.unitechhr.adapters.InterviewWithDetails
 import com.capstone.unitechhr.models.InterviewStatus
+import com.capstone.unitechhr.viewmodels.AuthViewModel
 import com.capstone.unitechhr.viewmodels.InterviewViewModel
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.tabs.TabLayout
+import android.util.Log
 
 class InterviewListFragment : Fragment() {
     
     private val viewModel: InterviewViewModel by viewModels()
+    private val authViewModel: AuthViewModel by activityViewModels()
     private lateinit var adapter: InterviewAdapter
     
     private lateinit var recyclerView: RecyclerView
@@ -59,14 +63,6 @@ class InterviewListFragment : Fragment() {
             onViewDetailsClick = { interview ->
                 viewModel.selectInterview(interview)
                 findNavController().navigate(R.id.action_interviewListFragment_to_interviewDetailFragment)
-            },
-            onRescheduleClick = { interview ->
-                // Navigate to reschedule screen
-                viewModel.selectInterview(interview)
-                findNavController().navigate(R.id.action_interviewListFragment_to_scheduleInterviewFragment)
-            },
-            onCompleteClick = { interview ->
-                viewModel.completeInterview(interview.id)
             }
         )
         
@@ -137,13 +133,38 @@ class InterviewListFragment : Fragment() {
     }
     
     private fun loadInterviews() {
-        viewModel.loadInterviews()
+        val userEmail = authViewModel.currentUser.value?.email
+        if (userEmail != null) {
+            Log.d("InterviewListFragment", "Loading interviews for user email: $userEmail")
+            
+            // First try to load from applicant subcollection (which seems to be where your interviews are stored)
+            viewModel.loadInterviewsFromApplicantSubcollection(userEmail)
+        } else {
+            // Fallback to loading all interviews if no user email is available
+            Log.d("InterviewListFragment", "No user email found, loading all interviews")
+            viewModel.loadInterviews()
+        }
     }
     
     private fun updateAdapterData() {
         val interviews = viewModel.interviews.value ?: emptyList()
         val applicantsMap = viewModel.interviewApplicants.value ?: emptyMap()
         val jobsMap = viewModel.interviewJobs.value ?: emptyMap()
+        
+        Log.d("InterviewListFragment", "Updating adapter with ${interviews.size} interviews")
+        if (interviews.isEmpty()) {
+            Log.d("InterviewListFragment", "No interviews found for the user")
+            // Try to find the empty state text view to update message
+            view?.findViewById<TextView>(R.id.emptyDescription)?.let { textView ->
+                if (viewModel.errorMessage.value != null) {
+                    textView.text = "Unable to load your scheduled interviews due to a format mismatch."
+                } else {
+                    textView.text = "You don't have any interviews scheduled."
+                }
+            }
+        } else {
+            Log.d("InterviewListFragment", "Found ${interviews.size} interviews with applicantIds: ${interviews.map { it.applicantId }}")
+        }
         
         val interviewWithDetailsList = interviews.map { interview ->
             InterviewWithDetails(
@@ -156,9 +177,11 @@ class InterviewListFragment : Fragment() {
         if (interviewWithDetailsList.isEmpty()) {
             emptyStateContainer.visibility = View.VISIBLE
             recyclerView.visibility = View.GONE
+            Log.d("InterviewListFragment", "Empty state shown: No interviews to display")
         } else {
             emptyStateContainer.visibility = View.GONE
             recyclerView.visibility = View.VISIBLE
+            Log.d("InterviewListFragment", "Showing ${interviewWithDetailsList.size} interviews in list")
         }
         
         val currentTabPosition = tabLayout.selectedTabPosition

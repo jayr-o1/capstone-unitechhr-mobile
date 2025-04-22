@@ -230,6 +230,9 @@
                         android:fontFamily="@font/urbanist"
                         android:textColor="#E6FFFFFF"
                         android:textSize="16sp"
+                        android:lineSpacingExtra="4dp"
+                        android:autoLink="none"
+                        android:textIsSelectable="false"
                         android:text="No application submitted yet" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>

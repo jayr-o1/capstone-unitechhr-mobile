@@ -85,6 +85,8 @@ dependencies {
     implementation("com.google.firebase:firebase-functions-ktx")
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-messaging-ktx")
+    implementation("com.google.firebase:firebase-storage-ktx")
+    implementation("com.google.firebase:firebase-common-ktx")
     
     // Google Auth
     implementation("com.google.android.gms:play-services-auth:20.7.0")
@@ -92,6 +94,12 @@ dependencies {
     // Email sending libraries
     implementation("com.sun.mail:android-mail:1.6.7")
     implementation("com.sun.mail:android-activation:1.6.7")
+
+    // OkHttp for network requests
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
+    
+    // Gson for JSON parsing
+    implementation("com.google.code.gson:gson:2.10.1")
 
     testImplementation(libs.junit)
     androidTestImplementation("androidx.test.ext:junit:1.9.0")

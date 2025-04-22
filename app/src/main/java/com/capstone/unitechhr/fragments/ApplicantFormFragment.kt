@@ -146,7 +146,12 @@ class ApplicantFormFragment : Fragment() {
             email = email,
             phone = phone,
             appliedPosition = position,
-            skills = skills.toList()
+            skills = skills.toList(),
+            education = emptyList(),
+            experience = emptyList(),
+            applicationDate = Date(),
+            status = ApplicationStatus.PENDING,
+            resume = ""
         ) ?: Applicant(
             id = "",
             firstName = firstName,

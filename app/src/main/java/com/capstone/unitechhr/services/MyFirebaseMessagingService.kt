@@ -1,12 +1,16 @@
 package com.capstone.unitechhr.services
 
 import android.util.Log
+import com.capstone.unitechhr.repositories.ApplicantRepository
 import com.capstone.unitechhr.utils.NotificationUtils
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.google.firebase.Timestamp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * Service that extends FirebaseMessagingService to handle incoming FCM messages
@@ -43,8 +47,42 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         // Save the token
         NotificationUtils.saveFcmToken(applicationContext, token)
         
-        // Send the token to server
+        // Send the token to server for current user
         sendRegistrationToServer(token)
+        
+        // Update token for applicant if exists
+        updateApplicantToken(token)
+    }
+    
+    /**
+     * Update FCM token for applicant in Firestore
+     */
+    private fun updateApplicantToken(token: String) {
+        // Check if there's a current user
+        val currentUser = FirebaseAuth.getInstance().currentUser ?: return
+        
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                // First, check if user exists as an applicant
+                val applicantRepository = ApplicantRepository()
+                
+                // Try to find an applicant with the user's email
+                val applicants = applicantRepository.searchApplicants(currentUser.email ?: "")
+                
+                // If found, update FCM token
+                applicants.firstOrNull()?.let { applicant ->
+                    Log.d(TAG, "Found applicant with ID: ${applicant.id}")
+                    val success = applicantRepository.updateFcmToken(applicant.id, token)
+                    if (success) {
+                        Log.d(TAG, "Updated FCM token for applicant: ${applicant.id}")
+                    } else {
+                        Log.e(TAG, "Failed to update FCM token for applicant: ${applicant.id}")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating applicant token: ${e.message}")
+            }
+        }
     }
 
     /**
