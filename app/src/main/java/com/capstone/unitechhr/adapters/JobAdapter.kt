@@ -1,5 +1,6 @@
 package com.capstone.unitechhr.adapters
 
+import android.graphics.Color
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -19,11 +20,28 @@ class JobAdapter(private val onItemClick: (Job) -> Unit) :
     ListAdapter<Job, JobAdapter.JobViewHolder>(JobDiffCallback()) {
 
     private val TAG = "JobAdapter"
+    
+    // Map to store university colors
+    private val universityColors = mutableMapOf<String, Int>()
+    
+    // Predefined colors for universities
+    private val colorOptions = listOf(
+        "#E53935", // Red
+        "#8E24AA", // Purple
+        "#3949AB", // Indigo
+        "#039BE5", // Light Blue
+        "#00897B", // Teal
+        "#7CB342", // Light Green
+        "#FFB300", // Amber
+        "#F57C00", // Orange
+        "#5D4037", // Brown
+        "#546E7A"  // Blue Grey
+    )
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): JobViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_job, parent, false)
-        return JobViewHolder(view, onItemClick)
+        return JobViewHolder(view, onItemClick, universityColors, colorOptions)
     }
 
     override fun onBindViewHolder(holder: JobViewHolder, position: Int) {
@@ -34,6 +52,16 @@ class JobAdapter(private val onItemClick: (Job) -> Unit) :
 
     override fun submitList(list: List<Job>?) {
         Log.d(TAG, "Submitting job list: ${list?.size ?: 0} items")
+        
+        // Assign colors to universities
+        list?.forEach { job ->
+            if (job.universityId.isNotEmpty() && !universityColors.containsKey(job.universityId)) {
+                // Assign a random color from colorOptions
+                val randomColor = colorOptions[universityColors.size % colorOptions.size]
+                universityColors[job.universityId] = Color.parseColor(randomColor)
+            }
+        }
+        
         if (list != null && list.isNotEmpty()) {
             // Log first job as an example
             val firstJob = list[0]
@@ -46,7 +74,9 @@ class JobAdapter(private val onItemClick: (Job) -> Unit) :
 
     class JobViewHolder(
         itemView: View,
-        private val onItemClick: (Job) -> Unit
+        private val onItemClick: (Job) -> Unit,
+        private val universityColors: Map<String, Int>,
+        private val colorOptions: List<String>
     ) : RecyclerView.ViewHolder(itemView) {
         
         private val TAG = "JobViewHolder"
@@ -58,6 +88,7 @@ class JobAdapter(private val onItemClick: (Job) -> Unit) :
         private val jobTypeTextView: TextView = itemView.findViewById(R.id.jobTypeTextView)
         private val postedDateTextView: TextView = itemView.findViewById(R.id.postedDateTextView)
         private val favoriteIcon: ImageView = itemView.findViewById(R.id.favoriteIcon)
+        private val universityColorStrip: View = itemView.findViewById(R.id.universityColorStrip)
         
         fun bind(job: Job) {
             Log.d(TAG, "Binding job ${job.id} - ${job.title}")
@@ -68,8 +99,18 @@ class JobAdapter(private val onItemClick: (Job) -> Unit) :
             if (job.universityName.isNotEmpty()) {
                 universityTextView.text = job.universityName
                 universityTextView.visibility = View.VISIBLE
+                
+                // Set university color strip
+                if (job.universityId.isNotEmpty() && universityColors.containsKey(job.universityId)) {
+                    universityColorStrip.setBackgroundColor(universityColors[job.universityId]!!)
+                } else {
+                    // Fallback to default blue if no color assigned
+                    universityColorStrip.setBackgroundColor(Color.parseColor("#2A3990"))
+                }
             } else {
                 universityTextView.visibility = View.GONE
+                // Default color
+                universityColorStrip.setBackgroundColor(Color.parseColor("#2A3990"))
             }
             
             // Use department as company if available

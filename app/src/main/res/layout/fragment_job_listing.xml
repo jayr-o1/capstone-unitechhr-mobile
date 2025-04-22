@@ -137,7 +137,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:paddingHorizontal="8dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="16dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -146,7 +148,8 @@
                 android:textColor="@color/blue"
                 android:textSize="20sp"
                 android:fontFamily="@font/urbanist_semibold"
-                android:layout_marginBottom="16dp" />
+                android:layout_marginStart="8dp"
+                android:layout_marginBottom="12dp" />
 
             <!-- Jobs RecyclerView -->
             <androidx.recyclerview.widget.RecyclerView
@@ -154,6 +157,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:clipToPadding="false"
+                android:paddingBottom="16dp"
                 tools:listitem="@layout/item_job" />
         </LinearLayout>
 

@@ -4,117 +4,176 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="16dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="4dp">
+    android:layout_marginHorizontal="8dp"
+    android:layout_marginVertical="8dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="3dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="16dp"
-        android:background="@drawable/card_gradient_blue">
+        android:orientation="vertical">
 
-        <LinearLayout
-            android:layout_width="0dp"
+        <!-- Color coding strip for university -->
+        <View
+            android:id="@+id/universityColorStrip"
+            android:layout_width="match_parent"
+            android:layout_height="6dp"
+            android:background="#2A3990" />
+
+        <!-- Top section with gradient background -->
+        <FrameLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
-            
-            <TextView
-                android:id="@+id/jobTitleTextView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/urbanist_semibold"
-                android:textColor="@color/white"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                tools:text="Software Engineer" />
+            android:background="@drawable/card_gradient_blue">
 
-            <TextView
-                android:id="@+id/universityTextView"
+            <!-- Content container -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:fontFamily="@font/urbanist_semibold"
-                android:textColor="#FFEEF4"
-                android:textSize="14sp"
-                tools:text="Example University" />
-                
-            <TextView
-                android:id="@+id/companyTextView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:fontFamily="@font/urbanist"
-                android:textColor="#E6FFFFFF"
-                android:textSize="15sp"
-                tools:text="Example Company" />
+                android:orientation="vertical"
+                android:padding="16dp">
 
-            <TextView
-                android:id="@+id/locationTextView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:fontFamily="@font/urbanist"
-                android:textColor="#E0FFFFFF"
-                android:textSize="14sp"
-                tools:text="San Francisco, CA" />
-            
+                <!-- Title with background -->
+                <TextView
+                    android:id="@+id/jobTitleTextView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/job_title_background"
+                    android:fontFamily="@font/urbanist_semibold"
+                    android:textColor="@color/white"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    tools:text="Software Engineer" />
+
+                <!-- Department and university info (swapped) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="12dp">
+                    
+                    <TextView
+                        android:id="@+id/companyTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/urbanist_semibold"
+                        android:textColor="#E6FFFFFF"
+                        android:textSize="16sp"
+                        tools:text="IT Department" />
+                        
+                    <TextView
+                        android:id="@+id/universityTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="@font/urbanist"
+                        android:textColor="#FFEEF4"
+                        android:textSize="15sp"
+                        tools:text="Example University" />
+                </LinearLayout>
+
+                <!-- Location row with icon -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:src="@android:drawable/ic_menu_mylocation"
+                        android:tint="#E0FFFFFF" />
+
+                    <TextView
+                        android:id="@+id/locationTextView"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="6dp"
+                        android:fontFamily="@font/urbanist"
+                        android:textColor="#E0FFFFFF"
+                        android:textSize="14sp"
+                        tools:text="San Francisco, CA" />
+                        
+                    <ImageView
+                        android:id="@+id/favoriteIcon"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:src="@android:drawable/btn_star_big_off"
+                        android:tint="@color/white" />
+                </LinearLayout>
+            </LinearLayout>
+        </FrameLayout>
+
+        <!-- Subtle divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@drawable/subtle_divider" />
+
+        <!-- Bottom section with white background -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:background="@android:color/white">
+
+            <!-- Salary and job type row -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginTop="12dp">
+                android:gravity="center_vertical">
                 
-                <TextView
-                    android:id="@+id/salaryTextView"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/urbanist_semibold"
-                    android:textColor="#FFFFFF"
-                    android:textSize="16sp"
-                    tools:text="$120,000 - $150,000" />
-                
-                <View
+                <LinearLayout
                     android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"/>
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+                    
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:src="@android:drawable/ic_menu_info_details"
+                        android:tint="#2A3990" />
+                        
+                    <TextView
+                        android:id="@+id/salaryTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:fontFamily="@font/urbanist_semibold"
+                        android:textColor="#2A3990"
+                        android:textSize="16sp"
+                        tools:text="$120,000 - $150,000" />
+                </LinearLayout>
                 
                 <TextView
                     android:id="@+id/jobTypeTextView"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/rounded_background"
-                    android:paddingStart="8dp"
-                    android:paddingTop="4dp"
-                    android:paddingEnd="8dp"
-                    android:paddingBottom="4dp"
-                    android:fontFamily="@font/urbanist"
-                    android:textColor="@android:color/white"
-                    android:textSize="12sp"
+                    android:fontFamily="@font/urbanist_semibold"
+                    android:textColor="#0D47A1"
+                    android:textSize="13sp"
                     tools:text="Full-time" />
             </LinearLayout>
             
+            <!-- Posted date row -->
             <TextView
                 android:id="@+id/postedDateTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:fontFamily="@font/urbanist"
-                android:textColor="#E0FFFFFF"
+                android:textColor="#757575"
                 android:textSize="12sp"
                 tools:text="Posted 3 days ago" />
-                
         </LinearLayout>
-        
-        <ImageView
-            android:id="@+id/favoriteIcon"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:layout_gravity="top"
-            android:src="@android:drawable/btn_star_big_off"
-            android:tint="@color/white"
-            android:layout_marginStart="8dp" />
     </LinearLayout>
 </androidx.cardview.widget.CardView> 
