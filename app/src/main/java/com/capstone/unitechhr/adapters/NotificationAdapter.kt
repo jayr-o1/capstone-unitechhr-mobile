@@ -4,6 +4,7 @@ import android.text.format.DateUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
@@ -13,7 +14,8 @@ import com.capstone.unitechhr.models.NotificationType
 import java.util.Date
 
 class NotificationAdapter(
-    private val onItemClick: (Notification) -> Unit
+    private val onItemClick: (Notification) -> Unit,
+    private val onDismissClick: (Notification) -> Unit
 ) : RecyclerView.Adapter<NotificationAdapter.NotificationViewHolder>() {
     
     private var notifications: List<Notification> = emptyList()
@@ -25,7 +27,7 @@ class NotificationAdapter(
     
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): NotificationViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_notification, parent, false)
-        return NotificationViewHolder(view, onItemClick)
+        return NotificationViewHolder(view, onItemClick, onDismissClick)
     }
     
     override fun onBindViewHolder(holder: NotificationViewHolder, position: Int) {
@@ -36,7 +38,8 @@ class NotificationAdapter(
     
     class NotificationViewHolder(
         itemView: View,
-        private val onItemClick: (Notification) -> Unit
+        private val onItemClick: (Notification) -> Unit,
+        private val onDismissClick: (Notification) -> Unit
     ) : RecyclerView.ViewHolder(itemView) {
         
         private val typeIcon: ImageView = itemView.findViewById(R.id.notificationTypeIcon)
@@ -44,6 +47,7 @@ class NotificationAdapter(
         private val title: TextView = itemView.findViewById(R.id.notificationTitle)
         private val message: TextView = itemView.findViewById(R.id.notificationMessage)
         private val time: TextView = itemView.findViewById(R.id.notificationTime)
+        private val dismissButton: ImageButton = itemView.findViewById(R.id.dismissButton)
         
         fun bind(notification: Notification) {
             // Set notification data
@@ -56,15 +60,20 @@ class NotificationAdapter(
             
             // Set icon based on notification type
             when (notification.type) {
-                NotificationType.JOB_POSTED -> typeIcon.setImageResource(R.drawable.ic_work)
+                NotificationType.JOB_POSTED, NotificationType.NEW_JOB -> typeIcon.setImageResource(R.drawable.ic_work)
                 NotificationType.INTERVIEW_SCHEDULED -> typeIcon.setImageResource(R.drawable.ic_schedule)
                 NotificationType.APPLICATION_STATUS_CHANGE -> typeIcon.setImageResource(R.drawable.ic_assessment)
                 else -> typeIcon.setImageResource(R.drawable.ic_notifications)
             }
             
-            // Set click listener
+            // Set click listener for the notification item
             itemView.setOnClickListener {
                 onItemClick(notification)
+            }
+            
+            // Set click listener for the dismiss button
+            dismissButton.setOnClickListener {
+                onDismissClick(notification)
             }
         }
         

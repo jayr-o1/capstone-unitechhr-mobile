@@ -482,9 +482,12 @@ class ApplicationRepository {
      */
     private suspend fun saveAnalysisToFirestore(analysis: ApplicationAnalysis): Boolean = withContext(Dispatchers.IO) {
         try {
+            // Convert email to consistent collection ID format
+            val applicantId = analysis.userId.replace("@", "-").replace(".", "-")
+            
             // Save analysis as a subcollection under the applicant's document
             firestore.collection("applicants")
-                .document(analysis.userId)
+                .document(applicantId)
                 .collection("analysis")
                 .document(analysis.id)
                 .set(analysis)

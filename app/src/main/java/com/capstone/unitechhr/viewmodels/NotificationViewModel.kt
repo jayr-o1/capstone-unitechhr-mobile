@@ -1,5 +1,6 @@
 package com.capstone.unitechhr.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -80,6 +81,32 @@ class NotificationViewModel : ViewModel() {
         }
     }
     
+    // Dismiss a notification (hide but don't delete it)
+    fun dismissNotification(applicantId: String, notificationId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            
+            try {
+                val success = repository.dismissNotification(applicantId, notificationId)
+                _operationResult.value = success
+                
+                // Update the local list to reflect changes by removing the notification
+                if (success) {
+                    val updatedList = _notifications.value?.filter { it.id != notificationId } ?: emptyList()
+                    _notifications.value = updatedList
+                    
+                    // Check if all remaining notifications are read
+                    _hasUnreadNotifications.value = updatedList.any { !it.isRead }
+                }
+            } catch (e: Exception) {
+                Log.e("NotificationViewModel", "Error dismissing notification: ${e.message}")
+                _operationResult.value = false
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+    
     // Mark all notifications as read
     fun markAllAsRead(applicantId: String) {
         viewModelScope.launch {
@@ -111,6 +138,20 @@ class NotificationViewModel : ViewModel() {
                 loadNotifications(applicantId)
             } catch (e: Exception) {
                 // Handle error
+            }
+        }
+    }
+    
+    // For testing - Add a sample general notification
+    fun addSampleGeneralNotification(notification: Notification) {
+        viewModelScope.launch {
+            try {
+                repository.addSampleGeneralNotification(notification)
+                // Check for notifications again to update the UI
+                _hasUnreadNotifications.value = true
+            } catch (e: Exception) {
+                // Handle error
+                Log.e("NotificationViewModel", "Error adding general notification: ${e.message}")
             }
         }
     }

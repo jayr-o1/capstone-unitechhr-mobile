@@ -1,6 +1,7 @@
 package com.capstone.unitechhr.fragments
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -48,6 +49,7 @@ class HomeFragment : Fragment() {
         
         // Setup welcome message with user's name
         val welcomeText = view.findViewById<TextView>(R.id.welcomeText)
+        
         authViewModel.currentUser.observe(viewLifecycleOwner) { userData ->
             userData?.let {
                 // Get the first name only
@@ -95,27 +97,13 @@ class HomeFragment : Fragment() {
     private fun checkForNotifications(email: String) {
         // Convert email to applicant ID format (same as in AuthRepository.emailToCollectionId)
         val applicantId = email.replace("@", "-").replace(".", "-")
+        Log.d("HomeFragment", "Checking for notifications for applicantId: $applicantId")
         notificationViewModel.checkUnreadNotifications(applicantId)
-        
-        // For testing only - uncomment to add a test notification
-        // addTestNotification(applicantId)
     }
     
     private fun navigateToNotifications() {
         // Navigate to the notification list fragment
         findNavController().navigate(R.id.action_homeFragment_to_notificationListFragment)
-    }
-    
-    // For testing purposes only
-    private fun addTestNotification(applicantId: String) {
-        val testNotification = Notification(
-            title = "New Job Posted",
-            message = "A new job matching your skills has been posted.",
-            timestamp = Date(),
-            isRead = false,
-            type = NotificationType.JOB_POSTED
-        )
-        notificationViewModel.addSampleNotification(applicantId, testNotification)
     }
     
     private fun setupInterviewCard(card: CardView, description: String, actionId: Int) {
