@@ -14,7 +14,9 @@ data class Applicant(
     val status: ApplicationStatus = ApplicationStatus.PENDING,
     val skills: List<String> = emptyList(),
     val education: List<ApplicantEducation> = emptyList(),
-    val experience: List<WorkExperience> = emptyList()
+    val experience: List<WorkExperience> = emptyList(),
+    val fcmToken: String = "",
+    val notificationsEnabled: Boolean = true
 )
 
 data class ApplicantEducation(
