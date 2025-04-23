@@ -134,7 +134,13 @@ class EmployeeOnboardingFragment : Fragment() {
         viewModel.errorMessage.observe(viewLifecycleOwner) { message ->
             message?.let {
                 Log.e(TAG, "Error: $it")
-                showToast(it)
+                
+                // Check if this is a document not found error
+                if (it.contains("Document not found") || it.contains("not found")) {
+                    showToast("Onboarding not set up yet. Please contact HR to set up your onboarding.")
+                } else {
+                    showToast(it)
+                }
             }
         }
         

@@ -18,7 +18,10 @@ data class UserData(
     val email: String,
     val displayName: String,
     val resumeUrl: String? = null,
-    val hasResume: Boolean = false
+    val hasResume: Boolean = false,
+    val jobTitle: String? = null,
+    val universityId: String? = null,
+    val jobId: String? = null
 )
 
 class AuthViewModel : ViewModel() {
@@ -98,12 +101,26 @@ class AuthViewModel : ViewModel() {
                 val resumeUrl = sharedPreferences.getString("resume_url", null)
                 val hasResume = !resumeUrl.isNullOrEmpty()
                 
+                // Load job-related information
+                val jobTitle = sharedPreferences.getString("job_title", null)
+                val universityId = sharedPreferences.getString("university_id", null)
+                val jobId = sharedPreferences.getString("job_id", null)
+                
                 // Update the current user value and email
-                val userData = UserData(email, displayName, resumeUrl, hasResume)
+                val userData = UserData(
+                    email = email, 
+                    displayName = displayName, 
+                    resumeUrl = resumeUrl, 
+                    hasResume = hasResume,
+                    jobTitle = jobTitle,
+                    universityId = universityId,
+                    jobId = jobId
+                )
                 _currentUser.value = userData
                 _currentUserEmail.value = email
                 
                 Log.d("AuthViewModel", "Successfully loaded user: $displayName ($email), resume: ${if (hasResume) "Yes" else "No"}")
+                Log.d("AuthViewModel", "User job info - title: $jobTitle, universityId: $universityId, jobId: $jobId")
                 
                 // If we somehow didn't have the name stored properly, update it
                 if (!sharedPreferences.contains("current_user_name")) {

@@ -40,6 +40,13 @@ class EmployeeOnboardingViewModel : ViewModel() {
                     collectionPath
                 }
                 
+                // Check if path matches the university/jobs/applicants pattern
+                val isUniversityJobPath = cleanPath.contains("/universities/") && 
+                                        cleanPath.contains("/jobs/") && 
+                                        cleanPath.contains("/applicants/")
+                
+                Log.d(TAG, "Is university job applicant path: $isUniversityJobPath")
+                
                 Log.d(TAG, "Using document path: $cleanPath")
                 val document = firestore.document(cleanPath).get().await()
                 Log.d(TAG, "Document exists: ${document.exists()}")
@@ -72,13 +79,121 @@ class EmployeeOnboardingViewModel : ViewModel() {
                         _errorMessage.value = null
                     } else {
                         Log.e(TAG, "Onboarding checklist array not found in document")
-                        _errorMessage.value = "Onboarding checklist not found"
-                        _tasks.value = emptyList()
+                        
+                        if (isUniversityJobPath) {
+                            // For university/job/applicant paths, create a default onboarding checklist
+                            Log.d(TAG, "Creating default onboarding checklist for university job applicant")
+                            
+                            val defaultChecklist = createDefaultChecklist()
+                            _tasks.value = defaultChecklist
+                            updateProgress(defaultChecklist)
+                            
+                            // Save the default checklist to Firestore
+                            try {
+                                val checklistData = defaultChecklist.map { task ->
+                                    mapOf(
+                                        "id" to task.id,
+                                        "task" to task.task,
+                                        "completed" to task.completed
+                                    )
+                                }
+                                
+                                // Get the current document data to determine if we should use set or update
+                                val documentData = document.data
+                                
+                                if (documentData != null) {
+                                    // If document exists, use update to add the onboardingChecklist field
+                                    firestore.document(cleanPath)
+                                        .update("onboardingChecklist", checklistData)
+                                        .addOnSuccessListener {
+                                            Log.d(TAG, "Default checklist added to existing document via update")
+                                        }
+                                        .addOnFailureListener { e ->
+                                            // If update fails (e.g., permission denied), try using set with merge
+                                            Log.e(TAG, "Error updating document with checklist: ${e.message}")
+                                            Log.d(TAG, "Attempting to set with merge instead...")
+                                            
+                                            val updatedData = hashMapOf<String, Any>(
+                                                "onboardingChecklist" to checklistData
+                                            )
+                                            
+                                            firestore.document(cleanPath)
+                                                .set(updatedData, com.google.firebase.firestore.SetOptions.merge())
+                                                .addOnSuccessListener {
+                                                    Log.d(TAG, "Default checklist added via set with merge")
+                                                }
+                                                .addOnFailureListener { e2 ->
+                                                    Log.e(TAG, "Error setting document with merge: ${e2.message}")
+                                                }
+                                        }
+                                } else {
+                                    // If document doesn't exist, create it with the checklist
+                                    val newDocData = hashMapOf<String, Any>(
+                                        "onboardingChecklist" to checklistData,
+                                        "createdAt" to com.google.firebase.Timestamp.now(),
+                                        "userId" to employeeId
+                                    )
+                                    
+                                    firestore.document(cleanPath)
+                                        .set(newDocData)
+                                        .addOnSuccessListener {
+                                            Log.d(TAG, "New document created with default checklist")
+                                        }
+                                        .addOnFailureListener { e ->
+                                            Log.e(TAG, "Error creating document with checklist: ${e.message}")
+                                        }
+                                }
+                                
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Error creating default checklist: ${e.message}")
+                            }
+                        } else {
+                            _errorMessage.value = "Onboarding checklist not found"
+                            _tasks.value = emptyList()
+                        }
                     }
                 } else {
                     Log.e(TAG, "Document not found at path: $cleanPath")
-                    _errorMessage.value = "Document not found"
-                    _tasks.value = emptyList()
+                    
+                    if (isUniversityJobPath) {
+                        // For university/job/applicant paths, create a new document with a default checklist
+                        Log.d(TAG, "Creating new document with default checklist at path: $cleanPath")
+                        
+                        val defaultChecklist = createDefaultChecklist()
+                        _tasks.value = defaultChecklist
+                        updateProgress(defaultChecklist)
+                        
+                        // Create a new document with the default checklist
+                        try {
+                            val checklistData = defaultChecklist.map { task ->
+                                mapOf(
+                                    "id" to task.id,
+                                    "task" to task.task,
+                                    "completed" to task.completed
+                                )
+                            }
+                            
+                            val newDocData = hashMapOf<String, Any>(
+                                "onboardingChecklist" to checklistData,
+                                "createdAt" to com.google.firebase.Timestamp.now(),
+                                "userId" to employeeId
+                            )
+                            
+                            firestore.document(cleanPath)
+                                .set(newDocData)
+                                .addOnSuccessListener {
+                                    Log.d(TAG, "New document created with default checklist")
+                                }
+                                .addOnFailureListener { e ->
+                                    Log.e(TAG, "Error creating document with checklist: ${e.message}")
+                                }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error creating new document with checklist: ${e.message}")
+                        }
+                    } else {
+                        _errorMessage.value = "Document not found"
+                        _tasks.value = emptyList()
+                    }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading tasks: ${e.message}", e)
@@ -88,6 +203,21 @@ class EmployeeOnboardingViewModel : ViewModel() {
                 _isLoading.value = false
             }
         }
+    }
+    
+    private fun createDefaultChecklist(): List<OnboardingChecklistTask> {
+        return listOf(
+            OnboardingChecklistTask(id = 1, task = "Complete employment paperwork", completed = false),
+            OnboardingChecklistTask(id = 2, task = "Set up company email account", completed = false),
+            OnboardingChecklistTask(id = 3, task = "Tour of office facilities", completed = false),
+            OnboardingChecklistTask(id = 4, task = "IT systems access setup", completed = false),
+            OnboardingChecklistTask(id = 5, task = "Meet with HR for benefits enrollment", completed = false),
+            OnboardingChecklistTask(id = 6, task = "Attend company orientation", completed = false),
+            OnboardingChecklistTask(id = 7, task = "Introduction to department team", completed = false),
+            OnboardingChecklistTask(id = 8, task = "Review company policies", completed = false),
+            OnboardingChecklistTask(id = 9, task = "Set up workstation", completed = false),
+            OnboardingChecklistTask(id = 10, task = "First project assignment", completed = false)
+        )
     }
     
     // Function to update a task status
