@@ -116,21 +116,12 @@ class MyApplicationsFragment : Fragment() {
                             jobViewModel.selectJob(job)
                             findNavController().navigate(R.id.action_myApplicationsFragment_to_jobDetailFragment)
                         } else {
-                            // Try hardcoded sample path
-                            val sampleJob = jobRepository.getJobById("university_322305", "bSpb3DxJCw6FbRKj58KT")
-                            
-                            if (sampleJob != null) {
-                                Log.d(TAG, "Using sample job as fallback: ${sampleJob.title}")
-                                jobViewModel.selectJob(sampleJob)
-                                findNavController().navigate(R.id.action_myApplicationsFragment_to_jobDetailFragment)
-                            } else {
-                                // Still couldn't find the job
-                                Toast.makeText(
-                                    requireContext(),
-                                    "Job details not found. Please try again later.",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
+                            // Show error message without hardcoded sample path
+                            Toast.makeText(
+                                requireContext(),
+                                "Job details not found. Please try again later.",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Error fetching job: ${e.message}", e)

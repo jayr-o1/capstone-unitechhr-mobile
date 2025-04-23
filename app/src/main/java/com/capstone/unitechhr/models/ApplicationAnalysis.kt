@@ -10,6 +10,7 @@ data class ApplicationAnalysis(
     val jobTitle: String = "",
     val resumeUrl: String = "",
     val analysisDate: Date = Date(),
+    val displayName: String? = null,
     
     // Analysis data
     @get:PropertyName("match_percentage")

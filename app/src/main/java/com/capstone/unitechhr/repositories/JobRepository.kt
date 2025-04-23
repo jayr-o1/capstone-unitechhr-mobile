@@ -104,6 +104,37 @@ class JobRepository {
         }
     }
     
+    suspend fun getJobById(jobId: String): Job? = withContext(Dispatchers.IO) {
+        try {
+            // Get all universities to search for this job
+            val universitiesSnapshot = universitiesCollection.get().await()
+            
+            // Search through all universities for this job
+            for (universityDoc in universitiesSnapshot.documents) {
+                val universityId = universityDoc.id
+                val universityName = universityDoc.getString("name") ?: ""
+                
+                // Check if this job exists in this university
+                val jobDoc = universitiesCollection.document(universityId)
+                    .collection("jobs")
+                    .document(jobId)
+                    .get()
+                    .await()
+                
+                if (jobDoc.exists()) {
+                    return@withContext convertDocumentToJob(jobDoc, universityId, universityName)
+                }
+            }
+            
+            // Job not found in any university
+            Log.e("JobRepository", "Job $jobId not found in any university")
+            return@withContext null
+        } catch (e: Exception) {
+            Log.e("JobRepository", "Error finding job $jobId across universities: ${e.message}")
+            return@withContext null
+        }
+    }
+    
     suspend fun searchJobs(query: String): List<Job> = withContext(Dispatchers.IO) {
         try {
             // Get all jobs first

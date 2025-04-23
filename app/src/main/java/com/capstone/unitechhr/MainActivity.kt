@@ -91,13 +91,17 @@ class MainActivity : AppCompatActivity() {
         val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
         bottomNavigationView.setupWithNavController(navController)
         
-        // Hide bottom navigation for login fragment
+        // Add destination changed listener to manage bottom nav visibility
         navController.addOnDestinationChangedListener { _, destination, _ ->
-            if (destination.id == R.id.loginFragment) {
-                bottomNavigationView.visibility = android.view.View.GONE
-            } else {
-                bottomNavigationView.visibility = android.view.View.VISIBLE
+            // Show bottom navigation only for main tabs
+            val showBottomNav = when (destination.id) {
+                R.id.homeFragment, R.id.jobListingFragment, R.id.profileFragment -> true
+                else -> false
             }
+            
+            // Log and update bottom nav visibility
+            Log.d(TAG, "Navigation destination changed to: ${destination.label}, showBottomNav: $showBottomNav")
+            bottomNavigationView.visibility = if (showBottomNav) android.view.View.VISIBLE else android.view.View.GONE
         }
 
         // Check and request notification permission
@@ -206,5 +210,10 @@ class MainActivity : AppCompatActivity() {
             
         Log.d(TAG, "User appears to be logged in with email: $storedEmail")
         return false
+    }
+
+    // Public method to access the NavController
+    fun getNavController(): NavController {
+        return navController
     }
 }

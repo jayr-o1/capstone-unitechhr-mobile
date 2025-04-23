@@ -357,6 +357,10 @@ class JobDetailFragment : Fragment() {
                 Log.d(TAG, "Submitting application for job: $jobTitle (ID: $jobId)")
                 Log.d(TAG, "Using resume URL: $resumeUrl")
                 
+                // Get the user's displayName from AuthViewModel
+                val currentUser = authViewModel.currentUser.value
+                val displayName = currentUser?.displayName
+                
                 // Call the API in the background
                 try {
                     val analysisResult = withContext(Dispatchers.IO) {
@@ -369,7 +373,8 @@ class JobDetailFragment : Fragment() {
                             qualifications,
                             userId,
                             jobId,
-                            jobTitle
+                            jobTitle,
+                            displayName
                         )
                     }
                     
@@ -740,15 +745,14 @@ class JobDetailFragment : Fragment() {
                 }
             }
             
-            // If we still didn't find an application, try the sample path format provided by the user
-            // Format: /universities/university_322305/jobs/bSpb3DxJCw6FbRKj58KT/applicants/jaycelosero-gmail-com
+            // If we still didn't find an application, try a more generic path format
             if (!applicantDoc.exists()) {
-                Log.d(TAG, "Trying sample path format as mentioned by user")
+                Log.d(TAG, "Trying alternative document format")
                 
                 // Parse user's email to document ID format
                 val emailAsDocId = userId.replace("@", "-").replace(".", "-")
                 
-                // Access using sample path format (with actual job and university IDs)
+                // Access using the actual job and university IDs
                 applicantDoc = withContext(Dispatchers.IO) {
                     db.collection("universities")
                         .document(universityId)
@@ -758,21 +762,6 @@ class JobDetailFragment : Fragment() {
                         .document(emailAsDocId)
                         .get()
                         .await()
-                }
-                
-                // If that doesn't work, try the exact sample path 
-                if (!applicantDoc.exists()) {
-                    Log.d(TAG, "Trying exact sample path provided by user")
-                    applicantDoc = withContext(Dispatchers.IO) {
-                        db.collection("universities")
-                            .document("university_322305")
-                            .collection("jobs")
-                            .document("bSpb3DxJCw6FbRKj58KT")
-                            .collection("applicants")
-                            .document(emailAsDocId)
-                            .get()
-                            .await()
-                    }
                 }
             }
             
