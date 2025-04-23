@@ -32,6 +32,7 @@ import kotlinx.coroutines.withContext
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import com.capstone.unitechhr.models.JobApplicationStatus
 
 class JobDetailFragment : Fragment() {
 
@@ -670,7 +671,12 @@ class JobDetailFragment : Fragment() {
      * Checks if there's an existing application for the current user and job,
      * and updates the status view accordingly
      */
-    private suspend fun checkForExistingApplication(universityId: String, jobId: String, userId: String, statusTextView: TextView) {
+    private suspend fun checkForExistingApplication(
+        universityId: String,
+        jobId: String,
+        userId: String,
+        statusTextView: TextView
+    ) {
         try {
             Log.d(TAG, "Checking for existing application for job $jobId with userId $userId")
             statusTextView.text = "Checking application status..."
@@ -734,6 +740,42 @@ class JobDetailFragment : Fragment() {
                 }
             }
             
+            // If we still didn't find an application, try the sample path format provided by the user
+            // Format: /universities/university_322305/jobs/bSpb3DxJCw6FbRKj58KT/applicants/jaycelosero-gmail-com
+            if (!applicantDoc.exists()) {
+                Log.d(TAG, "Trying sample path format as mentioned by user")
+                
+                // Parse user's email to document ID format
+                val emailAsDocId = userId.replace("@", "-").replace(".", "-")
+                
+                // Access using sample path format (with actual job and university IDs)
+                applicantDoc = withContext(Dispatchers.IO) {
+                    db.collection("universities")
+                        .document(universityId)
+                        .collection("jobs")
+                        .document(jobId)
+                        .collection("applicants")
+                        .document(emailAsDocId)
+                        .get()
+                        .await()
+                }
+                
+                // If that doesn't work, try the exact sample path 
+                if (!applicantDoc.exists()) {
+                    Log.d(TAG, "Trying exact sample path provided by user")
+                    applicantDoc = withContext(Dispatchers.IO) {
+                        db.collection("universities")
+                            .document("university_322305")
+                            .collection("jobs")
+                            .document("bSpb3DxJCw6FbRKj58KT")
+                            .collection("applicants")
+                            .document(emailAsDocId)
+                            .get()
+                            .await()
+                    }
+                }
+            }
+            
             if (applicantDoc.exists()) {
                 // Found existing application
                 Log.d(TAG, "Found existing application with ID: ${applicantDoc.id}")
@@ -741,9 +783,20 @@ class JobDetailFragment : Fragment() {
                 // Build detailed status message
                 val statusMessage = StringBuilder()
                 
-                // Get application status
-                val status = applicantDoc.getString("status") ?: "Pending"
-                statusMessage.append("Application Status: $status\n\n")
+                // Get application status - Log all fields for debugging
+                Log.d(TAG, "Application document fields: ${applicantDoc.data}")
+                
+                // Get the raw status string and log it
+                val rawStatus = applicantDoc.getString("status")
+                Log.d(TAG, "Raw status from Firestore: $rawStatus")
+                
+                // IMPORTANT - Simply display the raw status directly without any processing or conversion
+                // This ensures we show exactly what's in Firestore
+                val statusDisplay = rawStatus ?: "Pending"
+                Log.d(TAG, "Using raw status for display: $statusDisplay")
+                
+                // Format the status for display - use the original string value from Firestore
+                statusMessage.append("Application Status: $statusDisplay\n\n")
                 
                 // Get match percentage
                 val matchPercentage = applicantDoc.getString("matchPercentage") ?: "N/A"

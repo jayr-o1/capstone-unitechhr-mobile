@@ -50,7 +50,7 @@ class ApplicantAdapter(private val onItemClick: (Applicant) -> Unit) :
                 ApplicationStatus.PENDING -> R.color.status_pending
                 ApplicationStatus.REVIEWING -> R.color.status_reviewing
                 ApplicationStatus.INTERVIEW_SCHEDULED -> R.color.status_interview
-                ApplicationStatus.INTERVIEW -> R.color.status_interview
+                ApplicationStatus.INTERVIEW_COMPLETED -> R.color.status_interview
                 ApplicationStatus.HIRED -> R.color.status_hired
                 ApplicationStatus.REJECTED -> R.color.status_rejected
             }

@@ -4,7 +4,7 @@ enum class ApplicationStatus {
     PENDING,
     REVIEWING,
     INTERVIEW_SCHEDULED,
-    INTERVIEW,
+    INTERVIEW_COMPLETED,
     HIRED,
     REJECTED
 } 

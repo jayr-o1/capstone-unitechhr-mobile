@@ -38,7 +38,11 @@
         android:id="@+id/myApplicationsFragment"
         android:name="com.capstone.unitechhr.fragments.MyApplicationsFragment"
         android:label="My Applications"
-        tools:layout="@layout/fragment_applicant_list" />
+        tools:layout="@layout/fragment_my_applications">
+        <action
+            android:id="@+id/action_myApplicationsFragment_to_jobDetailFragment"
+            app:destination="@id/jobDetailFragment" />
+    </fragment>
 
     <!-- Notifications -->
     <fragment

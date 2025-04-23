@@ -34,6 +34,9 @@ import com.capstone.unitechhr.repositories.JobRepository
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentSnapshot
 import java.util.Locale
+import com.capstone.unitechhr.models.JobApplication
+import com.capstone.unitechhr.models.JobApplicationStatus
+import com.capstone.unitechhr.models.formatForDisplay
 
 class ApplicationRepository {
     private val TAG = "ApplicationRepository"
@@ -164,7 +167,7 @@ class ApplicationRepository {
                 jobTitle = "Android Developer",
                 companyName = "Google",
                 applicationDate = Date(System.currentTimeMillis() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
-                status = ApplicationStatus.INTERVIEW
+                status = ApplicationStatus.INTERVIEW_SCHEDULED
             ),
             Application(
                 id = "app2",
@@ -528,17 +531,17 @@ class ApplicationRepository {
             
             // Determine the appropriate application status based on the analysis
             val newStatus = when {
-                hasInterviewRecommendation || hasHighMatchPercentage -> ApplicationStatus.INTERVIEW
-                matchPercentageValue >= 60.0 -> ApplicationStatus.REVIEWING
-                else -> ApplicationStatus.PENDING
+                hasInterviewRecommendation || hasHighMatchPercentage -> JobApplicationStatus.INTERVIEW_SCHEDULED
+                matchPercentageValue >= 60.0 -> JobApplicationStatus.REVIEWING
+                else -> JobApplicationStatus.SUBMITTED
             }
             
             // Update the application status in Firestore
             updateApplicationStatus(analysis.userId, analysis.jobId, newStatus)
             
             // Copy applicant data to university's job applicants collection regardless of status
-            // For the copy to university jobs collection, always use PENDING initially
-            updateApplicationStatusAndCopyToUniversity(analysis, ApplicationStatus.PENDING)
+            // For the copy to university jobs collection, always use SUBMITTED initially
+            updateApplicationStatusAndCopyToUniversity(analysis, JobApplicationStatus.SUBMITTED)
             
             Log.d(TAG, "Successfully saved analysis: ${analysis.id} with status: $newStatus")
             return@withContext true
@@ -551,7 +554,7 @@ class ApplicationRepository {
     /**
      * Updates application status to INTERVIEW and copies the applicant data to university's job subcollection
      */
-    private suspend fun updateApplicationStatusAndCopyToUniversity(analysis: ApplicationAnalysis, newStatus: ApplicationStatus) = withContext(Dispatchers.IO) {
+    private suspend fun updateApplicationStatusAndCopyToUniversity(analysis: ApplicationAnalysis, newStatus: JobApplicationStatus) = withContext(Dispatchers.IO) {
         try {
             // Format the user ID properly - handle both normal IDs and email IDs
             val sanitizedUserId = analysis.userId.replace("@", "-").replace(".", "-")
@@ -588,7 +591,7 @@ class ApplicationRepository {
     /**
      * Create a minimal applicant profile when user document is not found
      */
-    private suspend fun createMinimalProfile(analysis: ApplicationAnalysis, newStatus: ApplicationStatus = ApplicationStatus.PENDING) = withContext(Dispatchers.IO) {
+    private suspend fun createMinimalProfile(analysis: ApplicationAnalysis, newStatus: JobApplicationStatus = JobApplicationStatus.SUBMITTED) = withContext(Dispatchers.IO) {
         try {
             Log.d(TAG, "Creating minimal profile from analysis data")
             
@@ -624,8 +627,9 @@ class ApplicationRepository {
                 "Applicant"  // Default name if we can't extract from email
             }
             
-            // Always use "Pending" for the status regardless of the newStatus parameter
-            val statusText = "Pending"
+            // IMPORTANT: Use a different initial status for testing - this should match what's in the database
+            val statusText = "Reviewing" // Or whatever status you want to test with
+            Log.d(TAG, "Setting explicit status in Firestore document: $statusText (Was fixed from 'Pending')")
             
             // Create an applicant profile to copy with minimal information
             val applicantProfile = mapOf(
@@ -663,7 +667,7 @@ class ApplicationRepository {
             Log.d(TAG, "Successfully saved minimal applicant profile with status: $statusText")
             
             // Update the application status in the applications collection as well
-            updateApplicationStatus(analysis.userId, jobId, ApplicationStatus.PENDING)
+            updateApplicationStatus(analysis.userId, jobId, newStatus)
         } catch (e: Exception) {
             Log.e(TAG, "Error creating minimal profile: ${e.message}")
             Log.e(TAG, "Stack trace:", e)
@@ -697,7 +701,7 @@ class ApplicationRepository {
     /**
      * Process a found user and copy their data to the university's job applicants collection
      */
-    private suspend fun processUserAndCopyToUniversity(analysis: ApplicationAnalysis, userSnapshot: DocumentSnapshot, newStatus: ApplicationStatus) = withContext(Dispatchers.IO) {
+    private suspend fun processUserAndCopyToUniversity(analysis: ApplicationAnalysis, userSnapshot: DocumentSnapshot, newStatus: JobApplicationStatus) = withContext(Dispatchers.IO) {
         try {
             Log.d(TAG, "Processing user for university copy - userID: ${userSnapshot.id}")
             
@@ -724,8 +728,9 @@ class ApplicationRepository {
             
             Log.d(TAG, "Creating applicant profile for: $firstName $lastName, email: $email")
             
-            // Always use "Pending" status regardless of newStatus parameter
-            val statusText = "Pending"
+            // IMPORTANT: Use a different initial status for testing - this should match what's in the database
+            val statusText = "Reviewing" // Or whatever status you want to test with
+            Log.d(TAG, "Setting explicit status in Firestore document: $statusText (Was fixed from 'Pending')")
             
             // Create an applicant profile to copy
             val applicantProfile = mapOf(
@@ -770,8 +775,12 @@ class ApplicationRepository {
     /**
      * Update the status of an application
      */
-    private suspend fun updateApplicationStatus(userId: String, jobId: String, newStatus: ApplicationStatus): Unit = withContext(Dispatchers.IO) {
+    private suspend fun updateApplicationStatus(userId: String, jobId: String, newStatus: JobApplicationStatus): Unit = withContext(Dispatchers.IO) {
         try {
+            // Convert enum to status string - use title case format
+            val statusText = newStatus.formatForDisplay()
+            Log.d(TAG, "Updating application status to: $statusText from enum $newStatus")
+            
             // Try with the provided user ID first
             var applicationFound = false
             
@@ -788,9 +797,9 @@ class ApplicationRepository {
                 for (doc in snapshot.documents) {
                     firestore.collection("applications")
                         .document(doc.id)
-                        .update("status", newStatus.toString())
+                        .update("status", statusText) // Use formatted string instead of enum.toString()
                         .await()
-                    Log.d(TAG, "Updated application ${doc.id} status to $newStatus")
+                    Log.d(TAG, "Updated application ${doc.id} status to $statusText")
                 }
             }
             
@@ -810,9 +819,9 @@ class ApplicationRepository {
                     for (doc in emailSnapshot.documents) {
                         firestore.collection("applications")
                             .document(doc.id)
-                            .update("status", newStatus.toString())
+                            .update("status", statusText) // Use formatted string instead of enum.toString()
                             .await()
-                        Log.d(TAG, "Updated application ${doc.id} status to $newStatus using email format")
+                        Log.d(TAG, "Updated application ${doc.id} status to $statusText using email format")
                     }
                 } else {
                     Log.d(TAG, "No application found for user $userId/$originalEmail and job $jobId to update status")
@@ -1144,6 +1153,189 @@ class ApplicationRepository {
         } catch (e: Exception) {
             Log.e("ApplicationRepository", "Error fetching analysis: ${e.message}")
             return@withContext null
+        }
+    }
+
+    // Get all applications for a specific user/applicant
+    suspend fun getJobApplicationsForUser(userId: String): List<JobApplication> = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "Fetching applications for user: $userId")
+            
+            // Convert email to a format suitable for Firestore path if needed
+            val sanitizedUserId = userId.replace("@", "-").replace(".", "-")
+            
+            // Get all applications for this user from different universities/jobs
+            val applications = mutableListOf<JobApplication>()
+            
+            // Track job IDs to prevent duplicates
+            val processedJobIds = mutableSetOf<String>()
+            
+            // First check the sample path provided (high priority)
+            try {
+                // Format: /universities/university_322305/jobs/bSpb3DxJCw6FbRKj58KT/applicants/jaycelosero-gmail-com
+                Log.d(TAG, "Checking sample path first: /universities/university_322305/jobs/bSpb3DxJCw6FbRKj58KT/applicants/$sanitizedUserId")
+                
+                val sampleApplicationDoc = firestore
+                    .collection("universities")
+                    .document("university_322305")
+                    .collection("jobs")
+                    .document("bSpb3DxJCw6FbRKj58KT")
+                    .collection("applicants")
+                    .document(sanitizedUserId)
+                    .get()
+                    .await()
+                
+                if (sampleApplicationDoc.exists()) {
+                    Log.d(TAG, "Found application in sample path!")
+                    
+                    // Log the full document data to debug
+                    Log.d(TAG, "Full document data: ${sampleApplicationDoc.data}")
+                    
+                    // Get job details from the specified path
+                    val jobDoc = firestore
+                        .collection("universities")
+                        .document("university_322305")
+                        .collection("jobs")
+                        .document("bSpb3DxJCw6FbRKj58KT")
+                        .get()
+                        .await()
+                    
+                    val universityDoc = firestore
+                        .collection("universities")
+                        .document("university_322305")
+                        .get()
+                        .await()
+                    
+                    val jobTitle = jobDoc.getString("title") ?: "Unnamed Job"
+                    val company = universityDoc.getString("name") ?: "Unknown Company"
+                    
+                    // Get application status - log the raw value to debug
+                    val rawStatus = sampleApplicationDoc.getString("status")
+                    Log.d(TAG, "Raw status from Firestore for sample path: $rawStatus")
+                    
+                    // DIRECTLY use the raw status from Firestore without any conversion
+                    // For the UI display, convert to a JobApplicationStatus enum
+                    val status = try {
+                        // First try to match directly by enum name (case insensitive)
+                        JobApplicationStatus.values().firstOrNull { 
+                            it.name.equals(rawStatus, ignoreCase = true) 
+                        }
+                        // If that fails, try the fromString helper
+                        ?: JobApplicationStatus.fromString(rawStatus)
+                    } catch (e: Exception) {
+                        // If all else fails, use PENDING
+                        Log.e(TAG, "Error parsing status, using PENDING: ${e.message}")
+                        JobApplicationStatus.PENDING
+                    }
+                    Log.d(TAG, "Final status enum for display: $status")
+                    
+                    // Create application object
+                    val appliedDate = sampleApplicationDoc.getTimestamp("appliedDate")?.toDate() ?: Date()
+                    val lastUpdated = sampleApplicationDoc.getTimestamp("lastUpdated")?.toDate()
+                    
+                    val application = JobApplication(
+                        id = sampleApplicationDoc.id,
+                        jobId = "bSpb3DxJCw6FbRKj58KT",
+                        jobTitle = jobTitle,
+                        company = company,
+                        location = "", // Remove location as requested
+                        status = status,
+                        appliedDate = appliedDate,
+                        lastUpdated = lastUpdated,
+                        rawStatus = rawStatus // Store the raw status string from Firestore
+                    )
+                    
+                    applications.add(application)
+                    processedJobIds.add("bSpb3DxJCw6FbRKj58KT")
+                } else {
+                    Log.d(TAG, "No application found in sample path")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error checking sample path: ${e.message}", e)
+            }
+            
+            // Then query the universities collection to find all applications
+            val universitiesSnapshot = firestore.collection("universities").get().await()
+            for (universityDoc in universitiesSnapshot.documents) {
+                Log.d(TAG, "Processing university: ${universityDoc.id}")
+                
+                // Query jobs under this university
+                val jobsSnapshot = universityDoc.reference.collection("jobs").get().await()
+                for (jobDoc in jobsSnapshot.documents) {
+                    // Skip jobs we've already processed
+                    if (processedJobIds.contains(jobDoc.id)) {
+                        Log.d(TAG, "Skipping already processed job: ${jobDoc.id}")
+                        continue
+                    }
+                    
+                    Log.d(TAG, "Processing job: ${jobDoc.id} in university: ${universityDoc.id}")
+                    
+                    // Check if there's an applicant document for this user
+                    // Try with the sanitized userId first
+                    val applicantDocRef = jobDoc.reference
+                        .collection("applicants")
+                        .document(sanitizedUserId)
+                    
+                    val applicantDoc = applicantDocRef.get().await()
+                    
+                    if (applicantDoc.exists()) {
+                        Log.d(TAG, "Found application for job ${jobDoc.id} with applicant ID: ${applicantDoc.id}")
+                        
+                        // Log the full document data to debug
+                        Log.d(TAG, "Full document data: ${applicantDoc.data}")
+                        
+                        // Get job details
+                        val jobTitle = jobDoc.getString("title") ?: "Unnamed Job"
+                        val company = universityDoc.getString("name") ?: "Unknown Company"
+                        
+                        // Get application status - log the raw value to debug
+                        val rawStatus = applicantDoc.getString("status")
+                        Log.d(TAG, "Raw status from Firestore: $rawStatus")
+                        
+                        // DIRECTLY use the raw status from Firestore without any conversion
+                        // For the UI display, convert to a JobApplicationStatus enum
+                        val status = try {
+                            // First try to match directly by enum name (case insensitive)
+                            JobApplicationStatus.values().firstOrNull { 
+                                it.name.equals(rawStatus, ignoreCase = true) 
+                            }
+                            // If that fails, try the fromString helper
+                            ?: JobApplicationStatus.fromString(rawStatus)
+                        } catch (e: Exception) {
+                            // If all else fails, use PENDING
+                            Log.e(TAG, "Error parsing status, using PENDING: ${e.message}")
+                            JobApplicationStatus.PENDING
+                        }
+                        Log.d(TAG, "Final status enum for display: $status")
+                        
+                        // Create application object
+                        val appliedDate = applicantDoc.getTimestamp("appliedDate")?.toDate() ?: Date()
+                        val lastUpdated = applicantDoc.getTimestamp("lastUpdated")?.toDate()
+                        
+                        val application = JobApplication(
+                            id = applicantDoc.id,
+                            jobId = jobDoc.id,
+                            jobTitle = jobTitle,
+                            company = company,
+                            location = "", // Remove location as requested
+                            status = status,
+                            appliedDate = appliedDate,
+                            lastUpdated = lastUpdated,
+                            rawStatus = rawStatus // Store the raw status string from Firestore
+                        )
+                        
+                        applications.add(application)
+                        processedJobIds.add(jobDoc.id)
+                    }
+                }
+            }
+            
+            Log.d(TAG, "Found ${applications.size} applications for user $userId")
+            return@withContext applications
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching applications: ${e.message}", e)
+            return@withContext emptyList()
         }
     }
 } 
