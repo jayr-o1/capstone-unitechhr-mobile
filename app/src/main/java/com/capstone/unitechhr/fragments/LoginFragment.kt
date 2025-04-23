@@ -25,6 +25,7 @@ import android.os.Handler
 import android.os.Looper
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import android.content.Context
+import com.capstone.unitechhr.MainActivity
 
 class LoginFragment : Fragment() {
     private val authViewModel: AuthViewModel by activityViewModels()
@@ -76,33 +77,85 @@ class LoginFragment : Fragment() {
         
         // Initialize Google Sign-In Launcher
         signInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            // Always reset the UI first to ensure it's in a consistent state
+            Handler(Looper.getMainLooper()).post {
+                if (isAdded() && !isDetached()) {
+                    progressIndicator.visibility = View.GONE
+                    googleSignInButton.isEnabled = true
+                    googleSignInButton.visibility = View.VISIBLE
+                    
+                    // Show the card view again
+                    view?.findViewById<androidx.cardview.widget.CardView>(R.id.google_sign_in_card)?.visibility = View.VISIBLE
+                }
+            }
+            
             if (result.resultCode == Activity.RESULT_OK) {
-                val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-                authViewModel.handleSignInResult(requireContext(), task)
+                try {
+                    Log.d("LoginFragment", "Got successful result from Google Sign-In")
+                    val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+                    
+                    if (task.isSuccessful) {
+                        Log.d("LoginFragment", "Google Sign-In task successful, handling result")
+                    } else {
+                        Log.d("LoginFragment", "Google Sign-In task not successful: ${task.exception?.message}")
+                    }
+                    
+                    // Force flag to ensure we're not considered logged out anymore
+                    context?.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+                        ?.edit()
+                        ?.putBoolean("is_logged_out", false)
+                        ?.apply()
+                    
+                    authViewModel.handleSignInResult(requireContext(), task)
+                    
+                    // EMERGENCY: Directly trigger navigation after a short delay
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        if (isAdded() && !isDetached()) {
+                            try {
+                                Log.d("LoginFragment", "DIRECT LAUNCHER NAVIGATION: Attempting to go to home screen")
+                                findNavController().navigate(
+                                    R.id.homeFragment,
+                                    null,
+                                    NavOptions.Builder()
+                                        .setPopUpTo(R.id.nav_graph, true)
+                                        .build()
+                                )
+                            } catch (e: Exception) {
+                                Log.e("LoginFragment", "Error in launcher direct navigation", e)
+                            }
+                        }
+                    }, 2000) // Give the auth process time to complete
+                } catch (e: Exception) {
+                    Log.e("LoginFragment", "Error processing Google sign-in result", e)
+                    if (isAdded() && !isDetached()) {
+                        Toast.makeText(
+                            requireContext(),
+                            "Sign-in failed: ${e.message}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
             } else {
-                progressIndicator.visibility = View.GONE
-                googleSignInButton.isEnabled = true
-                googleSignInButton.visibility = View.VISIBLE
-                
-                // Show the card view again
-                view?.findViewById<androidx.cardview.widget.CardView>(R.id.google_sign_in_card)?.visibility = View.VISIBLE
-                
                 // Provide more informative error message based on result code
                 when (result.resultCode) {
                     Activity.RESULT_CANCELED -> {
-                        Toast.makeText(
-                            requireContext(),
-                            "Sign in was cancelled. Please try again.",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        if (isAdded() && !isDetached()) {
+                            Toast.makeText(
+                                requireContext(),
+                                "Sign in was cancelled. Please try again.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                         Log.d("LoginFragment", "Google sign-in was cancelled by user")
                     }
                     else -> {
-                        Toast.makeText(
-                            requireContext(),
-                            "Sign in failed with code: ${result.resultCode}. Please try again.",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        if (isAdded() && !isDetached()) {
+                            Toast.makeText(
+                                requireContext(),
+                                "Sign in failed with code: ${result.resultCode}. Please try again.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                         Log.e("LoginFragment", "Google sign-in failed with result code: ${result.resultCode}")
                     }
                 }
@@ -172,40 +225,64 @@ class LoginFragment : Fragment() {
         
         // Observe sign-in result
         authViewModel.signInResult.observe(viewLifecycleOwner) { result ->
+            // Always ensure UI is in a consistent state first
             progressIndicator.visibility = View.GONE
             googleSignInButton.isEnabled = true
             googleSignInButton.visibility = View.VISIBLE
-            
-            // Show the card view again
             view?.findViewById<androidx.cardview.widget.CardView>(R.id.google_sign_in_card)?.visibility = View.VISIBLE
             
             result.fold(
                 onSuccess = { email ->
-                    // Clear the logged_out flag since we're signing in now
-                    context?.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-                           ?.edit()
-                           ?.putBoolean("is_logged_out", false)
-                           ?.apply()
-                    
-                    // Clear any system property that might be set
-                    System.clearProperty("com.capstone.unitechhr.user.logged_out")
-                    
-                    // Ensure user profile is fully loaded before showing welcome dialog
-                    authViewModel.loadCurrentUser(requireContext())
-                    
-                    // Add a short delay to ensure data is loaded
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        if (isAdded() && !isDetached()) {
-                            showSuccessDialog(email)
+                    try {
+                        Log.d("LoginFragment", "Sign-in successful for: $email")
+                        
+                        // Clear the logged_out flag since we're signing in now
+                        context?.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+                               ?.edit()
+                               ?.putBoolean("is_logged_out", false)
+                               ?.apply()
+                        
+                        // Clear any system property that might be set
+                        System.clearProperty("com.capstone.unitechhr.user.logged_out")
+                        
+                        // Ensure user profile is fully loaded
+                        authViewModel.loadCurrentUser(requireContext())
+                        
+                        // CRITICAL: Force immediate navigation with explicit NavController access
+                        val navController = findNavController()
+                        Log.d("LoginFragment", "IMMEDIATE NAVIGATION: NavController available = ${navController != null}")
+                        
+                        Log.d("LoginFragment", "Attempting DIRECT navigation to homeFragment")
+                        navController.navigate(
+                            R.id.homeFragment,
+                            null,
+                            NavOptions.Builder()
+                                .setPopUpTo(R.id.nav_graph, true)
+                                .build()
+                        )
+                        
+                        Log.d("LoginFragment", "Direct navigation command issued")
+                    } catch (e: Exception) {
+                        Log.e("LoginFragment", "Error during successful sign-in navigation", e)
+                        
+                        // Last resort emergency navigation attempt
+                        try {
+                            Log.d("LoginFragment", "Attempting emergency navigation")
+                            findNavController().navigate(R.id.homeFragment)
+                        } catch (e2: Exception) {
+                            Log.e("LoginFragment", "ALL navigation attempts failed", e2)
                         }
-                    }, 500)
+                    }
                 },
                 onFailure = { exception ->
-                    Toast.makeText(
-                        requireContext(),
-                        "Sign in failed: ${exception.message}",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    Log.e("LoginFragment", "Sign-in failed", exception)
+                    if (isAdded() && !isDetached()) {
+                        Toast.makeText(
+                            requireContext(),
+                            "Sign in failed: ${exception.message}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
                 }
             )
         }
@@ -245,25 +322,100 @@ class LoginFragment : Fragment() {
         // Find the parent CardView of the Google sign-in button to hide both
         val signInCardView = view?.findViewById<androidx.cardview.widget.CardView>(R.id.google_sign_in_card)
         
-        // Show loading indicator and hide sign in button and its container
-        progressIndicator.visibility = View.VISIBLE
-        googleSignInButton.isEnabled = false
-        googleSignInButton.visibility = View.INVISIBLE
-        signInCardView?.visibility = View.INVISIBLE
-        
-        // Launch Google Sign-In
-        val signInIntent = googleSignInClient.signInIntent
-        signInLauncher.launch(signInIntent)
+        try {
+            Log.d("LoginFragment", "Starting Google sign-in process...")
+            
+            // Make sure the views are reset to a known state first
+            progressIndicator.visibility = View.VISIBLE
+            googleSignInButton.isEnabled = false
+            googleSignInButton.visibility = View.INVISIBLE
+            signInCardView?.visibility = View.INVISIBLE
+            
+            // Force logout any existing Google account to ensure clean sign-in
+            // This is especially important after a user has logged out
+            val isLoggedOut = context?.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+                ?.getBoolean("is_logged_out", false) ?: false
+                
+            Log.d("LoginFragment", "isLoggedOut flag before sign-in: $isLoggedOut")
+                
+            // Completely reset the sign-in state
+            // Create a new Google client with fresh configuration
+            val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(webClientId)
+                .requestEmail()
+                .requestProfile()
+                .build()
+            
+            googleSignInClient = GoogleSignIn.getClient(requireContext(), gso)
+            
+            // Clear the is_logged_out flag before signin attempt to prevent conflicts
+            context?.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+                ?.edit()
+                ?.putBoolean("is_logged_out", false)
+                ?.apply()
+            
+            // Clear any system property that might be set
+            System.clearProperty("com.capstone.unitechhr.user.logged_out")
+            
+            Log.d("LoginFragment", "Launching Google Sign-In intent")
+            
+            // Launch Google Sign-In
+            val signInIntent = googleSignInClient.signInIntent
+            signInLauncher.launch(signInIntent)
+            
+        } catch (e: Exception) {
+            // If there's any error, restore the UI and show error
+            progressIndicator.visibility = View.GONE
+            googleSignInButton.isEnabled = true
+            googleSignInButton.visibility = View.VISIBLE
+            signInCardView?.visibility = View.VISIBLE
+            
+            Log.e("LoginFragment", "Error during sign-in attempt", e)
+            Toast.makeText(
+                requireContext(),
+                "Sign-in failed: ${e.message}",
+                Toast.LENGTH_LONG
+            ).show()
+        }
     }
     
     private fun navigateToHome() {
-        findNavController().navigate(
-            R.id.action_loginFragment_to_homeFragment,
-            null,
-            NavOptions.Builder()
-                .setPopUpTo(R.id.loginFragment, true)
-                .build()
-        )
+        try {
+            Log.d("LoginFragment", "Attempting navigation to home screen...")
+            
+            if (!isAdded() || isDetached()) {
+                Log.e("LoginFragment", "Cannot navigate: Fragment not attached to activity")
+                return
+            }
+            
+            // Make sure to clear any "logged out" flags
+            context?.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+                   ?.edit()
+                   ?.putBoolean("is_logged_out", false)
+                   ?.apply()
+            
+            // Clear system property if set
+            System.clearProperty("com.capstone.unitechhr.user.logged_out")
+            
+            // Attempt navigation with try-catch for safety
+            findNavController().navigate(
+                R.id.action_loginFragment_to_homeFragment,
+                null,
+                NavOptions.Builder()
+                    .setPopUpTo(R.id.loginFragment, true)
+                    .build()
+            )
+            
+            Log.d("LoginFragment", "Successfully navigated to home screen")
+        } catch (e: Exception) {
+            Log.e("LoginFragment", "Error during navigation to home", e)
+            // Try a fallback navigation without popUp options if the first attempt fails
+            try {
+                findNavController().navigate(R.id.action_loginFragment_to_homeFragment)
+            } catch (e2: Exception) {
+                Log.e("LoginFragment", "Fallback navigation also failed", e2)
+            }
+        }
     }
 
     /**
@@ -302,5 +454,44 @@ class LoginFragment : Fragment() {
             }
             .setCancelable(false)
             .show()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        
+        // EMERGENCY CHECK: If we have authenticated user but are still on login screen, force navigation
+        val isAuthenticated = context?.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+            ?.getBoolean("is_logged_out", true)?.not() ?: false
+            
+        val userEmail = context?.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+            ?.getString("current_user_email", null)
+            
+        if (isAuthenticated && userEmail != null) {
+            Log.d("LoginFragment", "EMERGENCY: Detected authenticated user in onResume: $userEmail")
+            try {
+                // Force navigation to home
+                findNavController().navigate(
+                    R.id.homeFragment,
+                    null,
+                    NavOptions.Builder()
+                        .setPopUpTo(R.id.nav_graph, true)
+                        .build()
+                )
+                Log.d("LoginFragment", "Successfully performed emergency navigation in onResume")
+            } catch (e: Exception) {
+                Log.e("LoginFragment", "Failed emergency navigation in onResume", e)
+                
+                try {
+                    // One last attempt with activity reference
+                    (activity as? MainActivity)?.let { mainActivity ->
+                        Log.d("LoginFragment", "Attempting navigation via MainActivity")
+                        mainActivity.findViewById<View>(R.id.bottom_navigation)?.visibility = View.VISIBLE
+                        mainActivity.getNavController().navigate(R.id.homeFragment)
+                    }
+                } catch (e2: Exception) {
+                    Log.e("LoginFragment", "All navigation attempts failed", e2)
+                }
+            }
+        }
     }
 }

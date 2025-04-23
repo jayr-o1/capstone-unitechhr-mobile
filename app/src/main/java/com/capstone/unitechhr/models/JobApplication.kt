@@ -18,13 +18,14 @@ data class JobApplication(
 enum class JobApplicationStatus {
     SUBMITTED,
     REVIEWING,
+    UNDER_REVIEW,
     INTERVIEW_SCHEDULED,
     INTERVIEW_COMPLETED,
     OFFERED,
     HIRED,
     REJECTED,
     PENDING,
-    IN_ONBOARDING; // Adding the IN_ONBOARDING status to match Firestore
+    IN_ONBOARDING; // Add onboarding status
 
     companion object {
         private const val TAG = "JobApplicationStatus"
@@ -54,6 +55,7 @@ enum class JobApplicationStatus {
                     ?: when {
                         // Match based on containing text
                         normalizedStatus.contains("SUBMIT", ignoreCase = true) -> SUBMITTED
+                        normalizedStatus.contains("UNDER REVIEW", ignoreCase = true) -> UNDER_REVIEW
                         normalizedStatus.contains("REVIEW", ignoreCase = true) -> REVIEWING
                         normalizedStatus.contains("PEND", ignoreCase = true) -> PENDING
                         normalizedStatus.contains("WAIT", ignoreCase = true) -> PENDING
@@ -69,15 +71,18 @@ enum class JobApplicationStatus {
                         normalizedStatus.contains("ONBOARD", ignoreCase = true) -> IN_ONBOARDING
                         
                         // Check for exact string matches that might be used in Firestore
-                        statusStr == "pending" -> PENDING
-                        statusStr == "reviewing" -> REVIEWING
-                        statusStr == "submitted" -> SUBMITTED
+                        statusStr == "In Onboarding" -> IN_ONBOARDING
+                        statusStr == "Onboarding" -> IN_ONBOARDING
+                        statusStr == "In Progress" -> IN_ONBOARDING
                         statusStr == "Pending" -> PENDING
                         statusStr == "Reviewing" -> REVIEWING
+                        statusStr == "Under Review" -> UNDER_REVIEW
                         statusStr == "Submitted" -> SUBMITTED
+                        statusStr == "Interview Scheduled" -> INTERVIEW_SCHEDULED
+                        statusStr == "Interview Completed" -> INTERVIEW_COMPLETED
+                        statusStr == "Offered" -> OFFERED
                         statusStr == "Hired" -> HIRED
                         statusStr == "Rejected" -> REJECTED
-                        statusStr == "In Onboarding" -> IN_ONBOARDING
                         
                         // Log and return default if nothing matched
                         else -> {
@@ -119,27 +124,34 @@ enum class JobApplicationStatus {
     }
 }
 
+// Extension function to format status for display
+fun JobApplicationStatus.formatForDisplay(): String {
+    return when (this) {
+        JobApplicationStatus.SUBMITTED -> "Submitted"
+        JobApplicationStatus.REVIEWING -> "Reviewing"
+        JobApplicationStatus.UNDER_REVIEW -> "Under Review"
+        JobApplicationStatus.INTERVIEW_SCHEDULED -> "Interview Scheduled"
+        JobApplicationStatus.INTERVIEW_COMPLETED -> "Interview Completed"
+        JobApplicationStatus.OFFERED -> "Offered"
+        JobApplicationStatus.HIRED -> "Hired"
+        JobApplicationStatus.REJECTED -> "Rejected"
+        JobApplicationStatus.PENDING -> "Pending"
+        JobApplicationStatus.IN_ONBOARDING -> "In Onboarding"
+    }
+}
+
 // Extension function to get a color based on status
 fun JobApplicationStatus.getColorResourceId(): Int {
     return when (this) {
         JobApplicationStatus.SUBMITTED -> com.capstone.unitechhr.R.color.status_pending
-        JobApplicationStatus.REVIEWING -> com.capstone.unitechhr.R.color.status_reviewing
+        JobApplicationStatus.REVIEWING, 
+        JobApplicationStatus.UNDER_REVIEW -> com.capstone.unitechhr.R.color.status_reviewing
         JobApplicationStatus.PENDING -> com.capstone.unitechhr.R.color.status_pending
-        JobApplicationStatus.INTERVIEW_SCHEDULED, 
+        JobApplicationStatus.INTERVIEW_SCHEDULED,
         JobApplicationStatus.INTERVIEW_COMPLETED -> com.capstone.unitechhr.R.color.status_interview
-        JobApplicationStatus.OFFERED,
+        JobApplicationStatus.OFFERED -> com.capstone.unitechhr.R.color.status_hired
         JobApplicationStatus.HIRED -> com.capstone.unitechhr.R.color.status_hired
         JobApplicationStatus.REJECTED -> com.capstone.unitechhr.R.color.status_rejected
-        JobApplicationStatus.IN_ONBOARDING -> com.capstone.unitechhr.R.color.status_hired // Use hired color for onboarding
+        JobApplicationStatus.IN_ONBOARDING -> com.capstone.unitechhr.R.color.status_hired
     }
-}
-
-// Extension function to format status for display
-fun JobApplicationStatus.formatForDisplay(): String {
-    return this.toString()
-        .replace("_", " ")
-        .split(" ")
-        .joinToString(" ") { word ->
-            word.lowercase().replaceFirstChar { it.uppercase() }
-        }
 } 
