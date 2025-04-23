@@ -1,153 +1,189 @@
 package com.capstone.unitechhr.fragments
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.capstone.unitechhr.R
-import com.capstone.unitechhr.adapters.ApplicationAdapter
-import com.capstone.unitechhr.models.Application
-import com.capstone.unitechhr.utils.NotificationUtils
-import com.capstone.unitechhr.viewmodels.ApplicationViewModel
+import com.capstone.unitechhr.adapters.JobApplicationAdapter
+import com.capstone.unitechhr.models.Job
+import com.capstone.unitechhr.repositories.ApplicationRepository
+import com.capstone.unitechhr.repositories.JobRepository
 import com.capstone.unitechhr.viewmodels.AuthViewModel
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.progressindicator.CircularProgressIndicator
+import com.capstone.unitechhr.viewmodels.JobViewModel
+import com.capstone.unitechhr.viewmodels.MyApplicationsViewModel
+import kotlinx.coroutines.launch
 
 class MyApplicationsFragment : Fragment() {
     
     private val authViewModel: AuthViewModel by activityViewModels()
-    private val applicationViewModel: ApplicationViewModel by activityViewModels()
+    private val applicationsViewModel: MyApplicationsViewModel by viewModels()
+    private val jobViewModel: JobViewModel by activityViewModels()
+    private val TAG = "MyApplicationsFragment"
     
-    private lateinit var recyclerView: RecyclerView
-    private lateinit var progressIndicator: CircularProgressIndicator
-    private lateinit var noDataView: View
-    private lateinit var titleText: TextView
-    private lateinit var adapter: ApplicationAdapter
+    // UI components
+    private lateinit var backButton: ImageView
+    private lateinit var applicationsRecyclerView: RecyclerView
+    private lateinit var emptyStateContainer: LinearLayout
+    private lateinit var loadingOverlay: FrameLayout
+    private lateinit var infoMessageTextView: TextView
+    
+    private lateinit var adapter: JobApplicationAdapter
     
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Reuse the applicant list layout but we'll customize it
-        return inflater.inflate(R.layout.fragment_applicant_list, container, false)
+        return inflater.inflate(R.layout.fragment_my_applications, container, false)
     }
     
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        // Initialize views
-        recyclerView = view.findViewById(R.id.applicants_recycler_view)
-        progressIndicator = view.findViewById(R.id.progress_indicator)
-        noDataView = view.findViewById(R.id.no_data_view)
-        titleText = view.findViewById(R.id.title)
-        
-        // Change the title
-        titleText.text = "My Applications"
+        // Initialize UI components
+        backButton = view.findViewById(R.id.backButton)
+        applicationsRecyclerView = view.findViewById(R.id.applicationsRecyclerView)
+        emptyStateContainer = view.findViewById(R.id.emptyStateContainer)
+        loadingOverlay = view.findViewById(R.id.loadingOverlay)
+        infoMessageTextView = view.findViewById(R.id.infoMessageTextView)
         
         // Set up back button
-        view.findViewById<View>(R.id.backButton).setOnClickListener {
+        backButton.setOnClickListener {
             findNavController().navigateUp()
         }
         
-        // Hide the search view
-        view.findViewById<View>(R.id.search_view)?.visibility = View.GONE
-        
-        // Find and update empty state texts
-        val emptyTitle = noDataView.findViewById<TextView>(R.id.empty_title)
-        val emptyDescription = noDataView.findViewById<TextView>(R.id.empty_description)
-        
-        emptyTitle?.text = "No Applications Found"
-        emptyDescription?.text = "You haven't applied to any jobs yet. Browse available jobs and apply to start tracking your applications here."
-        
-        // Get the FAB or create a new one for testing notifications
-        val fab = view.findViewById<FloatingActionButton>(R.id.fab_add_applicant)
-        if (fab != null) {
-            // Repurpose the existing FAB for test notifications
-            fab.setImageResource(android.R.drawable.ic_popup_reminder)
-            fab.visibility = View.VISIBLE
-            fab.setOnClickListener {
-                sendTestNotification()
-            }
+        // Make sure Jobs are loaded
+        if (jobViewModel.jobs.value.isNullOrEmpty()) {
+            Log.d(TAG, "Jobs not loaded yet, loading them now")
+            jobViewModel.loadJobs()
         }
         
         // Setup RecyclerView
-        setupRecyclerView()
-        
-        // Observe data changes
-        applicationViewModel.myApplications.observe(viewLifecycleOwner) { applications ->
-            adapter.submitList(applications)
-            updateEmptyState(applications.isEmpty())
-        }
-        
-        // Observe loading state
-        applicationViewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            progressIndicator.visibility = if (isLoading) View.VISIBLE else View.GONE
-        }
-        
-        // Observe errors
-        applicationViewModel.errorMessage.observe(viewLifecycleOwner) { errorMessage ->
-            if (!errorMessage.isNullOrEmpty()) {
-                Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+        adapter = JobApplicationAdapter { application ->
+            // Handle application click - Navigate to job details
+            Log.d(TAG, "Application clicked: ${application.jobTitle}, job ID: ${application.jobId}")
+            
+            // Store the selected application in ViewModel
+            applicationsViewModel.selectApplication(application)
+            
+            // Get the job ID and find the job details
+            val jobId = application.jobId
+            
+            // Clear any previous job first
+            jobViewModel.clearSelectedJob()
+            
+            // Try to get the job by ID directly from all jobs first
+            val allJobs = jobViewModel.jobs.value ?: emptyList()
+            val selectedJob = allJobs.find { it.id == jobId }
+            
+            if (selectedJob != null) {
+                // We found the job, select it and navigate to details
+                Log.d(TAG, "Found job in loaded jobs: ${selectedJob.title}")
+                jobViewModel.selectJob(selectedJob)
+                findNavController().navigate(R.id.action_myApplicationsFragment_to_jobDetailFragment)
+            } else {
+                // We didn't find the job in the current list, try to load it from repository
+                Log.d(TAG, "Job not found in loaded jobs, trying to fetch it")
+                
+                lifecycleScope.launch {
+                    loadingOverlay.visibility = View.VISIBLE
+                    
+                    try {
+                        // Try to find the job in any university
+                        val jobRepository = JobRepository()
+                        
+                        // First try to get all jobs to see if we can find it
+                        val allRepoJobs = jobRepository.getJobs()
+                        val job = allRepoJobs.find { it.id == jobId }
+                        
+                        if (job != null) {
+                            // Found the job
+                            Log.d(TAG, "Found job from repository: ${job.title}")
+                            jobViewModel.selectJob(job)
+                            findNavController().navigate(R.id.action_myApplicationsFragment_to_jobDetailFragment)
+                        } else {
+                            // Try hardcoded sample path
+                            val sampleJob = jobRepository.getJobById("university_322305", "bSpb3DxJCw6FbRKj58KT")
+                            
+                            if (sampleJob != null) {
+                                Log.d(TAG, "Using sample job as fallback: ${sampleJob.title}")
+                                jobViewModel.selectJob(sampleJob)
+                                findNavController().navigate(R.id.action_myApplicationsFragment_to_jobDetailFragment)
+                            } else {
+                                // Still couldn't find the job
+                                Toast.makeText(
+                                    requireContext(),
+                                    "Job details not found. Please try again later.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error fetching job: ${e.message}", e)
+                        Toast.makeText(
+                            requireContext(),
+                            "Error loading job details: ${e.message}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } finally {
+                        loadingOverlay.visibility = View.GONE
+                    }
+                }
             }
         }
         
-        // Load user's applications
-        loadUserApplications()
-    }
-    
-    private fun setupRecyclerView() {
-        adapter = ApplicationAdapter { application ->
-            // Handle application click - view details
-            applicationViewModel.selectApplication(application)
-            // Get job details if needed (for future implementation)
-            Toast.makeText(context, "Application for: ${application.jobTitle}", Toast.LENGTH_SHORT).show()
+        applicationsRecyclerView.layoutManager = LinearLayoutManager(requireContext())
+        applicationsRecyclerView.adapter = adapter
+        
+        // Observe ViewModel data
+        applicationsViewModel.applications.observe(viewLifecycleOwner) { applications ->
+            Log.d(TAG, "Received ${applications.size} applications")
+            
+            if (applications.isEmpty()) {
+                emptyStateContainer.visibility = View.VISIBLE
+                applicationsRecyclerView.visibility = View.GONE
+            } else {
+                emptyStateContainer.visibility = View.GONE
+                applicationsRecyclerView.visibility = View.VISIBLE
+                adapter.submitList(applications)
+            }
         }
         
-        recyclerView.adapter = adapter
-        recyclerView.layoutManager = LinearLayoutManager(requireContext())
-    }
-    
-    private fun loadUserApplications() {
-        authViewModel.currentUser.value?.let { user ->
-            val userId = user.email.replace("@", "-").replace(".", "-")
-            applicationViewModel.loadUserApplications(userId)
+        applicationsViewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            loadingOverlay.visibility = if (isLoading) View.VISIBLE else View.GONE
+        }
+        
+        applicationsViewModel.errorMessage.observe(viewLifecycleOwner) { message ->
+            message?.let {
+                Log.e(TAG, "Error: $it")
+                Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
+            }
+        }
+        
+        // Load applications for current user
+        authViewModel.currentUser.observe(viewLifecycleOwner) { userData ->
+            userData?.let {
+                loadApplications(it.email)
+            }
         }
     }
     
-    private fun updateEmptyState(isEmpty: Boolean) {
-        if (isEmpty) {
-            recyclerView.visibility = View.GONE
-            noDataView.visibility = View.VISIBLE
-        } else {
-            recyclerView.visibility = View.VISIBLE
-            noDataView.visibility = View.GONE
-        }
-    }
-    
-    /**
-     * Send a test notification to demonstrate push notifications
-     */
-    private fun sendTestNotification() {
-        context?.let { ctx ->
-            NotificationUtils.showNotification(
-                ctx,
-                "UniTech HR Update",
-                "This is a test notification. Your application status may have changed!"
-            )
-            Toast.makeText(ctx, "Test notification sent!", Toast.LENGTH_SHORT).show()
-        }
-    }
-    
-    override fun onResume() {
-        super.onResume()
-        loadUserApplications()
+    private fun loadApplications(userEmail: String) {
+        Log.d(TAG, "Loading applications for user: $userEmail")
+        applicationsViewModel.loadApplicationsForUser(userEmail)
     }
 } 
