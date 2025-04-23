@@ -357,6 +357,10 @@ class JobDetailFragment : Fragment() {
                 Log.d(TAG, "Submitting application for job: $jobTitle (ID: $jobId)")
                 Log.d(TAG, "Using resume URL: $resumeUrl")
                 
+                // Get the user's displayName from AuthViewModel
+                val currentUser = authViewModel.currentUser.value
+                val displayName = currentUser?.displayName
+                
                 // Call the API in the background
                 try {
                     val analysisResult = withContext(Dispatchers.IO) {
@@ -369,7 +373,8 @@ class JobDetailFragment : Fragment() {
                             qualifications,
                             userId,
                             jobId,
-                            jobTitle
+                            jobTitle,
+                            displayName
                         )
                     }
                     

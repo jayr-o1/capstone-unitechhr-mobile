@@ -226,7 +226,8 @@ class ApplicationRepository {
         qualifications: String,
         userId: String,
         jobId: String,
-        jobTitle: String
+        jobTitle: String,
+        displayName: String? = null
     ): ApplicationAnalysis = withContext(Dispatchers.IO) {
         try {
             // First download the PDF from the URL to a temporary file
@@ -436,7 +437,7 @@ class ApplicationRepository {
                             Log.e("ApplicationRepository", "JSON parsing exception: ${e.message}", e)
                             
                             // Try to create a minimal valid object from the response
-                            val minimalAnalysis = createMinimalAnalysisFromJson(responseBody, userId, jobId, jobTitle, resumeUrl)
+                            val minimalAnalysis = createMinimalAnalysisFromJson(responseBody, userId, jobId, jobTitle, resumeUrl, displayName)
                             if (minimalAnalysis != null) {
                                 Log.d("ApplicationRepository", "Created minimal analysis object from JSON")
                                 return@withContext minimalAnalysis
@@ -457,7 +458,8 @@ class ApplicationRepository {
                             jobId = jobId,
                             jobTitle = jobTitle,
                             resumeUrl = resumeUrl,
-                            analysisDate = Date()
+                            analysisDate = Date(),
+                            displayName = displayName
                         )
                         
                         // Save the analysis to Firestore
@@ -499,6 +501,7 @@ class ApplicationRepository {
                 jobTitle = jobTitle,
                 resumeUrl = resumeUrl,
                 analysisDate = Date(),
+                displayName = displayName,
                 recommendation = "Error connecting to analysis service: ${e.message}. Please check your internet connection and try again."
             )
             
@@ -605,8 +608,8 @@ class ApplicationRepository {
             val universityId = job.universityId
             val jobId = analysis.jobId
             
-            // Format name from email
-            val name = formatNameFromEmail(analysis.userId)
+            // Use displayName if available, otherwise format name from email
+            val name = analysis.displayName ?: formatNameFromEmail(analysis.userId)
             
             // Get formatted status text - always use "Pending" status for new applications
             val statusText = "Pending"
@@ -698,7 +701,7 @@ class ApplicationRepository {
             val jobId = analysis.jobId
             
             // Extract user data from snapshot
-            val name = userSnapshot.getString("displayName") ?: userSnapshot.getString("name") ?: formatNameFromEmail(analysis.userId)
+            val name = analysis.displayName ?: userSnapshot.getString("displayName") ?: userSnapshot.getString("name") ?: formatNameFromEmail(analysis.userId)
             
             // Always use "Pending" status text for new applications
             val statusText = "Pending"
@@ -1019,7 +1022,8 @@ class ApplicationRepository {
         userId: String,
         jobId: String,
         jobTitle: String,
-        resumeUrl: String
+        resumeUrl: String,
+        displayName: String? = null
     ): ApplicationAnalysis? = withContext(Dispatchers.IO) {
         try {
             // Use a more tolerant JSON parser approach
@@ -1099,7 +1103,7 @@ class ApplicationRepository {
             // Log the successful parsing
             Log.d(TAG, "Successfully created minimal analysis from JSON")
             
-            // Create a basic analysis object with the extracted information
+            // Create a minimal analysis object
             val analysis = ApplicationAnalysis(
                 id = analysisId,
                 userId = userId,
@@ -1107,8 +1111,9 @@ class ApplicationRepository {
                 jobTitle = jobTitle,
                 resumeUrl = resumeUrl,
                 analysisDate = Date(),
-                recommendation = recommendation,
+                displayName = displayName,
                 matchPercentage = matchPercentage,
+                recommendation = recommendation,
                 skillsMatch = skillsMatch,
                 experience = experience,
                 education = education,
