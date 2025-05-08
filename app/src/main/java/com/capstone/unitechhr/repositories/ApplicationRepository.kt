@@ -21,9 +21,11 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
 import java.util.concurrent.TimeUnit
 import com.capstone.unitechhr.models.ApplicationAnalysis
+import com.capstone.unitechhr.models.Duration
 import com.capstone.unitechhr.models.Education
 import com.capstone.unitechhr.models.Experience
 import com.capstone.unitechhr.models.ImprovementSuggestions
+import com.capstone.unitechhr.models.PassingDetails
 import com.capstone.unitechhr.models.SalaryEstimate
 import com.capstone.unitechhr.models.SkillsMatch
 import com.google.gson.Gson
@@ -256,6 +258,7 @@ class ApplicationRepository {
                 .addFormDataPart("key_duties", keyDuties)
                 .addFormDataPart("essential_skills", essentialSkills)
                 .addFormDataPart("qualifications", qualifications)
+                .addFormDataPart("job_title", jobTitle)
                 .build()
             
             // Get appropriate API endpoint
@@ -270,6 +273,7 @@ class ApplicationRepository {
                 Log.d("ApplicationRepository", "- key_duties: ${keyDuties.take(50)}...")
                 Log.d("ApplicationRepository", "- essential_skills: ${essentialSkills.take(50)}...")
                 Log.d("ApplicationRepository", "- qualifications: ${qualifications.take(50)}...")
+                Log.d("ApplicationRepository", "- job_title: $jobTitle")
             }
             
             // Build the request
@@ -397,6 +401,46 @@ class ApplicationRepository {
                                     if (expJson.has("required_years")) {
                                         analysis.experience.requiredYears = expJson.getString("required_years")
                                     }
+                                    
+                                    // Extract job titles
+                                    if (expJson.has("job_titles")) {
+                                        val titleArray = expJson.getJSONArray("job_titles")
+                                        val titles = mutableListOf<String>()
+                                        for (i in 0 until titleArray.length()) {
+                                            titles.add(titleArray.getString(i))
+                                        }
+                                        analysis.experience.jobTitles = titles
+                                    }
+                                    
+                                    // Extract durations
+                                    if (expJson.has("durations")) {
+                                        val durationsArray = expJson.getJSONArray("durations")
+                                        val durations = mutableListOf<Duration>()
+                                        
+                                        for (i in 0 until durationsArray.length()) {
+                                            try {
+                                                val durationJson = durationsArray.getJSONObject(i)
+                                                
+                                                val startDate = durationJson.optString("start_date", "")
+                                                val endDate = durationJson.optString("end_date", "")
+                                                val text = durationJson.optString("text", "")
+                                                val months = durationJson.optInt("months", 0)
+                                                
+                                                durations.add(
+                                                    Duration(
+                                                        startDate = startDate,
+                                                        endDate = endDate,
+                                                        text = text,
+                                                        months = months
+                                                    )
+                                                )
+                                            } catch (e: Exception) {
+                                                Log.e("ApplicationRepository", "Error parsing duration at index $i: ${e.message}")
+                                            }
+                                        }
+                                        
+                                        analysis.experience.durations = durations
+                                    }
                                 } catch (e: Exception) {
                                     Log.e("ApplicationRepository", "Error fixing experience data: ${e.message}")
                                 }
@@ -420,6 +464,81 @@ class ApplicationRepository {
                                     }
                                 } catch (e: Exception) {
                                     Log.e("ApplicationRepository", "Error fixing salary data: ${e.message}")
+                                }
+                            }
+                            
+                            // Extract passing details if available
+                            if (analysis.passingDetails == null && jsonObject.has("passing_details")) {
+                                try {
+                                    val passingJson = jsonObject.getJSONObject("passing_details")
+                                    if (analysis.passingDetails == null) {
+                                        analysis.passingDetails = PassingDetails()
+                                    }
+                                    
+                                    // Extract job title
+                                    if (passingJson.has("job_title")) {
+                                        analysis.passingDetails?.jobTitle = passingJson.optString("job_title", "")
+                                    }
+                                    
+                                    // Extract match percentage
+                                    if (passingJson.has("match_percentage")) {
+                                        analysis.passingDetails?.matchPercentage = passingJson.optInt("match_percentage", 0)
+                                    }
+                                    
+                                    // Extract status
+                                    if (passingJson.has("status")) {
+                                        analysis.passingDetails?.status = passingJson.optString("status", "")
+                                    }
+                                    
+                                    // Extract key strengths
+                                    if (passingJson.has("key_strengths")) {
+                                        val strengthsArray = passingJson.getJSONArray("key_strengths")
+                                        val strengths = mutableListOf<String>()
+                                        for (i in 0 until strengthsArray.length()) {
+                                            strengths.add(strengthsArray.getString(i))
+                                        }
+                                        analysis.passingDetails?.keyStrengths = strengths
+                                    }
+                                    
+                                    // Extract skills analysis
+                                    if (passingJson.has("skills_analysis")) {
+                                        val skillsJson = passingJson.getJSONObject("skills_analysis")
+                                        if (skillsJson.has("matched_count")) {
+                                            analysis.passingDetails?.skillsAnalysis?.matchedCount = skillsJson.optInt("matched_count", 0)
+                                        }
+                                        if (skillsJson.has("missing_count")) {
+                                            analysis.passingDetails?.skillsAnalysis?.missingCount = skillsJson.optInt("missing_count", 0)
+                                        }
+                                        if (skillsJson.has("match_impact")) {
+                                            analysis.passingDetails?.skillsAnalysis?.matchImpact = skillsJson.optString("match_impact", "")
+                                        }
+                                    }
+                                    
+                                    // Extract experience analysis
+                                    if (passingJson.has("experience_analysis")) {
+                                        val expJson = passingJson.getJSONObject("experience_analysis")
+                                        if (expJson.has("meets_requirement")) {
+                                            analysis.passingDetails?.experienceAnalysis?.meetsRequirement = expJson.optBoolean("meets_requirement", false)
+                                        }
+                                        if (expJson.has("impact")) {
+                                            analysis.passingDetails?.experienceAnalysis?.impact = expJson.optString("impact", "")
+                                        }
+                                    }
+                                    
+                                    // Extract education analysis
+                                    if (passingJson.has("education_analysis")) {
+                                        val eduJson = passingJson.getJSONObject("education_analysis")
+                                        if (eduJson.has("meets_requirement")) {
+                                            analysis.passingDetails?.educationAnalysis?.meetsRequirement = eduJson.optBoolean("meets_requirement", false)
+                                        }
+                                        if (eduJson.has("impact")) {
+                                            analysis.passingDetails?.educationAnalysis?.impact = eduJson.optString("impact", "")
+                                        }
+                                    }
+                                    
+                                    Log.d("ApplicationRepository", "Successfully parsed passing_details")
+                                } catch (e: Exception) {
+                                    Log.e("ApplicationRepository", "Error parsing passing_details: ${e.message}")
                                 }
                             }
                             
@@ -517,6 +636,20 @@ class ApplicationRepository {
      */
     private suspend fun saveAnalysisToFirestore(analysis: ApplicationAnalysis): Boolean = withContext(Dispatchers.IO) {
         try {
+            // Check if the recommendation is "Interview" (case-insensitive contains check)
+            val isInterviewRecommendation = analysis.recommendation.contains("interview", ignoreCase = true)
+            
+            if (!isInterviewRecommendation) {
+                // If the recommendation is not "Interview", log and return without saving to Firestore
+                Log.d(TAG, "Analysis not saved to Firestore: recommendation is not 'Interview', found: ${analysis.recommendation}")
+                return@withContext false
+            }
+            
+            // If we proceed here, the recommendation is "Interview"
+            
+            // Remove salary data before saving to Firestore
+            analysis.salaryEstimate = null
+            
             // Save to analyses collection
             firestore.collection("analyses")
                 .document(analysis.id)
@@ -525,12 +658,10 @@ class ApplicationRepository {
             
             // Check the match percentage and recommendation to determine appropriate status
             val matchPercentageValue = analysis.matchPercentage.replace("%", "").toDoubleOrNull() ?: 0.0
-            val hasInterviewRecommendation = analysis.recommendation.contains("interview", ignoreCase = true) ||
-                                            analysis.recommendation.contains("hire", ignoreCase = true)
             val hasHighMatchPercentage = matchPercentageValue >= 80.0
             
-            Log.d(TAG, "Analysis check - recommendation: ${analysis.recommendation}, match: ${analysis.matchPercentage}")
-            Log.d(TAG, "Interview recommendation: $hasInterviewRecommendation, high match: $hasHighMatchPercentage, match percentage: $matchPercentageValue")
+            Log.d(TAG, "Analysis saved - recommendation: ${analysis.recommendation}, match: ${analysis.matchPercentage}")
+            Log.d(TAG, "Interview recommendation: $isInterviewRecommendation, high match: $hasHighMatchPercentage, match percentage: $matchPercentageValue")
             
             // MODIFIED: Always set initial application status to PENDING regardless of analysis results
             val newStatus = JobApplicationStatus.PENDING
@@ -1088,6 +1219,46 @@ class ApplicationRepository {
                     val expJson = jsonObject.getJSONObject("experience")
                     experience.applicantYears = expJson.optString("applicant_years", "0")
                     experience.requiredYears = expJson.optString("required_years", "Not specified")
+                    
+                    // Extract job titles
+                    if (expJson.has("job_titles")) {
+                        val titleArray = expJson.getJSONArray("job_titles")
+                        val titles = mutableListOf<String>()
+                        for (i in 0 until titleArray.length()) {
+                            titles.add(titleArray.getString(i))
+                        }
+                        experience.jobTitles = titles
+                    }
+                    
+                    // Extract durations
+                    if (expJson.has("durations")) {
+                        val durationsArray = expJson.getJSONArray("durations")
+                        val durations = mutableListOf<Duration>()
+                        
+                        for (i in 0 until durationsArray.length()) {
+                            try {
+                                val durationJson = durationsArray.getJSONObject(i)
+                                
+                                val startDate = durationJson.optString("start_date", "")
+                                val endDate = durationJson.optString("end_date", "")
+                                val text = durationJson.optString("text", "")
+                                val months = durationJson.optInt("months", 0)
+                                
+                                durations.add(
+                                    Duration(
+                                        startDate = startDate,
+                                        endDate = endDate,
+                                        text = text,
+                                        months = months
+                                    )
+                                )
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Error parsing duration at index $i: ${e.message}")
+                            }
+                        }
+                        
+                        experience.durations = durations
+                    }
                 }
                 
                 if (jsonObject.has("education")) {
@@ -1098,6 +1269,66 @@ class ApplicationRepository {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error parsing experience/education: ${e.message}")
+            }
+            
+            // Try to extract passing details
+            var passingDetails: PassingDetails? = null
+            try {
+                if (jsonObject.has("passing_details")) {
+                    val passingJson = jsonObject.getJSONObject("passing_details")
+                    passingDetails = PassingDetails()
+                    
+                    // Extract job title
+                    if (passingJson.has("job_title")) {
+                        passingDetails.jobTitle = passingJson.optString("job_title", "")
+                    }
+                    
+                    // Extract match percentage
+                    if (passingJson.has("match_percentage")) {
+                        passingDetails.matchPercentage = passingJson.optInt("match_percentage", 0)
+                    }
+                    
+                    // Extract status
+                    if (passingJson.has("status")) {
+                        passingDetails.status = passingJson.optString("status", "")
+                    }
+                    
+                    // Extract key strengths
+                    if (passingJson.has("key_strengths")) {
+                        val strengthsArray = passingJson.getJSONArray("key_strengths")
+                        val strengths = mutableListOf<String>()
+                        for (i in 0 until strengthsArray.length()) {
+                            strengths.add(strengthsArray.getString(i))
+                        }
+                        passingDetails.keyStrengths = strengths
+                    }
+                    
+                    // Extract skills analysis
+                    if (passingJson.has("skills_analysis")) {
+                        val skillsJson = passingJson.getJSONObject("skills_analysis")
+                        passingDetails.skillsAnalysis.matchedCount = skillsJson.optInt("matched_count", 0)
+                        passingDetails.skillsAnalysis.missingCount = skillsJson.optInt("missing_count", 0)
+                        passingDetails.skillsAnalysis.matchImpact = skillsJson.optString("match_impact", "")
+                    }
+                    
+                    // Extract experience analysis
+                    if (passingJson.has("experience_analysis")) {
+                        val expJson = passingJson.getJSONObject("experience_analysis")
+                        passingDetails.experienceAnalysis.meetsRequirement = expJson.optBoolean("meets_requirement", false)
+                        passingDetails.experienceAnalysis.impact = expJson.optString("impact", "")
+                    }
+                    
+                    // Extract education analysis
+                    if (passingJson.has("education_analysis")) {
+                        val eduJson = passingJson.getJSONObject("education_analysis")
+                        passingDetails.educationAnalysis.meetsRequirement = eduJson.optBoolean("meets_requirement", false)
+                        passingDetails.educationAnalysis.impact = eduJson.optString("impact", "")
+                    }
+                    
+                    Log.d(TAG, "Successfully extracted passing details in minimal analysis")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error parsing passing_details in minimal analysis: ${e.message}")
             }
             
             // Log the successful parsing
@@ -1118,7 +1349,8 @@ class ApplicationRepository {
                 experience = experience,
                 education = education,
                 benchmark = null,
-                confidenceScores = null
+                confidenceScores = null,
+                passingDetails = passingDetails
             )
             
             // Save this minimal analysis to Firestore

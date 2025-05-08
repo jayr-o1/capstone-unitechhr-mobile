@@ -55,7 +55,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/urbanist_bold"
-                android:text="86% Match"
+                android:text="68% Match"
                 android:textColor="@color/white"
                 android:textSize="32sp" />
 
@@ -65,7 +65,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:fontFamily="@font/urbanist_semibold"
-                android:text="Strong Hire"
+                android:text="Interview"
                 android:textColor="@color/white"
                 android:textSize="20sp" />
         </LinearLayout>
@@ -79,16 +79,46 @@
             android:textColor="@color/black"
             android:textSize="18sp" />
 
+        <!-- Matched Skills Section -->
         <TextView
-            android:id="@+id/skillsMatchText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:fontFamily="@font/urbanist_semibold"
+            android:text="Matched Skills"
+            android:textColor="#28A745"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/matched_skills_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:fontFamily="@font/urbanist"
+            android:textColor="#666666"
+            android:textSize="15sp"
+            android:text="campaign management, brand management, marketing strategy, social media marketing, content marketing, email marketing, seo/sem, market research, analytics, budget management, team leadership, business, communication" />
+
+        <!-- Missing Skills Section -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:fontFamily="@font/urbanist_semibold"
+            android:text="Missing Skills"
+            android:textColor="#DC3545"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/missing_skills_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
             android:layout_marginBottom="16dp"
             android:fontFamily="@font/urbanist"
             android:textColor="#666666"
-            android:textSize="16sp"
-            tools:text="13/13 skills matched" />
+            android:textSize="15sp"
+            android:text="communication bachelor's degree in marketing, and presentation skills. marketing manager" />
 
         <!-- Experience -->
         <TextView
@@ -104,11 +134,52 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:fontFamily="@font/urbanist"
+            android:textColor="#666666"
+            android:textSize="15sp"
+            android:text="7 years experience (Not specified required)" />
+
+        <!-- Job History -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:fontFamily="@font/urbanist_semibold"
+            android:text="Current Position"
+            android:textColor="#495057"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/currentPositionText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="8dp"
+            android:fontFamily="@font/urbanist"
+            android:textColor="#666666"
+            android:textSize="15sp"
+            android:text="SENIOR MARKETING MANAGER (June 2019 - Present)" />
+        
+        <!-- Previous Positions -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:fontFamily="@font/urbanist_semibold"
+            android:text="Previous Positions"
+            android:textColor="#495057"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/previousPositionsText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
             android:layout_marginBottom="16dp"
             android:fontFamily="@font/urbanist"
             android:textColor="#666666"
-            android:textSize="16sp"
-            tools:text="11 years experience (5 required)" />
+            android:textSize="15sp"
+            android:text="August 2016 - May 2019 (33 months)\nJuly 2014 - July 2016 (24 months)" />
 
         <!-- Education -->
         <TextView
@@ -124,11 +195,21 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="4dp"
             android:fontFamily="@font/urbanist"
             android:textColor="#666666"
-            android:textSize="16sp"
-            tools:text="Master's degree (Bachelor's required)" />
+            android:textSize="15sp"
+            android:text="Master's degree (Bachelor's degree required)" />
+
+        <TextView
+            android:id="@+id/educationAssessmentText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:fontFamily="@font/urbanist_semibold"
+            android:textColor="#28A745"
+            android:textSize="15sp"
+            android:text="Assessment: Meets Requirement" />
 
         <!-- Improvement Suggestions -->
         <TextView
@@ -139,36 +220,46 @@
             android:textColor="@color/black"
             android:textSize="18sp" />
 
+        <!-- Skills Improvements -->
         <TextView
-            android:id="@+id/improvementSuggestionsText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:layout_marginBottom="16dp"
-            android:fontFamily="@font/urbanist"
-            android:textColor="#666666"
-            android:textSize="16sp"
-            tools:text="• Add industry-relevant certifications\n• Focus on recent achievements" />
-
-        <!-- Salary Estimate -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
             android:fontFamily="@font/urbanist_semibold"
-            android:text="Salary Estimate"
-            android:textColor="@color/black"
-            android:textSize="18sp" />
+            android:text="Skills"
+            android:textColor="#495057"
+            android:textSize="16sp" />
 
         <TextView
-            android:id="@+id/salaryEstimateText"
+            android:id="@+id/skillsImprovementText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="4dp"
+            android:fontFamily="@font/urbanist"
+            android:textColor="#666666"
+            android:textSize="15sp"
+            android:text="• Add the following missing skills for this position: communication bachelor's degree in marketing, and presentation skills. marketing manager\n• Use specific examples to demonstrate your listed skills relevant to this position" />
+
+        <!-- General Improvements -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:fontFamily="@font/urbanist_semibold"
+            android:text="General"
+            android:textColor="#495057"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/generalImprovementText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
             android:layout_marginBottom="16dp"
             android:fontFamily="@font/urbanist"
             android:textColor="#666666"
-            android:textSize="16sp"
-            tools:text="$100,000 - $265,000 USD" />
+            android:textSize="15sp"
+            android:text="• Add industry-relevant certifications for this position to strengthen your qualifications\n• Tailor your resume more specifically to the this position description\n• Use more keywords from the this position job posting" />
 
         <!-- Close Button -->
         <com.google.android.material.button.MaterialButton

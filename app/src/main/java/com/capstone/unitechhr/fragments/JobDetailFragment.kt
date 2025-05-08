@@ -487,25 +487,30 @@ class JobDetailFragment : Fragment() {
                     }
                     findViewById<TextView>(R.id.recommendationText)?.text = recommendation
                     
-                    // Skills match
-                    findViewById<TextView>(R.id.skillsMatchText)?.text = try {
+                    // Matched Skills
+                    findViewById<TextView>(R.id.matched_skills_text)?.text = try {
                         val matchedSkills = analysis.skillsMatch.matchedSkills ?: emptyList()
-                        val missingSkills = analysis.skillsMatch.missingSkills ?: emptyList()
-                        
-                        if (matchedSkills.isEmpty() && missingSkills.isEmpty()) {
-                            "Skills information not available"
+                        if (matchedSkills.isEmpty()) {
+                            "No matched skills found"
                         } else {
-                            val matchedCount = matchedSkills.size
-                            val totalSkills = matchedCount + missingSkills.size
-                            if (totalSkills > 0) {
-                                "$matchedCount/$totalSkills skills matched"
-                            } else {
-                                "Skills information not available"
-                            }
+                            matchedSkills.joinToString(", ")
                         }
                     } catch (e: Exception) {
-                        Log.e(TAG, "Error setting skills match text: ${e.message}", e)
-                        "Skills information not available"
+                        Log.e(TAG, "Error setting matched skills text: ${e.message}", e)
+                        "No matched skills found"
+                    }
+                    
+                    // Missing Skills
+                    findViewById<TextView>(R.id.missing_skills_text)?.text = try {
+                        val missingSkills = analysis.skillsMatch.missingSkills ?: emptyList()
+                        if (missingSkills.isEmpty()) {
+                            "No missing skills"
+                        } else {
+                            missingSkills.joinToString(", ")
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error setting missing skills text: ${e.message}", e)
+                        "Error retrieving missing skills"
                     }
                     
                     // Experience
@@ -530,6 +535,44 @@ class JobDetailFragment : Fragment() {
                         "Experience information not available"
                     }
                     
+                    // Current Position
+                    findViewById<TextView>(R.id.currentPositionText)?.text = try {
+                        val jobTitles = analysis.experience.jobTitles
+                        val durations = analysis.experience.durations
+                        
+                        if (jobTitles.isNotEmpty() && durations.isNotEmpty()) {
+                            // Get the current position (first in the list)
+                            val currentPosition = durations.first()
+                            "${jobTitles.first()} (${currentPosition.text})"
+                        } else if (jobTitles.isNotEmpty()) {
+                            // Just use the job title if we have it
+                            jobTitles.first()
+                        } else {
+                            "Position information not available"
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error setting current position text: ${e.message}", e)
+                        "Position information not available"
+                    }
+                    
+                    // Previous Positions
+                    findViewById<TextView>(R.id.previousPositionsText)?.text = try {
+                        val durations = analysis.experience.durations
+                        
+                        if (durations.size > 1) {
+                            // Skip the first position (current) and display the rest
+                            durations.subList(1, durations.size)
+                                .joinToString("\n") { position ->
+                                    "${position.text} (${position.months} months)"
+                                }
+                        } else {
+                            "No previous positions found"
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error setting previous positions text: ${e.message}", e)
+                        "Previous positions not available"
+                    }
+                    
                     // Education
                     findViewById<TextView>(R.id.educationText)?.text = try {
                         val educationData = analysis.education
@@ -552,33 +595,42 @@ class JobDetailFragment : Fragment() {
                         "Education information not available"
                     }
                     
-                    // Improvement suggestions
-                    val suggestions = buildSuggestionsList(analysis)
-                    findViewById<TextView>(R.id.improvementSuggestionsText)?.text = suggestions
-                    
-                    // Salary estimate
-                    findViewById<TextView>(R.id.salaryEstimateText)?.text = try {
-                        val salaryEstimate = analysis.salaryEstimate
-                        
-                        if (salaryEstimate != null) {
-                            val min = salaryEstimate.min.takeIf { it > 0 } ?: 0
-                            val max = salaryEstimate.max.takeIf { it > 0 } ?: 0
-                            val currency = salaryEstimate.currency.takeIf { 
-                                !it.isNullOrEmpty() 
-                            } ?: "USD"
-                            
-                            if (min > 0 || max > 0) {
-                                "$${min.toFormattedString()} - $${max.toFormattedString()} $currency"
-                            } else {
-                                "Salary information not available"
-                            }
+                    // Education Assessment
+                    findViewById<TextView>(R.id.educationAssessmentText)?.text = try {
+                        val assessment = analysis.education.assessment
+                        if (assessment.isNotEmpty()) {
+                            "Assessment: $assessment"
                         } else {
-                            "Salary information not available"
+                            "Assessment: Not specified"
                         }
                     } catch (e: Exception) {
-                        Log.e(TAG, "Error setting salary estimate text: ${e.message}", e)
-                        "Salary information not available"
+                        Log.e(TAG, "Error setting education assessment text: ${e.message}", e)
+                        "Assessment: Not available"
                     }
+                    
+                    // Skills Improvement Suggestions
+                    findViewById<TextView>(R.id.skillsImprovementText)?.text = try {
+                        val missingSkills = analysis.skillsMatch.missingSkills
+                        if (missingSkills.isNotEmpty()) {
+                            // Create improvement suggestions based on missing skills
+                            val suggestions = listOf(
+                                "Add the following missing skills for this position: ${missingSkills.joinToString(", ")}",
+                                "Use specific examples to demonstrate your listed skills relevant to this position"
+                            )
+                            suggestions.joinToString("\n") { "• $it" }
+                        } else {
+                            "• No specific skills improvements needed"
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error setting skills improvement text: ${e.message}", e)
+                        "• No skills improvement information available"
+                    }
+                    
+                    // General Improvement Suggestions - Hardcoded as requested
+                    findViewById<TextView>(R.id.generalImprovementText)?.text = 
+                        "• Add industry-relevant certifications for this position to strengthen your qualifications\n" +
+                        "• Tailor your resume more specifically to the this position description\n" +
+                        "• Use more keywords from the this position job posting"
                     
                     // Show the dialog
                     show()
@@ -593,38 +645,6 @@ class JobDetailFragment : Fragment() {
                 "Application Result: ${analysis.recommendation} (${analysis.matchPercentage} match)",
                 Toast.LENGTH_LONG
             ).show()
-        }
-    }
-    
-    private fun buildSuggestionsList(analysis: ApplicationAnalysis): String {
-        try {
-            val suggestionsList = mutableListOf<String>()
-            
-            // Get improvementSuggestions safely
-            val suggestions = analysis.improvementSuggestions
-            if (suggestions != null) {
-                // Add skills suggestions
-                suggestions.skills?.let { suggestionsList.addAll(it) }
-                
-                // Add experience suggestions
-                suggestions.experience?.let { suggestionsList.addAll(it) }
-                
-                // Add education suggestions
-                suggestions.education?.let { suggestionsList.addAll(it) }
-                
-                // Add general suggestions
-                suggestions.general?.let { suggestionsList.addAll(it) }
-            }
-            
-            // Format the list with bullet points
-            return if (suggestionsList.isNotEmpty()) {
-                suggestionsList.joinToString("\n") { "• $it" }
-            } else {
-                "No specific improvements needed"
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error building suggestions list: ${e.message}", e)
-            return "No specific improvements needed"
         }
     }
     

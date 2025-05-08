@@ -59,7 +59,11 @@ data class ApplicationAnalysis(
     
     @get:PropertyName("salary_estimate")
     @set:PropertyName("salary_estimate")
-    var salaryEstimate: SalaryEstimate? = SalaryEstimate()
+    var salaryEstimate: SalaryEstimate? = SalaryEstimate(),
+    
+    @get:PropertyName("passing_details")
+    @set:PropertyName("passing_details")
+    var passingDetails: PassingDetails? = PassingDetails()
 )
 
 data class SkillsMatch(
@@ -95,7 +99,29 @@ data class Experience(
     
     @get:PropertyName("job_titles")
     @set:PropertyName("job_titles")
-    var jobTitles: List<String> = listOf()
+    var jobTitles: List<String> = listOf(),
+    
+    @get:PropertyName("durations")
+    @set:PropertyName("durations")
+    var durations: List<Duration> = listOf()
+)
+
+data class Duration(
+    @get:PropertyName("start_date")
+    @set:PropertyName("start_date")
+    var startDate: String = "",
+    
+    @get:PropertyName("end_date")
+    @set:PropertyName("end_date")
+    var endDate: String = "",
+    
+    @get:PropertyName("text")
+    @set:PropertyName("text")
+    var text: String = "",
+    
+    @get:PropertyName("months")
+    @set:PropertyName("months")
+    var months: Int = 0
 )
 
 data class Education(
@@ -226,4 +252,69 @@ data class SalaryEstimate(
     @get:PropertyName("note")
     @set:PropertyName("note")
     var note: String = ""
+)
+
+// New model for passing details - why applicant passed the scoring system
+data class PassingDetails(
+    @get:PropertyName("job_title")
+    @set:PropertyName("job_title")
+    var jobTitle: String = "",
+    
+    @get:PropertyName("match_percentage")
+    @set:PropertyName("match_percentage")
+    var matchPercentage: Int = 0,
+    
+    @get:PropertyName("status")
+    @set:PropertyName("status")
+    var status: String = "",
+    
+    @get:PropertyName("key_strengths")
+    @set:PropertyName("key_strengths")
+    var keyStrengths: List<String> = listOf(),
+    
+    @get:PropertyName("skills_analysis")
+    @set:PropertyName("skills_analysis")
+    var skillsAnalysis: SkillsAnalysis = SkillsAnalysis(),
+    
+    @get:PropertyName("experience_analysis")
+    @set:PropertyName("experience_analysis")
+    var experienceAnalysis: ExperienceAnalysis = ExperienceAnalysis(),
+    
+    @get:PropertyName("education_analysis")
+    @set:PropertyName("education_analysis")
+    var educationAnalysis: EducationAnalysis = EducationAnalysis()
+)
+
+data class SkillsAnalysis(
+    @get:PropertyName("matched_count")
+    @set:PropertyName("matched_count")
+    var matchedCount: Int = 0,
+    
+    @get:PropertyName("missing_count")
+    @set:PropertyName("missing_count")
+    var missingCount: Int = 0,
+    
+    @get:PropertyName("match_impact")
+    @set:PropertyName("match_impact")
+    var matchImpact: String = ""
+)
+
+data class ExperienceAnalysis(
+    @get:PropertyName("meets_requirement")
+    @set:PropertyName("meets_requirement")
+    var meetsRequirement: Boolean = false,
+    
+    @get:PropertyName("impact")
+    @set:PropertyName("impact")
+    var impact: String = ""
+)
+
+data class EducationAnalysis(
+    @get:PropertyName("meets_requirement")
+    @set:PropertyName("meets_requirement")
+    var meetsRequirement: Boolean = false,
+    
+    @get:PropertyName("impact")
+    @set:PropertyName("impact")
+    var impact: String = ""
 ) 
