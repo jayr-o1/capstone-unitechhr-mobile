@@ -16,6 +16,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import com.capstone.unitechhr.R
 import com.capstone.unitechhr.models.ApplicationAnalysis
+import com.capstone.unitechhr.models.CriteriaWeights
 import com.capstone.unitechhr.models.Education as AnalysisEducation
 import com.capstone.unitechhr.models.Experience
 import com.capstone.unitechhr.models.SalaryEstimate
@@ -235,6 +236,23 @@ class JobDetailFragment : Fragment() {
                     findViewById<TextView>(R.id.availableSlotsValueText)?.text = 
                         job.availableSlots?.toString() ?: "Not specified"
                     
+                    // Criteria Weights
+                    if (job.criteriaWeights != null) {
+                        findViewById<TextView>(R.id.educationWeightValueText)?.text = 
+                            "${job.criteriaWeights.education}%"
+                        
+                        findViewById<TextView>(R.id.skillsWeightValueText)?.text = 
+                            "${job.criteriaWeights.skills}%"
+                        
+                        findViewById<TextView>(R.id.experienceWeightValueText)?.text = 
+                            "${job.criteriaWeights.experience}%"
+                    } else {
+                        // If criteria weights are not available, show default values
+                        findViewById<TextView>(R.id.educationWeightValueText)?.text = "Not specified"
+                        findViewById<TextView>(R.id.skillsWeightValueText)?.text = "Not specified"
+                        findViewById<TextView>(R.id.experienceWeightValueText)?.text = "Not specified"
+                    }
+                    
                     // Show the dialog
                     show()
                 }
@@ -266,6 +284,11 @@ class JobDetailFragment : Fragment() {
         val keyDuties = selectedJob.keyDuties?.joinToString(", ") ?: ""
         val essentialSkills = selectedJob.essentialSkills?.joinToString(", ") ?: ""
         val qualifications = selectedJob.qualifications?.joinToString(", ") ?: ""
+        
+        // Log criteria weights if available
+        selectedJob.criteriaWeights?.let {
+            Log.d(TAG, "Job has criteria weights - Education: ${it.education}%, Skills: ${it.skills}%, Experience: ${it.experience}%")
+        } ?: Log.d(TAG, "Job does not have criteria weights defined")
         
         // Show application confirmation dialog
         showApplicationConfirmationDialog(jobSummary, keyDuties, essentialSkills, qualifications, currentUser.resumeUrl, currentUser.email, selectedJob.id, selectedJob.title)
@@ -314,6 +337,9 @@ class JobDetailFragment : Fragment() {
             return
         }
         
+        // Get the selected job to access criteria weights
+        val selectedJob = viewModel.selectedJob.value
+        
         AlertDialog.Builder(requireContext())
             .setTitle("Submit Application")
             .setMessage("Your application will be analyzed using your resume and the job details. Continue?")
@@ -326,7 +352,7 @@ class JobDetailFragment : Fragment() {
                 ).show()
                 
                 // Submit application to analysis API
-                submitApplication(jobSummary, keyDuties, essentialSkills, qualifications, resumeUrl, userId, jobId, jobTitle)
+                submitApplication(jobSummary, keyDuties, essentialSkills, qualifications, resumeUrl, userId, jobId, jobTitle, selectedJob?.criteriaWeights)
             }
             .setNegativeButton("Cancel", null)
             .show()
@@ -340,7 +366,8 @@ class JobDetailFragment : Fragment() {
         resumeUrl: String,
         userId: String,
         jobId: String,
-        jobTitle: String
+        jobTitle: String,
+        criteriaWeights: CriteriaWeights?
     ) {
         // Use lifecycleScope to launch a coroutine
         lifecycleScope.launch {
@@ -356,6 +383,20 @@ class JobDetailFragment : Fragment() {
                 // Log application submission details
                 Log.d(TAG, "Submitting application for job: $jobTitle (ID: $jobId)")
                 Log.d(TAG, "Using resume URL: $resumeUrl")
+                
+                // Convert CriteriaWeights to Map<String, Int> if available
+                val weightsMap = criteriaWeights?.let {
+                    mapOf(
+                        "education" to it.education,
+                        "skills" to it.skills,
+                        "experience" to it.experience
+                    )
+                }
+                
+                // Log weights if available
+                weightsMap?.let {
+                    Log.d(TAG, "Using criteria weights: education=${it["education"]}, skills=${it["skills"]}, experience=${it["experience"]}")
+                }
                 
                 // Get the user's displayName from AuthViewModel
                 val currentUser = authViewModel.currentUser.value
@@ -374,7 +415,8 @@ class JobDetailFragment : Fragment() {
                             userId,
                             jobId,
                             jobTitle,
-                            displayName
+                            displayName,
+                            weightsMap
                         )
                     }
                     

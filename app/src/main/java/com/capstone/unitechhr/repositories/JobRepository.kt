@@ -2,6 +2,7 @@ package com.capstone.unitechhr.repositories
 
 import android.util.Log
 import com.capstone.unitechhr.models.Job
+import com.capstone.unitechhr.models.CriteriaWeights
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.Dispatchers
@@ -191,6 +192,18 @@ class JobRepository {
             val keyDuties = document.get("keyDuties") as? List<String> ?: emptyList()
             val qualifications = document.get("qualifications") as? List<String> ?: emptyList()
             
+            // Extract criteria weights
+            val criteriaWeightsMap = document.get("criteriaWeights") as? Map<String, Any>
+            val criteriaWeights = if (criteriaWeightsMap != null) {
+                CriteriaWeights(
+                    education = (criteriaWeightsMap["education"] as? Number)?.toInt() ?: 0,
+                    skills = (criteriaWeightsMap["skills"] as? Number)?.toInt() ?: 0,
+                    experience = (criteriaWeightsMap["experience"] as? Number)?.toInt() ?: 0
+                )
+            } else {
+                null
+            }
+            
             // Format duties and qualifications for display
             val dutiesText = keyDuties.joinToString("\n• ", "• ")
             val qualificationsText = qualifications.joinToString("\n• ", "• ")
@@ -216,7 +229,8 @@ class JobRepository {
                 essentialSkills = essentialSkills,
                 keyDuties = keyDuties,
                 qualifications = qualifications,
-                isDeleted = document.getBoolean("isDeleted") ?: false
+                isDeleted = document.getBoolean("isDeleted") ?: false,
+                criteriaWeights = criteriaWeights
             )
         } catch (e: Exception) {
             Log.e("JobRepository", "Error converting document to Job: ${e.message}")

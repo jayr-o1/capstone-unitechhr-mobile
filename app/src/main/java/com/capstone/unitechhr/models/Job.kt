@@ -2,6 +2,13 @@ package com.capstone.unitechhr.models
 
 import java.util.Date
 
+// Data class to represent the criteria weights
+data class CriteriaWeights(
+    val education: Int = 0,
+    val skills: Int = 0,
+    val experience: Int = 0
+)
+
 data class Job(
     val id: String = "",
     val title: String = "",
@@ -25,5 +32,8 @@ data class Job(
     val essentialSkills: List<String>? = null,
     val keyDuties: List<String>? = null,
     val qualifications: List<String>? = null,
-    val isDeleted: Boolean = false
+    val isDeleted: Boolean = false,
+    
+    // Added criteria weights field
+    val criteriaWeights: CriteriaWeights? = null
 ) 

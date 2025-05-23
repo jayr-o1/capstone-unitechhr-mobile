@@ -75,7 +75,7 @@ class ApplicationRepository {
         // API endpoints for different environments
         private const val API_ENDPOINT_EMULATOR = "http://10.0.2.2:$API_PORT/analyze" // Special IP for emulator to host localhost
         private const val API_ENDPOINT_DEVICE = "http://127.0.0.1:$API_PORT/analyze" // For USB debugging with port forwarding
-        private const val API_ENDPOINT_PRODUCTION = "https://jayr-o1--resume-scorer-api-fastapi-app.modal.run/analyze" // Deployed API endpoint
+        private const val API_ENDPOINT_PRODUCTION = "https://jayr-o1--resume-scorer-fastapi-app.modal.run/analyze" // Deployed API endpoint
         
         // Debug flag - set to true for more detailed logging
         private const val DEBUG = true
@@ -215,6 +215,7 @@ class ApplicationRepository {
      * @param keyDuties Key duties of the job
      * @param essentialSkills Essential skills required for the job
      * @param qualifications Qualifications required for the job
+     * @param criteriaWeights Weights for education, skills, and experience criteria
      * @return The analysis result object
      */
     suspend fun submitApplicationForAnalysis(
@@ -227,7 +228,8 @@ class ApplicationRepository {
         userId: String,
         jobId: String,
         jobTitle: String,
-        displayName: String? = null
+        displayName: String? = null,
+        criteriaWeights: Map<String, Int>? = null
     ): ApplicationAnalysis = withContext(Dispatchers.IO) {
         try {
             // First download the PDF from the URL to a temporary file
@@ -256,7 +258,21 @@ class ApplicationRepository {
                 .addFormDataPart("key_duties", keyDuties)
                 .addFormDataPart("essential_skills", essentialSkills)
                 .addFormDataPart("qualifications", qualifications)
-                .build()
+                
+            // Add criteria weights if available
+            if (criteriaWeights != null) {
+                criteriaWeights["education"]?.let { 
+                    requestBody.addFormDataPart("education_weight", it.toString()) 
+                }
+                criteriaWeights["skills"]?.let { 
+                    requestBody.addFormDataPart("skills_weight", it.toString()) 
+                }
+                criteriaWeights["experience"]?.let { 
+                    requestBody.addFormDataPart("experience_weight", it.toString()) 
+                }
+            }
+            
+            val finalRequestBody = requestBody.build()
             
             // Get appropriate API endpoint
             val apiUrl = getApiEndpoint()
@@ -270,13 +286,16 @@ class ApplicationRepository {
                 Log.d("ApplicationRepository", "- key_duties: ${keyDuties.take(50)}...")
                 Log.d("ApplicationRepository", "- essential_skills: ${essentialSkills.take(50)}...")
                 Log.d("ApplicationRepository", "- qualifications: ${qualifications.take(50)}...")
+                if (criteriaWeights != null) {
+                    Log.d("ApplicationRepository", "- weights: education=${criteriaWeights["education"]}, skills=${criteriaWeights["skills"]}, experience=${criteriaWeights["experience"]}")
+                }
             }
             
             // Build the request
             val request = Request.Builder()
                 .url(apiUrl)
                 .header("Accept", "application/json")
-                .post(requestBody)
+                .post(finalRequestBody)
                 .build()
             
             // Execute the request

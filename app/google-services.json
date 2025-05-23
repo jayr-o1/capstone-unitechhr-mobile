@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "1087281687437-d1a9qm155d5cvto660ggm5eh6q6uf0vd.apps.googleusercontent.com",
+          "client_id": "1087281687437-cacfa6l4crr5slupd74leick1ub23t0k.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.capstone.unitechhr",
-            "certificate_hash": "01fc538ec6977962ab59b19a880a07c722feb732"
+            "certificate_hash": "8494e9a27dd98f1544933e64ce5ad9f8139a3442"
           }
         },
         {
@@ -35,7 +35,7 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "1087281687437-vtms620hg66vtd88bko6gn7530kg7n06.apps.googleusercontent.com",
+              "client_id": "1087281687437-9ribfoudemf0mo0fgbcl8g4kgm4uk5ku.apps.googleusercontent.com",
               "client_type": 3
             }
           ]
